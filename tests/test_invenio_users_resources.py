@@ -31,10 +31,3 @@ def test_init():
     assert "invenio-users-resources" not in app.extensions
     ext.init_app(app)
     assert "invenio-users-resources" in app.extensions
-
-
-def test_view(base_client):
-    """Test view."""
-    res = base_client.get("/")
-    assert res.status_code == 200
-    assert "Welcome to Invenio-Users-Resources" in str(res.data)

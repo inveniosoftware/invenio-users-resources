@@ -9,8 +9,9 @@
 """User groups service configuration."""
 
 from invenio_records_resources.services import RecordServiceConfig, \
-    SearchOptions
+    SearchOptions, pagination_links
 
+from ..common import Link
 from ..permissions import UsersPermissionPolicy
 from .results import UserGroupItem, UserGroupList
 
@@ -25,17 +26,23 @@ class UserGroupSearchOptions(SearchOptions):
 class UserGroupsServiceConfig(RecordServiceConfig):
     """Requests service configuration."""
 
-    # TODO common configuration
+    # common configuration
     permission_policy_cls = UsersPermissionPolicy
     result_item_cls = UserGroupItem
     result_list_cls = UserGroupList
     search = UserGroupSearchOptions
 
-    record_cls = None  # needed for model queries
+    # specific configuration
+    record_cls = None
     schema = None
     index_dumper = None
 
-    # TODO links configuration
+    # links configuration
+    links_item = {
+        "self": Link("{+api}/groups/{id}"),
+        "avatar": Link("{+api}/groups/{id}/avatar.svg"),
+    }
+    links_search = pagination_links("{+api}/groups{?args*}")
 
     components = [
         # Order of components are important!

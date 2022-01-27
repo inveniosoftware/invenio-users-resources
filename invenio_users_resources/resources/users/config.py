@@ -32,7 +32,7 @@ class UsersResourceConfig(RecordResourceConfig):
     blueprint_name = "users"
     url_prefix = "/users"
     routes = {
-        "list": "/",
+        "list": "",
         "item": "/<id>",
         "avatar": "/<id>/avatar.svg",
     }
