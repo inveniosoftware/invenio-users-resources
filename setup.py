@@ -16,7 +16,7 @@ from setuptools import find_packages, setup
 readme = open("README.rst").read()
 history = open("CHANGES.rst").read()
 
-records_resources_version = ">=0.18.2,<0.19"
+records_resources_version = ">=0.18.3,<0.19"
 
 tests_require = [
     "pytest-invenio>=1.4.0",
@@ -39,7 +39,15 @@ extras_require = {
 }
 
 extras_require["all"] = []
-for reqs in extras_require.values():
+for name, reqs in extras_require.items():
+    if name in (
+        "elasticsearch6",
+        "elasticsearch7",
+        "mysql",
+        "postgresql",
+        "sqlite",
+    ):
+        continue
     extras_require["all"].extend(reqs)
 
 setup_requires = [

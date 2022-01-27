@@ -45,7 +45,7 @@ class UserItem(RecordItem):
     @property
     def links(self):
         """Get links for this result item."""
-        return self._links_tpl.expand(self._user, identity=self._identity)
+        return self._links_tpl.expand(self._user)
 
     @property
     def _obj(self):
@@ -139,7 +139,7 @@ class UserList(RecordList):
         #     # TODO
         #     if self._links_item_tpl:
         #         projection["links"] = self._links_item_tpl.expand(
-        #             user, identity=self._identity
+        #             user
         #         )
 
         #     yield projection

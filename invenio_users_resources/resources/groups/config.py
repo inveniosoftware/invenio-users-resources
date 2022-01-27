@@ -32,7 +32,7 @@ class UserGroupsResourceConfig(RecordResourceConfig):
     blueprint_name = "groups"
     url_prefix = "/groups"
     routes = {
-        "list": "/",
+        "list": "",
         "item": "/<id>",
         "avatar": "/<id>/avatar.svg",
     }

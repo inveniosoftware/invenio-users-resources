@@ -20,7 +20,7 @@ class UsersService(RecordService):
         # resolve and require permission
         user = current_datastore.get_user(id_)
         if user is None:
-            raise LookupError(f"there is no user with id {id_}")
+            raise LookupError(f"No user with id '{id_}'.")
 
         self.require_permission(identity, "read", user=user)
 
@@ -29,7 +29,7 @@ class UsersService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, user=user)
 
-        return self.result_item(self, identity, user)
+        return self.result_item(self, identity, user, links_tpl=self.links_item_tpl)
 
     def search(self, identity, params=None, es_preference=None, **kwargs):
         """Search for users matching the querystring."""

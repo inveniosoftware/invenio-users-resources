@@ -20,7 +20,7 @@ class UserGroupsService(RecordService):
         # resolve and require permission
         role = current_datastore.role_model.query.get(id_)
         if role is None:
-            raise LookupError(f"no group with id '{id_}'")
+            raise LookupError(f"No group with id '{id_}'.")
 
         self.require_permission(identity, "read", role=role)
 
@@ -29,11 +29,7 @@ class UserGroupsService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, role=role)
 
-        return self.result_item(
-            self,
-            identity,
-            role,
-        )
+        return self.result_item(self, identity, role, links_tpl=self.links_item_tpl)
 
     def search(self, identity, params=None, es_preference=None, **kwargs):
         """Search for users matching the querystring."""
