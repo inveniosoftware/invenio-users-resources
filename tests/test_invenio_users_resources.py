@@ -16,24 +16,25 @@ from invenio_users_resources import InvenioUsersResources
 def test_version():
     """Test version import."""
     from invenio_users_resources import __version__
+
     assert __version__
 
 
 def test_init():
     """Test extension initialization."""
-    app = Flask('testapp')
+    app = Flask("testapp")
     ext = InvenioUsersResources(app)
-    assert 'invenio-users-resources' in app.extensions
+    assert "invenio-users-resources" in app.extensions
 
-    app = Flask('testapp')
+    app = Flask("testapp")
     ext = InvenioUsersResources()
-    assert 'invenio-users-resources' not in app.extensions
+    assert "invenio-users-resources" not in app.extensions
     ext.init_app(app)
-    assert 'invenio-users-resources' in app.extensions
+    assert "invenio-users-resources" in app.extensions
 
 
 def test_view(base_client):
     """Test view."""
     res = base_client.get("/")
     assert res.status_code == 200
-    assert 'Welcome to Invenio-Users-Resources' in str(res.data)
+    assert "Welcome to Invenio-Users-Resources" in str(res.data)

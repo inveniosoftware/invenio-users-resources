@@ -9,16 +9,14 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
-from flask import Blueprint, render_template
-from flask_babelex import gettext as _
 
 def create_users_resources_bp(app):
-    """Create the users resources blueprint."""
+    """Create the users resource blueprint."""
+    ext = app.extensions["invenio-users-resources"]
+    return ext.users_resource.as_blueprint()
 
-    # TODO create actual blueprint for the resources
-    blueprint = Blueprint(
-        'invenio_users_resources',
-        __name__,
-    )
 
-    return blueprint
+def create_user_groups_resources_bp(app):
+    """Create the user groups resource blueprint."""
+    ext = app.extensions["invenio-users-resources"]
+    return ext.user_groups_resource.as_blueprint()
