@@ -58,15 +58,13 @@ class UserItem(RecordItem):
         if self._data:
             return self._data
 
-        # TODO
-        self._data = {"id": self._user.id, "email": self._user.email}
-        # self._data = self._schema.dump(
-        #     self._obj,
-        #     context={
-        #         "identity": self._identity,
-        #         "record": self._user,
-        #     },
-        # )
+        self._data = self._schema.dump(
+            self._obj,
+            context={
+                "identity": self._identity,
+                "record": self._user,
+            },
+        )
 
         if self._links_tpl:
             self._data["links"] = self.links
@@ -117,32 +115,25 @@ class UserList(RecordList):
         """Iterator over the hits."""
         user_cls = self._service.record_cls
 
-        # TODO this is only a temporary thing
         for hit in self._results:
-            if hit is not None:
-                yield {"id": hit.id, "email": hit.email}
+            # load dump
+            user = user_cls.loads(hit.to_dict())
+            schema = self._service.schema
 
-        # for hit in self._results:
-        #     # TODO load dump
-        #     user = user_cls.loads(hit.to_dict())
-        #     schema = self._service.schema
+            # project the user
+            projection = schema.dump(
+                user,
+                context={
+                    "identity": self._identity,
+                    "record": user,
+                },
+            )
 
-        #     # TODO project the user
-        #     projection = schema.dump(
-        #         user,
-        #         context={
-        #             "identity": self._identity,
-        #             "record": user,
-        #         },
-        #     )
+            # inject the links
+            if self._links_item_tpl:
+                projection["links"] = self._links_item_tpl.expand(user)
 
-        #     # TODO
-        #     if self._links_item_tpl:
-        #         projection["links"] = self._links_item_tpl.expand(
-        #             user
-        #         )
-
-        #     yield projection
+            yield projection
 
     def to_dict(self):
         """Return result as a dictionary."""
@@ -157,9 +148,9 @@ class UserList(RecordList):
         if self.aggregations:
             res["aggregations"] = self.aggregations
 
-        # if self._params:
-        #     res["sortBy"] = self._params["sort"]
-        #     if self._links_tpl:
-        #         res["links"] = self._links_tpl.expand(self.pagination)
+        if self._params:
+            res["sortBy"] = self._params["sort"]
+            if self._links_tpl:
+                res["links"] = self._links_tpl.expand(self.pagination)
 
         return res

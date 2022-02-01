@@ -1,0 +1,33 @@
+{
+  "mappings": {
+    "_doc": {
+      "dynamic": "strict",
+      "properties": {
+        "$schema": {
+          "type": "keyword"
+        },
+        "id": {
+          "type": "keyword"
+        },
+        "version_id": {
+          "type": "keyword"
+        },
+        "uuid": {
+          "type": "keyword"
+        },
+        "created": {
+          "type": "date"
+        },
+        "updated": {
+          "type": "date"
+        },
+        "name": {
+          "type": "text"
+        },
+        "description": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
