@@ -9,9 +9,8 @@
 """Users service."""
 
 from invenio_accounts.models import User
-from invenio_records_resources.services import LinksTemplate, RecordService
-from invenio_records_resources.services.uow import RecordCommitOp, \
-    RecordDeleteOp, unit_of_work
+from invenio_records_resources.services import RecordService
+from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
 
 from ...records.api import UserAggregate
 

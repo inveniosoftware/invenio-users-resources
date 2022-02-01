@@ -8,14 +8,6 @@
 
 """Base model classes for user and group management in Invenio."""
 
-import uuid
-
-from invenio_accounts.models import Role, User
-from invenio_db import db
-from invenio_records.models import RecordMetadataBase
-from sqlalchemy.types import Integer
-from sqlalchemy_utils import UUIDType
-
 
 class MockModel(dict):
     """Model class that does not correspondond to a database table.

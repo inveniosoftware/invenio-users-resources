@@ -9,8 +9,7 @@
 """User groups service."""
 
 from invenio_accounts.models import Role
-from invenio_accounts.proxies import current_datastore
-from invenio_records_resources.services import LinksTemplate, RecordService
+from invenio_records_resources.services import RecordService
 
 from ...records.api import UserGroupAggregate
 

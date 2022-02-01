@@ -9,7 +9,6 @@
 """API classes for user and group management in Invenio."""
 
 
-from invenio_accounts.models import Role, User
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import ElasticsearchDumper
@@ -162,7 +161,7 @@ class UserGroupAggregate(Record):
     """The model class for the user group aggregate."""
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
-    #       field, which is currently an integer for User objects!
+    #       field, which is currently an integer for Role objects!
     dumper = ElasticsearchDumper(
         extensions=[], model_fields={"id": ("uuid", int)}
     )
@@ -208,14 +207,14 @@ class UserGroupAggregate(Record):
         """Update the aggregate data on commit."""
         # TODO this does not allow us to set properties via the aggregate?
         #      because everything's taken from the Role object...
-        data = parse_role_data(self.user)
+        data = parse_role_data(self.role)
         self.update(data)
         self.model.update(data)
         return self
 
     @classmethod
     def from_role(cls, role):
-        """Create the user aggregate from the given role."""
+        """Create the user group aggregate from the given role."""
         # TODO
         data = parse_role_data(role)
 
