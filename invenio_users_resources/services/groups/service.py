@@ -8,8 +8,11 @@
 
 """User groups service."""
 
+from invenio_accounts.models import Role
 from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services import LinksTemplate, RecordService
+
+from ...records.api import UserGroupAggregate
 
 
 class UserGroupsService(RecordService):
@@ -18,36 +21,19 @@ class UserGroupsService(RecordService):
     def read(self, identity, id_):
         """Retrieve a user group."""
         # resolve and require permission
-        role = current_datastore.role_model.query.get(id_)
-        if role is None:
+        group = UserGroupAggregate.get_record(id_)
+        if group is None:
             raise LookupError(f"No group with id '{id_}'.")
 
-        self.require_permission(identity, "read", role=role)
+        self.require_permission(identity, "read", group=group)
 
         # run components
         for component in self.components:
             if hasattr(component, "read"):
-                component.read(identity, role=role)
+                component.read(identity, group=group)
 
-        return self.result_item(self, identity, role, links_tpl=self.links_item_tpl)
-
-    def search(self, identity, params=None, es_preference=None, **kwargs):
-        """Search for users matching the querystring."""
-        self.require_permission(identity, "search")
-
-        # Prepare and execute the search
-        params = params or {}
-
-        # TODO
-        search_result = current_datastore.role_model.query.all()
-
-        return self.result_list(
-            self,
-            identity,
-            search_result,
-            params,
-            links_tpl=LinksTemplate(self.config.links_search, context={"args": params}),
-            links_item_tpl=self.links_item_tpl,
+        return self.result_item(
+            self, identity, group, links_tpl=self.links_item_tpl
         )
 
     def get_avatar(self, identity, id_):
@@ -55,3 +41,11 @@ class UserGroupsService(RecordService):
         # TODO
         print("getting that group avatar")
         return None
+
+    def rebuild_index(self, identity, uow=None):
+        """Reindex all user groups managed by this service."""
+        for role in Role.query.all():
+            role_agg = self.record_cls.from_role(role)
+            self.indexer.index(role_agg)
+
+        return True
