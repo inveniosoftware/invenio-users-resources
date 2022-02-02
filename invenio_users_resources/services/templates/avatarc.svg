@@ -1,0 +1,6 @@
+ <svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="125" cy="125" r="125" fill="{{ bg_color }}" stroke="grey" />
+    <text x="48%" y="53%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="125" fill="#f9f9f9" stroke="grey" stroke-width="2">
+            {{ text | escape }}
+    </text>
+  </svg>
