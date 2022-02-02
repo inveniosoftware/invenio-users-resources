@@ -95,9 +95,6 @@ setup(
             "invenio_users = invenio_users_resources.views:create_users_resources_bp",  # noqa
             "invenio_groups = invenio_users_resources.views:create_groups_resources_bp",  # noqa
         ],
-        "invenio_jsonschemas.schemas": [
-            "jsonschemas = invenio_users_resources.records.jsonschemas",
-        ],
         "invenio_search.mappings": [
             "users = invenio_users_resources.records.mappings",
             "groups = invenio_users_resources.records.mappings",
