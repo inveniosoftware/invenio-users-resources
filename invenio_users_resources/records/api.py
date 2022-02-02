@@ -24,21 +24,37 @@ def parse_user_data(user):
     data = {
         "id": user.id,
         "email": user.email,
-        "username": None,
-        "full_name": None,
+        "active": user.active,
+        "confirmed": user.confirmed_at is not None,
+        "is_current_user": False,  # TODO
+        "preferences": None,  # TODO
+        "identities": None,  # TODO
+        "access": None,  # TODO
+        "profile": None,
     }
 
     if user.profile is not None:
-        data["full_name"] = user.profile.full_name
-        data["username"] = user.profile.username
+        data["profile"] = {
+            "full_name": user.profile.full_name,
+            "username": user.profile.username,
+        }
         # TODO populate more when we have extensible user profiles
+
+    # TODO
+    data["access"] = {"visibility": "public", "email_visibility": "public"}
 
     return data
 
 
 def parse_role_data(role):
     """Parse the role's information into a dictionary."""
-    data = {"id": role.id, "name": role.name, "description": role.description}
+    data = {
+        "id": role.id,
+        "name": role.name,
+        "title": None,  # TODO
+        "description": role.description,
+        "is_managed": True,  # TODO
+    }
     return data
 
 
@@ -68,11 +84,21 @@ class UserAggregate(Record):
     email = DictField("email")
     """The user's email address."""
 
-    username = DictField("username")
-    """The user's username."""
+    # TODO new profile system field?
+    profile = DictField("profile")
+    """The user's profile."""
 
-    full_name = DictField("full_name")
-    """The user's full name."""
+    active = DictField("active")
+
+    confirmed = DictField("confirmed")
+
+    is_current_user = DictField("is_current_user")
+
+    preferences = DictField("preferences")
+
+    identities = DictField("identities")
+
+    access = DictField("access")
 
     _user = None
     """The cached User entity."""
@@ -96,19 +122,10 @@ class UserAggregate(Record):
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
         with db.session.begin_nested():
-            email = data["email"]
-            active = data.pop("active", True)
-
-            full_name = data.pop("full_name", None)
-            username = data.pop("username", None)
-
-            # TODO populate user profile
-            if full_name and username:
-                pass
-
-            user = current_datastore.create_user(email=email, active=active)
+            # create_user() will already take care of creating the profile
+            # for us, if it's specified in the data
+            user = current_datastore.create_user(**data)
             user_aggregate = cls.from_user(user)
-
             return user_aggregate
 
     def _validate(self, *args, **kwargs):
@@ -172,8 +189,14 @@ class GroupAggregate(Record):
     name = DictField("name")
     """The group's name."""
 
+    title = DictField("title")
+    """The group's title."""
+
     description = DictField("description")
     """The group's description."""
+
+    is_managed = DictField("is_managed")
+    """If the group is managed manually."""
 
     _role = None
     """The cached Role entity."""
