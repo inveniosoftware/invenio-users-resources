@@ -18,11 +18,6 @@ charset = utf-8
 # Python files
 [*.py]
 indent_size = 4
-# isort plugin configuration
-known_first_party = invenio_users_resources
-multi_line_output = 2
-default_section = THIRDPARTY
-skip = .eggs
 
 # RST files (used by sphinx)
 [*.rst]
