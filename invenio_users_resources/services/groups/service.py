@@ -11,16 +11,16 @@
 from invenio_accounts.models import Role
 from invenio_records_resources.services import RecordService
 
-from ...records.api import UserGroupAggregate
+from ...records.api import GroupAggregate
 
 
-class UserGroupsService(RecordService):
+class GroupsService(RecordService):
     """User groups service."""
 
     def read(self, identity, id_):
         """Retrieve a user group."""
         # resolve and require permission
-        group = UserGroupAggregate.get_record(id_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             raise LookupError(f"No group with id '{id_}'.")
 

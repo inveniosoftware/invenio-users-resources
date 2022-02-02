@@ -12,14 +12,14 @@ from invenio_records_resources.services.records.results import RecordItem, \
     RecordList
 
 
-class UserGroupItem(RecordItem):
+class GroupItem(RecordItem):
     """Single user group result."""
 
     def __init__(
         self,
         service,
         identity,
-        user_group,
+        group,
         errors=None,
         links_tpl=None,
         schema=None,
@@ -28,7 +28,7 @@ class UserGroupItem(RecordItem):
         self._data = None
         self._errors = errors
         self._identity = identity
-        self._user_group = user_group
+        self._group = group
         self._service = service
         self._links_tpl = links_tpl
         self._schema = schema or service.schema
@@ -36,7 +36,7 @@ class UserGroupItem(RecordItem):
     @property
     def id(self):
         """Identity of the user group."""
-        return str(self._user_group.id)
+        return str(self._group.id)
 
     def __getitem__(self, key):
         """Key a key from the data."""
@@ -45,12 +45,12 @@ class UserGroupItem(RecordItem):
     @property
     def links(self):
         """Get links for this result item."""
-        return self._links_tpl.expand(self._user_group)
+        return self._links_tpl.expand(self._group)
 
     @property
     def _obj(self):
         """Return the object to dump."""
-        return self._user_group
+        return self._group
 
     @property
     def data(self):
@@ -62,7 +62,7 @@ class UserGroupItem(RecordItem):
             self._obj,
             context={
                 "identity": self._identity,
-                "record": self._user_group,
+                "record": self._group,
             },
         )
 
@@ -84,7 +84,7 @@ class UserGroupItem(RecordItem):
         return res
 
 
-class UserGroupList(RecordList):
+class GroupList(RecordList):
     """List of user group results."""
 
     def __init__(
@@ -113,25 +113,25 @@ class UserGroupList(RecordList):
     @property
     def hits(self):
         """Iterator over the hits."""
-        user_group_cls = self._service.record_cls
+        group_cls = self._service.record_cls
 
         for hit in self._results:
             # load dump
-            user_group = user_group_cls.loads(hit.to_dict())
+            group = group_cls.loads(hit.to_dict())
             schema = self._service.schema
 
             # project the user group
             projection = schema.dump(
-                user_group,
+                group,
                 context={
                     "identity": self._identity,
-                    "record": user_group,
+                    "record": group,
                 },
             )
 
             # inject the links
             if self._links_item_tpl:
-                projection["links"] = self._links_item_tpl.expand(user_group)
+                projection["links"] = self._links_item_tpl.expand(group)
 
             yield projection
 

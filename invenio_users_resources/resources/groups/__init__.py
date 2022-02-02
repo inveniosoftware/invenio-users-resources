@@ -8,10 +8,10 @@
 
 """Resources for user roles/groups."""
 
-from .config import UserGroupsResourceConfig
-from .resource import UserGroupsResource
+from .config import GroupsResourceConfig
+from .resource import GroupsResource
 
 __all__ = (
-    "UserGroupsResource",
-    "UserGroupsResourceConfig",
+    "GroupsResource",
+    "GroupsResourceConfig",
 )

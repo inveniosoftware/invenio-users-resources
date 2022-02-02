@@ -44,7 +44,7 @@ class UserSchema(BaseRecordSchema):
     access = fields.Nested(UserAccessSchema)
 
 
-class UserGroupSchema(BaseRecordSchema):
+class GroupSchema(BaseRecordSchema):
     """Schema for user groups."""
 
     name = fields.String()
