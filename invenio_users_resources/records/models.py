@@ -62,5 +62,5 @@ class UserAggregateModel(MockModel):
     """Mock model for glueing together various parts of user info."""
 
 
-class UserGroupAggregateModel(MockModel):
+class GroupAggregateModel(MockModel):
     """Mock model for glueing together various parts of user group info."""

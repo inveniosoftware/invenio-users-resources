@@ -10,10 +10,10 @@
 """Invenio module providing management APIs for users and roles/groups."""
 
 from . import config
-from .resources import UserGroupsResource, UserGroupsResourceConfig, \
-    UsersResource, UsersResourceConfig
-from .services import UserGroupsService, UserGroupsServiceConfig, \
-    UsersService, UsersServiceConfig
+from .resources import GroupsResource, GroupsResourceConfig, UsersResource, \
+    UsersResourceConfig
+from .services import GroupsService, GroupsServiceConfig, UsersService, \
+    UsersServiceConfig
 
 
 class InvenioUsersResources(object):
@@ -40,9 +40,7 @@ class InvenioUsersResources(object):
     def init_services(self, app):
         """Initialize the services for users and user groups."""
         self.users_service = UsersService(config=UsersServiceConfig)
-        self.user_groups_service = UserGroupsService(
-            config=UserGroupsServiceConfig
-        )
+        self.groups_service = GroupsService(config=GroupsServiceConfig)
 
     def init_resources(self, app):
         """Initialize the resources for users and user groups."""
@@ -50,7 +48,7 @@ class InvenioUsersResources(object):
             service=self.users_service,
             config=UsersResourceConfig,
         )
-        self.user_groups_resource = UserGroupsResource(
-            service=self.user_groups_service,
-            config=UserGroupsResourceConfig,
+        self.groups_resource = GroupsResource(
+            service=self.groups_service,
+            config=GroupsResourceConfig,
         )

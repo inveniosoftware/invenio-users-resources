@@ -16,7 +16,7 @@ from invenio_records.systemfields import ConstantField, DictField, ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 
-from .models import UserAggregateModel, UserGroupAggregateModel
+from .models import GroupAggregateModel, UserAggregateModel
 
 
 def parse_user_data(user):
@@ -154,10 +154,10 @@ class UserAggregate(Record):
         return cls.from_user(user)
 
 
-class UserGroupAggregate(Record):
+class GroupAggregate(Record):
     """An aggregate of information about a user group/role."""
 
-    model_cls = UserGroupAggregateModel
+    model_cls = GroupAggregateModel
     """The model class for the user group aggregate."""
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
@@ -172,7 +172,7 @@ class UserGroupAggregate(Record):
     schema = ConstantField("$schema", "local://users/group-v1.0.0.json")
     """The JSON Schema to use for validation."""
 
-    index = IndexField("user_groups-group-v1.0.0", search_alias="user_groups")
+    index = IndexField("groups-group-v1.0.0", search_alias="groups")
     """The Elasticsearch index to use."""
 
     # TODO
