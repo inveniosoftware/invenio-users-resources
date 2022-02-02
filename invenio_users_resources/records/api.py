@@ -58,9 +58,6 @@ class UserAggregate(Record):
     metadata = None
     """Disabled metadata field from the base class."""
 
-    schema = ConstantField("$schema", "local://users/user-v1.0.0.json")
-    """The JSON Schema to use for validation."""
-
     index = IndexField("users-user-v1.0.0", search_alias="users")
     """The Elasticsearch index to use."""
 
@@ -98,8 +95,6 @@ class UserAggregate(Record):
     ):
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
-        # TODO: should we do some JSON Schema validation here?
-        #       or do we rely on marshmallow?
         with db.session.begin_nested():
             email = data["email"]
             active = data.pop("active", True)
@@ -118,8 +113,6 @@ class UserAggregate(Record):
 
     def _validate(self, *args, **kwargs):
         """Skip the validation."""
-        # TODO does a JSONSchema even make sense? we don't actually store
-        #      anything, we just collect data from all over the place
         pass
 
     def commit(self):
@@ -168,9 +161,6 @@ class GroupAggregate(Record):
 
     metadata = None
     """Disabled metadata field from the base class."""
-
-    schema = ConstantField("$schema", "local://users/group-v1.0.0.json")
-    """The JSON Schema to use for validation."""
 
     index = IndexField("groups-group-v1.0.0", search_alias="groups")
     """The Elasticsearch index to use."""
