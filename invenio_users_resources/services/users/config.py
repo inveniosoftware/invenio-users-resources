@@ -8,8 +8,11 @@
 
 """Users service configuration."""
 
-from invenio_records_resources.services import RecordServiceConfig, \
-    SearchOptions, pagination_links
+from invenio_records_resources.services import (
+    RecordServiceConfig,
+    SearchOptions,
+    pagination_links,
+)
 
 from ...records.api import UserAggregate
 from ..common import Link

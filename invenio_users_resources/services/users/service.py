@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 European Union.
+# Copyright (C) 2022 CERN.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -11,6 +13,8 @@
 from invenio_accounts.models import User
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
+
+from invenio_users_resources.services.results import AvatarResult
 
 from ...records.api import UserAggregate
 
@@ -68,14 +72,13 @@ class UsersService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, user=user)
 
-        return self.result_item(
-            self, identity, user, links_tpl=self.links_item_tpl
-        )
+        return self.result_item(self, identity, user, links_tpl=self.links_item_tpl)
 
-    def get_avatar(self, identity, id_):
+    def read_avatar(self, identity, id_):
         """Get a user's avatar."""
-        # TODO
-        return None
+        user = UserAggregate.get_record(id_)
+        self.require_permission(identity, "read", record=user)
+        return AvatarResult(user)
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all users managed by this service."""

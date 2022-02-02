@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 CERN.
+# Copyright (C) 2022 European Union.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,11 +11,13 @@
 """User groups resource."""
 
 
-from flask import g
+from flask import g, send_file
 from flask_resources import resource_requestctx, response_handler, route
 from invenio_records_resources.resources import RecordResource
-from invenio_records_resources.resources.records.resource import \
-    request_search_args, request_view_args
+from invenio_records_resources.resources.records.resource import (
+    request_search_args,
+    request_view_args,
+)
 from invenio_records_resources.resources.records.utils import es_preference
 
 
@@ -29,7 +33,7 @@ class GroupsResource(RecordResource):
         return [
             route("GET", routes["list"], self.search),
             route("GET", routes["item"], self.read),
-            route("GET", routes["avatar"], self.avatar),
+            route("GET", routes["item-avatar"], self.avatar),
         ]
 
     @request_search_args
@@ -55,11 +59,18 @@ class GroupsResource(RecordResource):
         return item.to_dict(), 200
 
     @request_view_args
-    @response_handler()
     def avatar(self):
-        """Get a group's avatar."""
-        item = self.service.get_avatar(
+        """Get a groups's avatar."""
+        avatar = self.service.read_avatar(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
         )
-        return item.to_dict(), 200
+        return send_file(
+            avatar.bytes_io,
+            mimetype=avatar.mimetype,
+            as_attachment=False,
+            download_name=avatar.name,
+            etag=avatar.etag,
+            last_modified=avatar.last_modified,
+            max_age=86400 * 7,
+        )

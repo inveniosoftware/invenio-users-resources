@@ -17,10 +17,18 @@ from invenio_userprofiles.models import UserProfile
 from sqlalchemy import event
 
 from . import config
-from .resources import GroupsResource, GroupsResourceConfig, UsersResource, \
-    UsersResourceConfig
-from .services import GroupsService, GroupsServiceConfig, UsersService, \
-    UsersServiceConfig
+from .resources import (
+    GroupsResource,
+    GroupsResourceConfig,
+    UsersResource,
+    UsersResourceConfig,
+)
+from .services import (
+    GroupsService,
+    GroupsServiceConfig,
+    UsersService,
+    UsersServiceConfig,
+)
 from .utils import reindex_group, reindex_user, unindex_group, unindex_user
 
 
@@ -102,9 +110,7 @@ class InvenioUsersResources(object):
                 # models aren't listed in session.dirty, but are listed
                 # in this collection, especially with UserProfiles
                 changes = session._model_changes.values()
-                updated = updated.union(
-                    {m for (m, op) in changes if op == "update"}
-                )
+                updated = updated.union({m for (m, op) in changes if op == "update"})
             except Exception as e:
                 app.logger.warn(f"Error while checking DB model changes: {e}")
 

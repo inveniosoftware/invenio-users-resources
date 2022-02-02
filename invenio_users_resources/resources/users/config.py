@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 CERN.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,8 +11,10 @@
 
 
 import marshmallow as ma
-from invenio_records_resources.resources import RecordResourceConfig, \
-    SearchRequestArgsSchema
+from invenio_records_resources.resources import (
+    RecordResourceConfig,
+    SearchRequestArgsSchema,
+)
 
 
 #
@@ -34,7 +37,7 @@ class UsersResourceConfig(RecordResourceConfig):
     routes = {
         "list": "",
         "item": "/<id>",
-        "avatar": "/<id>/avatar.svg",
+        "item-avatar": "/<id>/avatar.svg",
     }
 
     request_view_args = {

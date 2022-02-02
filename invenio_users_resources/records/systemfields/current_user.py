@@ -9,8 +9,7 @@
 """System field for checking if the subject is the current user.."""
 
 from flask_security import current_user
-from invenio_records_resources.records.systemfields.calculated import \
-    CalculatedField
+from invenio_records_resources.records.systemfields.calculated import CalculatedField
 
 
 class CurrentUserField(CalculatedField):
