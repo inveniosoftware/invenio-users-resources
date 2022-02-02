@@ -27,18 +27,25 @@ class UserAccessSchema(Schema):
     email_visibility = fields.String(validate=validate_visibility)
 
 
+class UserProfileSchema(Schema):
+    """Schema for user profiles."""
+
+    username = fields.String()
+    full_name = fields.String()
+    # TODO fields: affiliations, bio, location, url, ...
+    #      will they be customizable?
+
+
 class UserSchema(BaseRecordSchema):
     """Schema for users."""
 
     # NOTE: API should only deliver users that are active & confirmed
     active = fields.Boolean()
     confirmed = fields.Boolean(dump_only=True)
+    is_current_user = fields.Boolean(dump_only=True)
 
     email = fields.String()
-    username = fields.String()
-    full_name = fields.String()
-
-    profile = fields.Dict()  # TODO the contents will be customizable?
+    profile = fields.Dict()
     identities = fields.Dict()  # TODO how to find out the contents?
     preferences = fields.Dict()  # TODO the content will be customizable?
     access = fields.Nested(UserAccessSchema)
@@ -48,4 +55,7 @@ class GroupSchema(BaseRecordSchema):
     """Schema for user groups."""
 
     name = fields.String()
+    title = fields.String()
     description = fields.String()
+    provider = fields.String(dump_only=True)
+    is_managed = fields.Boolean(dump_only=True)
