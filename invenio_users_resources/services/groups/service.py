@@ -24,7 +24,7 @@ class GroupsService(RecordService):
         if group is None:
             raise LookupError(f"No group with id '{id_}'.")
 
-        self.require_permission(identity, "read", group=group)
+        self.require_permission(identity, "read", record=group)
 
         # run components
         for component in self.components:
