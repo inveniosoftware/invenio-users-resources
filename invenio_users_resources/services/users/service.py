@@ -8,6 +8,7 @@
 # details.
 
 """Users service."""
+
 import invenio_userprofiles.models
 from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services import LinksTemplate, RecordService
@@ -16,6 +17,11 @@ from flask import send_file as _send_file
 from flask import render_template, request
 import re
 from io import BytesIO
+from invenio_accounts.models import User
+from invenio_records_resources.services import RecordService
+from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
+
+from ...records.api import UserAggregate
 
 
 user_colors = ['#e06055', '#ff8a65', '#e91e63', '#f06292', '#673ab7', '#ba68c8', '#7986cb', '#3f51b5', '#5e97f6',
@@ -25,10 +31,46 @@ user_colors = ['#e06055', '#ff8a65', '#e91e63', '#f06292', '#673ab7', '#ba68c8',
 class UsersService(RecordService):
     """Users service."""
 
+    @property
+    def user_cls(self):
+        """Alias for record_cls."""
+        return self.record_cls
+
+    @unit_of_work()
+    def create(self, identity, data, raise_errors=True, uow=None):
+        """Create a user."""
+        self.require_permission(identity, "create")
+
+        # validate data
+        data, errors = self.schema.load(
+            data,
+            context={"identity": identity},
+        )
+
+        # create the user with the specified data
+        user = self.user_cls.create(data)
+
+        # run components
+        self.run_components(
+            "create",
+            identity,
+            data=data,
+            user=user,
+            errors=errors,
+            uow=uow,
+        )
+
+        # persist user (DB and index)
+        uow.register(RecordCommitOp(user, self.indexer))
+
+        return self.result_item(
+            self, identity, user, links_tpl=self.links_item_tpl, errors=errors
+        )
+
     def read(self, identity, id_):
         """Retrieve a user."""
         # resolve and require permission
-        user = current_datastore.get_user(id_)
+        user = UserAggregate.get_record(id_)
         if user is None:
             raise LookupError(f"No user with id '{id_}'.")
 
@@ -39,29 +81,13 @@ class UsersService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, user=user)
 
-        return self.result_item(self, identity, user, links_tpl=self.links_item_tpl)
-
-    def search(self, identity, params=None, es_preference=None, **kwargs):
-        """Search for users matching the querystring."""
-        self.require_permission(identity, "search")
-
-        # Prepare and execute the search
-        params = params or {}
-
-        # TODO
-        search_result = current_datastore.user_model.query.all()
-
-        return self.result_list(
-            self,
-            identity,
-            search_result,
-            params,
-            links_tpl=LinksTemplate(self.config.links_search, context={"args": params}),
-            links_item_tpl=self.links_item_tpl,
+        return self.result_item(
+            self, identity, user, links_tpl=self.links_item_tpl
         )
 
     def get_avatar(self, identity, id_):
         """Get a user's avatar."""
+
         #user = self.read(identity, id)
         name = UserProfile.get_by_userid(id_).username
         text = name[0].upper()
@@ -124,3 +150,13 @@ class UsersService(RecordService):
             rv.cache_control.no_cache = True
 
         return rv
+
+
+    def rebuild_index(self, identity, uow=None):
+        """Reindex all users managed by this service."""
+        for user in User.query.all():
+            user_agg = self.record_cls.from_user(user)
+            self.indexer.index(user_agg)
+
+        return True
+

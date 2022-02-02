@@ -11,8 +11,10 @@
 from invenio_records_resources.services import RecordServiceConfig, \
     SearchOptions, pagination_links
 
+from ...records.api import UserGroupAggregate
 from ..common import Link
 from ..permissions import UsersPermissionPolicy
+from ..schemas import UserGroupSchema
 from .results import UserGroupItem, UserGroupList
 
 
@@ -33,8 +35,8 @@ class UserGroupsServiceConfig(RecordServiceConfig):
     search = UserGroupSearchOptions
 
     # specific configuration
-    record_cls = None
-    schema = None
+    record_cls = UserGroupAggregate
+    schema = UserGroupSchema
     index_dumper = None
 
     # links configuration

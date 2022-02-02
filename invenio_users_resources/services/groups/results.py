@@ -58,15 +58,13 @@ class UserGroupItem(RecordItem):
         if self._data:
             return self._data
 
-        # TODO
-        self._data = {"id": self._user_group.id, "name": self._user_group.name}
-        # self._data = self._schema.dump(
-        #     self._obj,
-        #     context={
-        #         "identity": self._identity,
-        #         "record": self._user_group,
-        #     },
-        # )
+        self._data = self._schema.dump(
+            self._obj,
+            context={
+                "identity": self._identity,
+                "record": self._user_group,
+            },
+        )
 
         if self._links_tpl:
             self._data["links"] = self.links
@@ -117,32 +115,25 @@ class UserGroupList(RecordList):
         """Iterator over the hits."""
         user_group_cls = self._service.record_cls
 
-        # TODO this is only a temporary thing
         for hit in self._results:
-            if hit is not None:
-                yield {"id": hit.id, "name": hit.name}
+            # load dump
+            user_group = user_group_cls.loads(hit.to_dict())
+            schema = self._service.schema
 
-        # for hit in self._results:
-        #     # TODO load dump
-        #     user_group = user_group_cls.loads(hit.to_dict())
-        #     schema = self._service.schema
+            # project the user group
+            projection = schema.dump(
+                user_group,
+                context={
+                    "identity": self._identity,
+                    "record": user_group,
+                },
+            )
 
-        #     # TODO project the user group
-        #     projection = schema.dump(
-        #         user_group,
-        #         context={
-        #             "identity": self._identity,
-        #             "record": user_group,
-        #         },
-        #     )
+            # inject the links
+            if self._links_item_tpl:
+                projection["links"] = self._links_item_tpl.expand(user_group)
 
-        #     # TODO
-        #     if self._links_item_tpl:
-        #         projection["links"] = self._links_item_tpl.expand(
-        #             user_group
-        #         )
-
-        #     yield projection
+            yield projection
 
     def to_dict(self):
         """Return result as a dictionary."""
@@ -157,9 +148,9 @@ class UserGroupList(RecordList):
         if self.aggregations:
             res["aggregations"] = self.aggregations
 
-        # if self._params:
-        #     res["sortBy"] = self._params["sort"]
-        #     if self._links_tpl:
-        #         res["links"] = self._links_tpl.expand(self.pagination)
+        if self._params:
+            res["sortBy"] = self._params["sort"]
+            if self._links_tpl:
+                res["links"] = self._links_tpl.expand(self.pagination)
 
         return res

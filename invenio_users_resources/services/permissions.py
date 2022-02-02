@@ -9,14 +9,14 @@
 """Users and user groups permissions."""
 
 from invenio_records_permissions import BasePermissionPolicy
-from invenio_records_permissions.generators import AnyUser, Disable
+from invenio_records_permissions.generators import AnyUser, SystemProcess
 
 
 class UsersPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
-    can_create = [Disable()]
-    can_read = [AnyUser()]
-    can_search = [AnyUser()]
-    can_update = [Disable()]
-    can_delete = [Disable()]
+    can_create = [SystemProcess()]
+    can_read = [AnyUser(), SystemProcess()]
+    can_search = [AnyUser(), SystemProcess()]
+    can_update = [SystemProcess()]
+    can_delete = [SystemProcess()]
