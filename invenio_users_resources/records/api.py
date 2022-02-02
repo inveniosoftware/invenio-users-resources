@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 CERN.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,6 +10,7 @@
 """API classes for user and group management in Invenio."""
 
 
+from flask import current_app
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import ElasticsearchDumper
@@ -32,7 +34,7 @@ def parse_user_data(user):
         "preferences": dict(user.preferences or {}),
         "identities": None,  # TODO
         "access": {},
-        "profile": dict(user.user_profile or {}),
+        "profile": dict(user.profile or {}),
     }
 
     if user.profile is not None:
@@ -90,7 +92,9 @@ class UserAggregate(Record):
     email = DictField("email")
     """The user's email address."""
 
-    # TODO new profile system field?
+    username = DictField("username")
+    """The user's email address."""
+
     profile = DictField("profile")
     """The user's profile."""
 
@@ -106,10 +110,28 @@ class UserAggregate(Record):
 
     access = DictField("access")
 
+    @property
+    def avatar_chars(self):
+        """Get avatar characters for user."""
+        text = None
+        if self.profile.get("full_name"):
+            text = self.profile["full_name"]
+        elif self.username:
+            text = self.username
+        else:
+            alphabet = "ABCDEFGHIJKLMNOPQRSTUVXYZ"
+            text = alphabet[self.id % len(alphabet)]
+
+        return text[0].upper()
+
+    @property
+    def avatar_color(self):
+        """Get avatar color for user."""
+        colors = current_app.config["USERS_RESOURCES_AVATAR_COLORS"]
+        return colors[self.id % len(colors)]
+
     @classmethod
-    def create(
-        cls, data, id_=None, validator=None, format_checker=None, **kwargs
-    ):
+    def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
@@ -163,9 +185,7 @@ class GroupAggregate(Record):
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently an integer for Role objects!
-    dumper = ElasticsearchDumper(
-        extensions=[], model_fields={"id": ("uuid", int)}
-    )
+    dumper = ElasticsearchDumper(extensions=[], model_fields={"id": ("uuid", int)})
 
     metadata = None
     """Disabled metadata field from the base class."""
@@ -191,6 +211,17 @@ class GroupAggregate(Record):
 
     _role = None
     """The cached Role entity."""
+
+    @property
+    def avatar_chars(self):
+        """Get avatar characters for user."""
+        return self.name[0].upper()
+
+    @property
+    def avatar_color(self):
+        """Get avatar color for user."""
+        colors = current_app.config["USERS_RESOURCES_AVATAR_COLORS"]
+        return colors[self.id % len(colors)]
 
     @property
     def role(self):

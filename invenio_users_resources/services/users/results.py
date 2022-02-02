@@ -8,8 +8,7 @@
 
 """Results for the users service."""
 
-from invenio_records_resources.services.records.results import RecordItem, \
-    RecordList
+from invenio_records_resources.services.records.results import RecordItem, RecordList
 
 
 class UserItem(RecordItem):

@@ -14,8 +14,12 @@ from itertools import chain
 
 from elasticsearch_dsl import Q
 from invenio_records_permissions import BasePermissionPolicy
-from invenio_records_permissions.generators import AnyUser, Generator, \
-    SystemProcess, UserNeed
+from invenio_records_permissions.generators import (
+    AnyUser,
+    Generator,
+    SystemProcess,
+    UserNeed,
+)
 
 
 class IfPublic(Generator):
@@ -40,20 +44,14 @@ class IfPublic(Generator):
     def needs(self, record=None, **kwargs):
         """Set of Needs granting permission."""
         needs_chain = chain.from_iterable(
-            [
-                g.needs(record=record, **kwargs)
-                for g in self._generators(record)
-            ]
+            [g.needs(record=record, **kwargs) for g in self._generators(record)]
         )
         return list(set(needs_chain))
 
     def excludes(self, record=None, **kwargs):
         """Set of Needs denying permission."""
         needs_chain = chain.from_iterable(
-            [
-                g.excludes(record=record, **kwargs)
-                for g in self._generators(record)
-            ]
+            [g.excludes(record=record, **kwargs) for g in self._generators(record)]
         )
         return list(set(needs_chain))
 
@@ -128,3 +126,13 @@ class UsersPermissionPolicy(BasePermissionPolicy):
 
     can_read_email = [IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
     can_read_details = [Self(), SystemProcess()]
+
+
+class GroupsPermissionPolicy(BasePermissionPolicy):
+    """Permission policy for users and user groups."""
+
+    can_create = [SystemProcess()]
+    can_read = [AnyUser(), SystemProcess()]
+    can_search = [AnyUser(), SystemProcess()]
+    can_update = [SystemProcess()]
+    can_delete = [SystemProcess()]

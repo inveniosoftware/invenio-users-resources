@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 CERN.
+# Copyright (C) 2022 European Union.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
-"""User groups service."""
+"""Groups service."""
 
 from invenio_accounts.models import Role
 from invenio_records_resources.services import RecordService
 
 from ...records.api import GroupAggregate
+from ..results import AvatarResult
 
 
 class GroupsService(RecordService):
@@ -31,15 +34,13 @@ class GroupsService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, group=group)
 
-        return self.result_item(
-            self, identity, group, links_tpl=self.links_item_tpl
-        )
+        return self.result_item(self, identity, group, links_tpl=self.links_item_tpl)
 
-    def get_avatar(self, identity, id_):
-        """Get a user group's avatar."""
-        # TODO
-        print("getting that group avatar")
-        return None
+    def read_avatar(self, identity, id_):
+        """Get a groups's avatar."""
+        group = GroupAggregate.get_record(id_)
+        self.require_permission(identity, "read", record=group)
+        return AvatarResult(group)
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all user groups managed by this service."""
