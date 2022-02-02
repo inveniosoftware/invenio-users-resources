@@ -10,6 +10,7 @@
 from flask_babelex import lazy_gettext as _
 from invenio_records_resources.services.records.schema import BaseRecordSchema
 from marshmallow import Schema, ValidationError, fields
+from marshmallow_utils.permissions import FieldPermissionsMixin
 
 
 def validate_visibility(value):
@@ -36,8 +37,12 @@ class UserProfileSchema(Schema):
     #      will they be customizable?
 
 
-class UserSchema(BaseRecordSchema):
+class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     """Schema for users."""
+
+    field_dump_permissions = {
+        "email": "read_email",
+    }
 
     # NOTE: API should only deliver users that are active & confirmed
     active = fields.Boolean()

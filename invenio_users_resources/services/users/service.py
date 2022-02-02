@@ -61,7 +61,7 @@ class UsersService(RecordService):
         if user is None:
             raise LookupError(f"No user with id '{id_}'.")
 
-        self.require_permission(identity, "read", user=user)
+        self.require_permission(identity, "read", record=user)
 
         # run components
         for component in self.components:
