@@ -42,6 +42,13 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 
     field_dump_permissions = {
         "email": "read_email",
+        "created": "read_details",
+        "updated": "read_details",
+        "revision_id": "read_details",
+        "active": "read_details",
+        "confirmed": "read_details",
+        "identities": "read_details",
+        "preferences": "read_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed

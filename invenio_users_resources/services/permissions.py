@@ -12,10 +12,12 @@ from itertools import chain
 
 from invenio_records_permissions import BasePermissionPolicy
 from invenio_records_permissions.generators import AnyUser, Disable, \
-    Generator, SystemProcess
+    Generator, SystemProcess, UserNeed
 
 
 class IfPublicEmail(Generator):
+    """Generator for different permissions based on the visibility settings."""
+
     def __init__(self, then_, else_):
         self.then_ = then_
         self.else_ = else_
@@ -48,6 +50,17 @@ class IfPublicEmail(Generator):
         return list(set(needs_chain))
 
 
+class Self(Generator):
+    """Requires the users themselves."""
+
+    def needs(self, record=None, **kwargs):
+        """Set of Needs granting permission."""
+        if record is not None:
+            return [UserNeed(record.id)]
+
+        return []
+
+
 class UsersPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
@@ -57,4 +70,5 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
-    can_read_email = [IfPublicEmail([AnyUser()], [Disable()]), SystemProcess()]
+    can_read_email = [IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
+    can_read_details = [Self(), SystemProcess()]
