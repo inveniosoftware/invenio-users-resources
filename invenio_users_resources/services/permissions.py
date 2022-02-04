@@ -57,4 +57,4 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
-    can_read_email = [IfPublicEmail([AnyUser()], [Disable()])]
+    can_read_email = [IfPublicEmail([AnyUser()], [Disable()]), SystemProcess()]

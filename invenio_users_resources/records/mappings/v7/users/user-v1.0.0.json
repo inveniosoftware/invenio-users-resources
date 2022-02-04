@@ -51,6 +51,10 @@
       "email": {
         "type": "keyword"
       },
+      "email_hidden": {
+        "type": "keyword",
+        "index": "false"
+      },
       "profile": {
         "properties": {
           "username": {

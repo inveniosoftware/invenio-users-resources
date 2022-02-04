@@ -12,10 +12,11 @@
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import ElasticsearchDumper
-from invenio_records.systemfields import ConstantField, DictField, ModelField
+from invenio_records.systemfields import DictField, ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 
+from .dumpers import EmailFieldDumperExt
 from .models import GroupAggregateModel, UserAggregateModel
 
 
@@ -67,7 +68,8 @@ class UserAggregate(Record):
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently an integer for User objects!
     dumper = ElasticsearchDumper(
-        extensions=[], model_fields={"id": ("uuid", int)}
+        extensions=[EmailFieldDumperExt("email")],
+        model_fields={"id": ("uuid", int)},
     )
     """Elasticsearch dumper with configured extensions."""
 
