@@ -10,4 +10,4 @@
 
 from .email import EmailFieldDumperExt
 
-__all__ = "EmailFieldDumperExt"
+__all__ = ("EmailFieldDumperExt",)

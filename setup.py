@@ -55,6 +55,7 @@ setup_requires = [
 ]
 
 install_requires = [
+    "invenio-accounts>=2.0.0dev0",
     "invenio-i18n>=1.3.1",
     "invenio-userprofiles>=1.2.4",
     "invenio-oauthclient>=1.5.4",
