@@ -15,3 +15,13 @@ current_user_resources = LocalProxy(
     lambda: current_app.extensions["invenio-users-resources"]
 )
 """Proxy for the instantiated Users-Resources extension."""
+
+current_users_service = LocalProxy(
+    lambda: current_app.extensions["invenio-users-resources"].users_service
+)
+"""Proxy for the currently instantiated users service."""
+
+current_groups_service = LocalProxy(
+    lambda: current_app.extensions["invenio-users-resources"].groups_service
+)
+"""Proxy for the currently instantiated user groups service."""

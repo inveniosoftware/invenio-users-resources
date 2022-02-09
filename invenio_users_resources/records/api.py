@@ -102,21 +102,6 @@ class UserAggregate(Record):
 
     access = DictField("access")
 
-    _user = None
-    """The cached User entity."""
-
-    @property
-    def user(self):
-        """Cache for the associated user object."""
-        user = self._user
-        if user is None:
-            id_, email = self.id, self.email
-            user = current_datastore.get_user(id_ or email)
-
-            self._user = user
-
-        return user
-
     @classmethod
     def create(
         cls, data, id_=None, validator=None, format_checker=None, **kwargs
@@ -139,7 +124,7 @@ class UserAggregate(Record):
         """Update the aggregate data on commit."""
         # TODO this does not allow us to set properties via the UserAggregate?
         #      because everything's taken from the User object...
-        data = parse_user_data(self.user)
+        data = parse_user_data(self.model.model_obj)
         self.update(data)
         self.model.update(data)
         return self
@@ -150,9 +135,8 @@ class UserAggregate(Record):
         # TODO
         data = parse_user_data(user)
 
-        model = cls.model_cls(data)
+        model = cls.model_cls(data, model_obj=user)
         user_agg = cls(data, model=model)
-        user_agg._user = user
         return user_agg
 
     @classmethod
@@ -234,7 +218,7 @@ class GroupAggregate(Record):
         # TODO
         data = parse_role_data(role)
 
-        model = cls.model_cls(data)
+        model = cls.model_cls(data, model_obj=role)
         role_agg = cls(data, model=model)
         role_agg._role = role
         return role_agg
