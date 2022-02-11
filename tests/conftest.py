@@ -20,16 +20,6 @@ from flask import Flask
 from flask_babelex import Babel
 
 from invenio_users_resources import InvenioUsersResources
-from invenio_users_resources.views import blueprint
-
-
-@pytest.fixture(scope="module")
-def celery_config():
-    """Override pytest-invenio fixture.
-
-    TODO: Remove this fixture if you add Celery support.
-    """
-    return {}
 
 
 @pytest.fixture(scope="module")
