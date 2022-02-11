@@ -19,6 +19,7 @@ class IfPublicEmail(Generator):
     """Generator for different permissions based on the visibility settings."""
 
     def __init__(self, then_, else_):
+        """Constructor."""
         self.then_ = then_
         self.else_ = else_
 

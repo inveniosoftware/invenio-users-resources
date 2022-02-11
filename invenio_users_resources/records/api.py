@@ -121,6 +121,7 @@ class UserAggregate(Record):
     def create(
         cls, data, id_=None, validator=None, format_checker=None, **kwargs
     ):
+        """Create a new User and store it in the database."""
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
         with db.session.begin_nested():
