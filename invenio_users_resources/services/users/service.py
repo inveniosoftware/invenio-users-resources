@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2022 European Union.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -87,6 +88,7 @@ class UsersService(RecordService):
 
         # user = self.read(identity, id)
         name = UserProfile.get_by_userid(id_).username
+        # email = UserProfile.get_by_userid(id_).email
         text = name[0].upper()
         color = self.get_color_for_user_id(id_)
         avatar = render_template('avatarc.svg', bg_color=color, text=text)

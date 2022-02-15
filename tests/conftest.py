@@ -18,10 +18,10 @@ import tempfile
 import pytest
 from flask import Flask
 from flask_babelex import Babel
+from invenio_app.factory import create_api as _create_api
 
 from invenio_users_resources import InvenioUsersResources
-from invenio_users_resources.views import blueprint
-
+#from invenio_users_resources.views import blueprint
 
 @pytest.fixture(scope="module")
 def celery_config():
@@ -45,3 +45,6 @@ def create_app(instance_path):
         return app
 
     return factory
+
+
+

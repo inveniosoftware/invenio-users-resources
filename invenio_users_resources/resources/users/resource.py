@@ -22,14 +22,18 @@ from invenio_records_resources.resources.records.utils import es_preference
 #
 class UsersResource(RecordResource):
     """Resource for users."""
+    def p(prefix, route):
+        """Prefix a route with the URL prefix"""
+        return f"{prefix}{route}"
 
     def create_url_rules(self):
         """Create the URL rules for the users resource."""
         routes = self.config.routes
+        prefix = self.config.url_prefix
         return [
-            route("GET", routes["list"], self.search),
-            route("GET", routes["item"], self.read),
-            route("GET", routes["avatar"], self.avatar),
+            route("GET", self.p(prefix,routes["list"]), self.search),
+            route("GET", self.p(prefix,routes["item"]), self.read),
+            route("GET", self.p(prefix,routes["avatar"]), self.avatar),
         ]
 
     @request_search_args
