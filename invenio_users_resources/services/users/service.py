@@ -15,7 +15,6 @@ from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
 
 from ...records.api import UserAggregate
 
-from invenio_userprofiles.models import UserProfile
 from flask import send_file as _send_file
 from flask import render_template, request
 import re
@@ -86,7 +85,7 @@ class UsersService(RecordService):
     def get_avatar(self, identity, id_):
         """Get a user's avatar."""
 
-        userAgg = self.read(identity, id)
+        userAgg = self.read(identity, id_)
         if userAgg.profile.get('full_name', None):
             name = userAgg['profile']['full_name']
         elif userAgg.profile.get('username'):

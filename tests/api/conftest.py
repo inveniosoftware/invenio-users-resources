@@ -150,3 +150,36 @@ def client_logged_as(client, users):
         return client
 
     return log_user
+
+
+@pytest.fixture(scope="module")
+def groups(app):
+    """Create example groups."""
+    # This is a convenient way to get a handle on db that, as opposed to the
+    # fixture, won't cause a DB rollback after the test is run in order
+    # to help with test performance
+    from invenio_db import db
+
+    with db.session.begin_nested():
+        datastore = app.extensions["security"].datastore
+
+        su_role = Role(name="superuser-access")
+        db.session.add(su_role)
+
+        su_action_role = ActionRoles.create(action=superuser_access, role=su_role)
+        db.session.add(su_action_role)
+
+        group1 = datastore.create_group(
+            name="group1", description="a group for testing", role=None
+        )
+
+        group2 = datastore.create_group(
+        name="SecondGroup", descriptio="another group for testing", role=None
+        )
+    db.session.commit()
+    return [group1, group2]
+
+@pytest.fixture()
+def example_group(groups):
+    """Create example group."""
+    return groups[0]
