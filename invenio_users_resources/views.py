@@ -16,7 +16,7 @@ def create_users_resources_bp(app):
     return ext.users_resource.as_blueprint()
 
 
-def create_user_groups_resources_bp(app):
+def create_groups_resources_bp(app):
     """Create the user groups resource blueprint."""
     ext = app.extensions["invenio-users-resources"]
-    return ext.user_groups_resource.as_blueprint()
+    return ext.groups_resource.as_blueprint()

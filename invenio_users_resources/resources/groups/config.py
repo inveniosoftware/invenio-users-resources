@@ -17,7 +17,7 @@ from invenio_records_resources.resources import RecordResourceConfig, \
 #
 # Request args
 #
-class UserGroupSearchRequestArgsSchema(SearchRequestArgsSchema):
+class GroupSearchRequestArgsSchema(SearchRequestArgsSchema):
     """Add parameter to parse tags."""
 
     title = ma.fields.String()
@@ -26,7 +26,7 @@ class UserGroupSearchRequestArgsSchema(SearchRequestArgsSchema):
 #
 # Resource config
 #
-class UserGroupsResourceConfig(RecordResourceConfig):
+class GroupsResourceConfig(RecordResourceConfig):
     """User groups resource configuration."""
 
     blueprint_name = "groups"
@@ -41,4 +41,4 @@ class UserGroupsResourceConfig(RecordResourceConfig):
         "id": ma.fields.Str(),
     }
 
-    request_search_args = UserGroupSearchRequestArgsSchema
+    request_search_args = GroupSearchRequestArgsSchema

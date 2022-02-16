@@ -93,14 +93,11 @@ setup(
         ],
         "invenio_base.api_blueprints": [
             "invenio_users = invenio_users_resources.views:create_users_resources_bp",  # noqa
-            "invenio_user_groups = invenio_users_resources.views:create_user_groups_resources_bp",  # noqa
-        ],
-        "invenio_jsonschemas.schemas": [
-            "jsonschemas = invenio_users_resources.records.jsonschemas",
+            "invenio_groups = invenio_users_resources.views:create_groups_resources_bp",  # noqa
         ],
         "invenio_search.mappings": [
             "users = invenio_users_resources.records.mappings",
-            "user_groups = invenio_users_resources.records.mappings",
+            "groups = invenio_users_resources.records.mappings",
         ],
         "invenio_i18n.translations": [
             "messages = invenio_users_resources",

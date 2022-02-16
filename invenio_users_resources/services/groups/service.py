@@ -11,7 +11,7 @@
 from invenio_accounts.models import Role
 from invenio_records_resources.services import RecordService
 
-from ...records.api import UserGroupAggregate
+from ...records.api import GroupAggregate
 
 from flask import send_file as _send_file
 from flask import render_template, request
@@ -24,17 +24,17 @@ group_colors = ['#e06055', '#ff8a65', '#e91e63', '#f06292', '#673ab7', '#ba68c8'
                '#a1887f', '#fdd835', '#a3a3a3', '#556c60', '#605264', '#923035', '#915a30', '#55526f', '#67635a']
 
 
-class UserGroupsService(RecordService):
+class GroupsService(RecordService):
     """User groups service."""
 
     def read(self, identity, id_):
         """Retrieve a user group."""
         # resolve and require permission
-        group = UserGroupAggregate.get_record(id_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             raise LookupError(f"No group with id '{id_}'.")
 
-        self.require_permission(identity, "read", group=group)
+        self.require_permission(identity, "read", record=group)
 
         # run components
         for component in self.components:

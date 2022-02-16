@@ -8,12 +8,12 @@
 
 """Services for users and user roles/groups."""
 
-from .groups import UserGroupsService, UserGroupsServiceConfig
+from .groups import GroupsService, GroupsServiceConfig
 from .users import UsersService, UsersServiceConfig
 
 __all__ = (
+    "GroupsService",
+    "GroupsServiceConfig",
     "UsersService",
     "UsersServiceConfig",
-    "UserGroupsService",
-    "UserGroupsServiceConfig",
 )

@@ -17,29 +17,71 @@
         "index": "false"
       },
       "id": {
-        "type": "keyword"
+        "type": "keyword",
+        "index": "false"
       },
       "version_id": {
         "type": "integer",
         "index": "false"
       },
       "uuid": {
-        "type": "keyword"
+        "type": "keyword",
+        "index": "false"
       },
       "created": {
-        "type": "date"
+        "type": "date",
+        "index": "false"
       },
       "updated": {
-        "type": "date"
+        "type": "date",
+        "index": "false"
+      },
+      "active": {
+        "type": "boolean",
+        "index": "false"
+      },
+      "confirmed": {
+        "type": "boolean",
+        "index": "false"
+      },
+      "is_current_user": {
+        "type": "boolean",
+        "index": "false"
       },
       "email": {
         "type": "keyword"
       },
-      "username": {
-        "type": "keyword"
+      "email_hidden": {
+        "type": "keyword",
+        "index": "false"
       },
-      "full_name": {
-        "type": "text"
+      "profile": {
+        "properties": {
+          "username": {
+            "type": "keyword"
+          },
+          "full_name": {
+            "type": "text"
+          }
+        }
+      },
+      "identities": {
+        "enabled": "false"
+      },
+      "preferences": {
+        "enabled": "false"
+      },
+      "access": {
+        "properties": {
+          "visibility": {
+            "type": "keyword",
+            "index": "false"
+          },
+          "email_visibility": {
+            "type": "keyword",
+            "index": "false"
+          }
+        }
       }
     }
   }

@@ -20,7 +20,7 @@ from invenio_records_resources.resources.records.utils import es_preference
 #
 # Resource
 #
-class UserGroupsResource(RecordResource):
+class GroupsResource(RecordResource):
     """Resource for user groups."""
 
     def p(prefix, route):

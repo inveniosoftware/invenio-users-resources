@@ -8,12 +8,12 @@
 
 """Resources for users and roles/groups."""
 
-from .groups import UserGroupsResource, UserGroupsResourceConfig
+from .groups import GroupsResource, GroupsResourceConfig
 from .users import UsersResource, UsersResourceConfig
 
 __all__ = (
+    "GroupsResource",
+    "GroupsResourceConfig",
     "UsersResource",
     "UsersResourceConfig",
-    "UserGroupsResource",
-    "UserGroupsResourceConfig",
 )
