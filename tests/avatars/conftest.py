@@ -133,6 +133,10 @@ def example_user(users):
     """Create example user."""
     return users[0]
 
+@pytest.fixture()
+def example_fullname_user(users)
+    users[1].profile.full_name = "Full Name"
+    return users[1]
 
 @pytest.fixture()
 def client_logged_as(client, users):

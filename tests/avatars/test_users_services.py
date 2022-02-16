@@ -12,8 +12,12 @@
 from invenio_users_resources.resources import UsersResource
 
 
-def test_get_user_avatar(app, client, headers, example_user):
+def test_get_user_avatar(app, client, headers, example_user, example_fullname_user):
     user=example_user()
+    res = client.get(f"/users/{user.id}/avatar.svg")
+    assert res.status_code == 200
+
+    user = example_fullname_user()
     res = client.get(f"/users/{user.id}/avatar.svg")
     assert res.status_code == 200
 

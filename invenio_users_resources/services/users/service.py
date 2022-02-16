@@ -86,8 +86,15 @@ class UsersService(RecordService):
     def get_avatar(self, identity, id_):
         """Get a user's avatar."""
 
-        # user = self.read(identity, id)
-        name = UserProfile.get_by_userid(id_).username
+        userAgg = self.read(identity, id)
+        if userAgg.profile.get('full_name', None):
+            name = userAgg['profile']['full_name']
+        elif userAgg.profile.get('username'):
+            name = userAgg['profile']['username']
+        else:
+            name = userAgg.data['email']
+
+        # name = UserProfile.get_by_userid(id_).username
         # email = UserProfile.get_by_userid(id_).email
         text = name[0].upper()
         color = self.get_color_for_user_id(id_)
