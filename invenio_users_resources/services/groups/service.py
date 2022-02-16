@@ -56,28 +56,20 @@ class GroupsService(RecordService):
         text = name[0].upper()
         color = self.get_color_for_group_id(id_)
         avatar = render_template('avatarc.svg', bg_color=color, text=text)
+
         return self.send_file('avatar.svg', BytesIO(avatar.encode()), mimetype='image/svg+xml',
                               no_cache=False, inline=True, safe=False, max_age=86400 * 7)
 
+    def get_color_for_group_id(self, id):
+        """Calculate a unique color for a user based on their id.
+        :param user_id: the user ID (int), or otherwise a string (external search results)
+        """
+        return group_colors[id % len(group_colors)]
 
-def rebuild_index(self, identity, uow=None):
-        """Reindex all user groups managed by this service."""
-        for role in Role.query.all():
-            role_agg = self.record_cls.from_role(role)
-            self.indexer.index(role_agg)
-
-        return True
-
-def get_color_for_user_id(self, id):
-    """Calculate a unique color for a user based on their id.
-    :param user_id: the user ID (int), or otherwise a string (external search results)
-    """
-    return group_colors[id % len(group_colors)]
-
-def send_file(self, name, path_or_fd, mimetype, last_modified=None, no_cache=True, inline=None, conditional=False,
+    def send_file(self, name, path_or_fd, mimetype, last_modified=None, no_cache=True, inline=None, conditional=False,
                   safe=True,
                   **kwargs):
-    """Send a file to the user.
+        """Send a file to the user.
         `name` is required and should be the filename visible to the user.
         `path_or_fd` is either the physical path to the file or a file-like object (e.g. a StringIO).
         `mimetype` SHOULD be a proper MIME type such as image/png. It may also be an indico-style file type such as JPG.
@@ -90,35 +82,43 @@ def send_file(self, name, path_or_fd, mimetype, last_modified=None, no_cache=Tru
         the file only if it has been modified (based on mtime and size). Setting it will override `no_cache`.
         `safe` adds some basic security features such a adding a content-security-policy and forcing inline=False for
         text/html mimetypes
-    """
-    name = re.sub(r'\s+', ' ', name).strip()  # get rid of crap like linebreaks
-    assert '/' in mimetype
-    if inline is None:
-        inline = mimetype not in ('text/csv', 'text/xml', 'application/xml')
-    if request.user_agent.platform == 'Android':
-           # Android is just full of fail when it comes to inline content-disposition...
-        inline = False
-    # if _is_office_mimetype(mimetype):
-    #    inline = False
-    if safe and mimetype in ('text/html', 'image/svg+xml'):
-        inline = False
-    try:
-        rv = _send_file(path_or_fd, mimetype=mimetype, as_attachment=(not inline), download_name=name,
-                        conditional=conditional, last_modified=last_modified, **kwargs)
-    except OSError:
-        raise OSError
-        # if not current_app.debug:
-        #    raise
-        # raise NotFound('File not found: %s' % path_or_fd)
-    if safe:
-        rv.headers.add('Content-Security-Policy', "script-src 'self'; object-src 'self'")
-    # if the request is conditional, then caching shouldn't be disabled
-    if not conditional and no_cache:
-        del rv.expires
-        del rv.cache_control.max_age
-        rv.cache_control.public = False
-        rv.cache_control.private = True
-        rv.cache_control.no_cache = True
+        """
 
-    return rv
+        name = re.sub(r'\s+', ' ', name).strip()  # get rid of crap like linebreaks
+        assert '/' in mimetype
+        if inline is None:
+            inline = mimetype not in ('text/csv', 'text/xml', 'application/xml')
+        if request.user_agent.platform == 'Android':
+            # Android is just full of fail when it comes to inline content-disposition...
+            inline = False
+        # if _is_office_mimetype(mimetype):
+        #    inline = False
+        if safe and mimetype in ('text/html', 'image/svg+xml'):
+            inline = False
+        try:
+            rv = _send_file(path_or_fd, mimetype=mimetype, as_attachment=(not inline), download_name=name,
+                            conditional=conditional, last_modified=last_modified, **kwargs)
+        except OSError:
+            raise OSError
+            # if not current_app.debug:
+            #    raise
+            # raise NotFound('File not found: %s' % path_or_fd)
+        if safe:
+            rv.headers.add('Content-Security-Policy', "script-src 'self'; object-src 'self'")
+        # if the request is conditional, then caching shouldn't be disabled
+        if not conditional and no_cache:
+            del rv.expires
+            del rv.cache_control.max_age
+            rv.cache_control.public = False
+            rv.cache_control.private = True
+            rv.cache_control.no_cache = True
 
+        return rv
+
+def rebuild_index(self, identity, uow=None):
+        """Reindex all user groups managed by this service."""
+        for role in Role.query.all():
+            role_agg = self.record_cls.from_role(role)
+            self.indexer.index(role_agg)
+
+        return True
