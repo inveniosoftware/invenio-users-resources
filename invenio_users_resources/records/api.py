@@ -18,6 +18,7 @@ from invenio_records_resources.records.systemfields import IndexField
 
 from .dumpers import EmailFieldDumperExt
 from .models import GroupAggregateModel, UserAggregateModel
+from .systemfields import CurrentUserField
 
 
 def parse_user_data(user):
@@ -27,7 +28,6 @@ def parse_user_data(user):
         "email": user.email,
         "active": user.active,
         "confirmed": user.confirmed_at is not None,
-        "is_current_user": False,  # TODO
         "preferences": None,  # TODO
         "identities": None,  # TODO
         "access": None,  # TODO
@@ -94,7 +94,7 @@ class UserAggregate(Record):
 
     confirmed = DictField("confirmed")
 
-    is_current_user = DictField("is_current_user")
+    is_current_user = CurrentUserField("is_current_user")
 
     preferences = DictField("preferences")
 
