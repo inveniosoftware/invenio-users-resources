@@ -58,6 +58,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     is_current_user = fields.Boolean(dump_only=True)
 
     email = fields.String()
+    username = fields.String()
     profile = fields.Dict()
     identities = fields.Dict()  # TODO how to find out the contents?
     preferences = fields.Dict()  # TODO the content will be customizable?
