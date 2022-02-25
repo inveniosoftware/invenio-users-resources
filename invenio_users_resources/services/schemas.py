@@ -18,7 +18,7 @@ def validate_visibility(value):
     """Check if the value is a valid visibility setting."""
     if value not in ["public", "restricted"]:
         raise ValidationError(
-            _("Value must be either 'public' or 'restricted'.")
+            message=str(_("Value must be either 'public' or 'restricted'."))
         )
 
 
