@@ -17,8 +17,7 @@
         "index": "false"
       },
       "id": {
-        "type": "keyword",
-        "index": "false"
+        "type": "keyword"
       },
       "version_id": {
         "type": "integer",
@@ -48,6 +47,9 @@
         "type": "boolean",
         "index": "false"
       },
+      "username": {
+        "type": "keyword"
+      },
       "email": {
         "type": "keyword"
       },
@@ -57,13 +59,11 @@
       },
       "profile": {
         "properties": {
-          "username": {
-            "type": "keyword"
-          },
           "full_name": {
             "type": "text"
           }
-        }
+        },
+        "dynamic": true
       },
       "identities": {
         "enabled": "false"
@@ -74,12 +74,10 @@
       "access": {
         "properties": {
           "visibility": {
-            "type": "keyword",
-            "index": "false"
+            "type": "keyword"
           },
           "email_visibility": {
-            "type": "keyword",
-            "index": "false"
+            "type": "keyword"
           }
         }
       }

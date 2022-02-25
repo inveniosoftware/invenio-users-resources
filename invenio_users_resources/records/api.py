@@ -26,23 +26,27 @@ def parse_user_data(user):
     data = {
         "id": user.id,
         "email": user.email,
+        "username": user.username,
         "active": user.active,
         "confirmed": user.confirmed_at is not None,
-        "preferences": None,  # TODO
+        "preferences": dict(user.preferences or {}),
         "identities": None,  # TODO
-        "access": None,  # TODO
-        "profile": None,
+        "access": {},
+        "profile": dict(user.user_profile or {}),
     }
 
     if user.profile is not None:
+        # TODO change this when userprofiles are phased out
         data["profile"] = {
             "full_name": user.profile.full_name,
-            "username": user.profile.username,
         }
-        # TODO populate more when we have extensible user profiles
+        data["username"] = user.profile.username
 
-    # TODO
-    data["access"] = {"visibility": "public", "email_visibility": "public"}
+    # TODO do we store the visibility in the user preferences?
+    prefs = data["preferences"]
+    access = data["access"]
+    access["visibility"] = prefs.pop("visibility", "public")
+    access["email_visibility"] = prefs.pop("email_visibility", "restricted")
 
     return data
 
