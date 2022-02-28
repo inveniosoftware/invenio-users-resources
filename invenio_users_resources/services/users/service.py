@@ -47,8 +47,8 @@ class UsersService(RecordService):
             uow=uow,
         )
 
-        # persist user (DB and index)
-        uow.register(RecordCommitOp(user, self.indexer))
+        # persist user to DB (indexing is done in the session hooks, see ext)
+        uow.register(RecordCommitOp(user))
 
         return self.result_item(
             self, identity, user, links_tpl=self.links_item_tpl, errors=errors
