@@ -10,7 +10,14 @@
 """Invenio module providing management APIs for users and roles/groups."""
 
 from .ext import InvenioUsersResources
-from .proxies import current_user_resources
+from .proxies import current_groups_service, current_user_resources, \
+    current_users_service
 from .version import __version__
 
-__all__ = ("__version__", "current_user_resources", "InvenioUsersResources")
+__all__ = (
+    "__version__",
+    "current_user_resources",
+    "current_users_service",
+    "current_groups_service",
+    "InvenioUsersResources",
+)
