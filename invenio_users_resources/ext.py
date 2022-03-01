@@ -106,8 +106,7 @@ class InvenioUsersResources(object):
                     {m for (m, op) in changes if op == "update"}
                 )
             except Exception as e:
-                # TODO
-                print("Something went wrong:", e)
+                app.logger.warn(f"Error while checking DB model changes: {e}")
 
             # flush the session s.t. related models are queryable
             session.flush()
