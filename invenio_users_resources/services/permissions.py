@@ -14,8 +14,8 @@ from itertools import chain
 
 from elasticsearch_dsl import Q
 from invenio_records_permissions import BasePermissionPolicy
-from invenio_records_permissions.generators import AnyUser, Disable, \
-    Generator, SystemProcess, UserNeed
+from invenio_records_permissions.generators import AnyUser, Generator, \
+    SystemProcess, UserNeed
 
 
 class IfPublic(Generator):
@@ -85,6 +85,7 @@ class IfPublicEmail(IfPublic):
     """Generator checking the 'email_visibility' setting."""
 
     def __init__(self, then_, else_):
+        """Constructor."""
         super().__init__("email_visibility", then_, else_)
 
 
@@ -92,6 +93,7 @@ class IfPublicUser(IfPublic):
     """Generator checking the 'visibility' setting."""
 
     def __init__(self, then_, else_):
+        """Constructor."""
         super().__init__("visibility", then_, else_)
 
 

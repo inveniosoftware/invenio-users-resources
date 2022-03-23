@@ -10,7 +10,7 @@
 
 from flask import Flask
 
-from invenio_users_resources import InvenioUsersResources
+from invenio_users_resources.ext import InvenioUsersResources
 
 
 def test_version():
