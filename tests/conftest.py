@@ -12,14 +12,11 @@ See https://pytest-invenio.readthedocs.io/ for documentation on which test
 fixtures are available.
 """
 
-import shutil
-import tempfile
-
 import pytest
 from flask import Flask
 from flask_babelex import Babel
 
-from invenio_users_resources import InvenioUsersResources
+from invenio_users_resources.ext import InvenioUsersResources
 
 
 @pytest.fixture(scope="module")
