@@ -20,7 +20,6 @@ from invenio_records_resources.records.systemfields import IndexField
 
 from .dumpers import EmailFieldDumperExt
 from .models import GroupAggregateModel, UserAggregateModel
-from .systemfields import CurrentUserField
 
 
 def parse_user_data(user):
@@ -32,24 +31,11 @@ def parse_user_data(user):
         "active": user.active,
         "confirmed": user.confirmed_at is not None,
         "preferences": dict(user.preferences or {}),
-        "identities": None,  # TODO
-        "access": {},
-        "profile": dict(user.profile or {}),
+        "profile": dict(user.user_profile or {}),
     }
 
-    if user.profile is not None:
-        # TODO change this when userprofiles are phased out
-        data["profile"] = {
-            "full_name": user.profile.full_name,
-        }
-        data["username"] = user.profile.username
-
-    # TODO do we store the visibility in the user preferences?
-    prefs = data["preferences"]
-    access = data["access"]
-    access["visibility"] = prefs.pop("visibility", "public")
-    access["email_visibility"] = prefs.pop("email_visibility", "restricted")
-
+    data["preferences"].setdefault("visibility", "restricted")
+    data["preferences"].setdefault("email_visibility", "restricted")
     return data
 
 
@@ -102,13 +88,7 @@ class UserAggregate(Record):
 
     confirmed = DictField("confirmed")
 
-    is_current_user = CurrentUserField("is_current_user")
-
     preferences = DictField("preferences")
-
-    identities = DictField("identities")
-
-    access = DictField("access")
 
     @property
     def avatar_chars(self):

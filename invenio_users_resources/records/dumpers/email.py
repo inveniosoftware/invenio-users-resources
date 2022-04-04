@@ -25,7 +25,7 @@ class EmailFieldDumperExt(ElasticsearchDumperExt):
         """Dump the data."""
         email = data.pop(self.field, None)
 
-        email_visible = record.access["email_visibility"]
+        email_visible = record.preferences["email_visibility"]
         if email_visible == "public":
             data[self.field] = email
         else:
