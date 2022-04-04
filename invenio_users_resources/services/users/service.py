@@ -10,6 +10,7 @@
 
 """Users service."""
 
+from elasticsearch_dsl.query import Q
 from invenio_accounts.models import User
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
@@ -56,6 +57,16 @@ class UsersService(RecordService):
 
         return self.result_item(
             self, identity, user, links_tpl=self.links_item_tpl, errors=errors
+        )
+
+    def search(self, identity, params=None, es_preference=None, **kwargs):
+        """Search for records matching the querystring."""
+        return super().search(
+            identity,
+            params=params,
+            es_preference=es_preference,
+            extra_filter=Q('term', active=True) & Q('term', confirmed=True),
+            **kwargs
         )
 
     def read(self, identity, id_):

@@ -9,21 +9,11 @@
 
 """Users resource config."""
 
-
 import marshmallow as ma
 from invenio_records_resources.resources import (
     RecordResourceConfig,
     SearchRequestArgsSchema,
 )
-
-
-#
-# Request args
-#
-class UserSearchRequestArgsSchema(SearchRequestArgsSchema):
-    """Add parameter to parse tags."""
-
-    email = ma.fields.String()
 
 
 #
@@ -44,4 +34,4 @@ class UsersResourceConfig(RecordResourceConfig):
         "id": ma.fields.Str(),
     }
 
-    request_search_args = UserSearchRequestArgsSchema
+    request_search_args = SearchRequestArgsSchema

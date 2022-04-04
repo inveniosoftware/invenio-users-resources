@@ -22,8 +22,8 @@ def validate_visibility(value):
         )
 
 
-class UserAccessSchema(Schema):
-    """Schema for user access."""
+class UserPreferencesSchema(Schema):
+    """Schema for user preferences."""
 
     visibility = fields.String(validate=validate_visibility)
     email_visibility = fields.String(validate=validate_visibility)
@@ -32,10 +32,8 @@ class UserAccessSchema(Schema):
 class UserProfileSchema(Schema):
     """Schema for user profiles."""
 
-    username = fields.String()
     full_name = fields.String()
-    # TODO fields: affiliations, bio, location, url, ...
-    #      will they be customizable?
+    affiliations = fields.String()
 
 
 class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
@@ -48,21 +46,27 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
         "revision_id": "read_details",
         "active": "read_details",
         "confirmed": "read_details",
-        "identities": "read_details",
         "preferences": "read_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
     active = fields.Boolean()
     confirmed = fields.Boolean(dump_only=True)
-    is_current_user = fields.Boolean(dump_only=True)
+    is_current_user = fields.Method("is_self", dump_only=True)
 
     email = fields.String()
     username = fields.String()
     profile = fields.Dict()
-    identities = fields.Dict()  # TODO how to find out the contents?
-    preferences = fields.Dict()  # TODO the content will be customizable?
-    access = fields.Nested(UserAccessSchema)
+    preferences = fields.Nested(UserPreferencesSchema)
+
+    def is_self(self, obj):
+        """Determine if identity is the current identity."""
+        current_identity = self.context["identity"]
+        return (
+            obj.id is not None
+            and current_identity.id is not None
+            and str(obj.id) == str(current_identity.id)
+        )
 
 
 class GroupSchema(BaseRecordSchema):

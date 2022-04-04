@@ -15,6 +15,8 @@ fixtures are available.
 """
 
 import pytest
+from flask_principal import AnonymousIdentity
+from invenio_access.permissions import any_user as any_user_need
 from invenio_accounts.models import Role
 from invenio_app.factory import create_api
 
@@ -22,6 +24,7 @@ from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
 )
+from invenio_users_resources.records import UserAggregate
 
 pytest_plugins = ("celery.contrib.pytest",)
 
@@ -78,16 +81,91 @@ def group_service(app):
 # Users
 #
 @pytest.fixture(scope="module")
-def users(UserFixture, app, database):
+def anon_identity():
+    """A new user."""
+    identity = AnonymousIdentity()
+    identity.provides.add(any_user_need)
+    return identity
+
+
+@pytest.fixture(scope="module")
+def users_data():
+    """Data for users."""
+    return [
+        {
+            "username": "pubres",
+            "email": "pubres@inveniosoftware.org",
+            "profile": {
+                "full_name": "Tim Smith",
+                "affiliations": "CERN",
+            },
+            "preferences": {
+                "visibility": "public",
+                "email_visibility": "restricted",
+            },
+        },
+        {
+            "username": "pub",
+            "email": "pub@inveniosoftware.org",
+            "profile": {
+                "full_name": "Jose Benito Gonzalez Lopez",
+                "affiliations": "CERN",
+            },
+            "preferences": {
+                "visibility": "public",
+                "email_visibility": "public",
+            },
+        },
+        {
+            "username": "res",
+            "email": "res@inveniosoftware.org",
+            "profile": {
+                "full_name": "Donat Agosti",
+                "affiliations": "Plazi",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "restricted",
+            },
+        },
+        {
+            "username": "unconfirmed",
+            "email": "unconfirmed@inveniosoftware.org",
+            "confirmed": False,
+        },
+        {
+            "username": "inactive",
+            "email": "inactive@inveniosoftware.org",
+            "profile": {
+                "full_name": "Spammer",
+                "affiliations": "Spam org",
+            },
+            "preferences": {
+                "visibility": "public",
+                "email_visibility": "public",
+            },
+            "active": False,
+        },
+    ]
+
+
+@pytest.fixture(scope="module")
+def users(UserFixture, app, database, users_data):
     """Test users."""
     users = {}
-    for r in ["user1", "user2"]:
+    for obj in users_data:
         u = UserFixture(
-            email=f"{r}@{r}.org",
-            password=r,
+            username=obj["username"],
+            email=obj["email"],
+            password=obj["username"],
+            user_profile=obj.get("profile"),
+            preferences=obj.get("preferences"),
+            active=obj.get("active", True),
+            confirmed=obj.get("confirmed", True),
         )
         u.create(app, database)
-        users[r] = u
+        users[obj["username"]] = u
+    UserAggregate.index.refresh()
     return users
 
 
@@ -101,12 +179,30 @@ def group(database):
 
 
 @pytest.fixture(scope="module")
-def user1(users):
-    """User 1."""
-    return users["user1"]
+def user_pub(users):
+    """User jbenito (restricted/restricted)."""
+    return users["pub"]
 
 
 @pytest.fixture(scope="module")
-def user2(users):
-    """User 2."""
-    return users["user2"]
+def user_pubres(users):
+    """User tjs (public/restricted)."""
+    return users["pubres"]
+
+
+@pytest.fixture(scope="module")
+def user_res(users):
+    """User agosti (restricted/restricted)."""
+    return users["res"]
+
+
+@pytest.fixture(scope="module")
+def user_inactive(users):
+    """Inactive user."""
+    return users["inactive"]
+
+
+@pytest.fixture(scope="module")
+def user_unconfirmed(users):
+    """Unconfirmed user."""
+    return users["unconfirmed"]

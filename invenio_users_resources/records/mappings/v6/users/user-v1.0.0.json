@@ -66,13 +66,7 @@
           },
           "dynamic": true
         },
-        "identities": {
-          "enabled": "false"
-        },
         "preferences": {
-          "enabled": "false"
-        },
-        "access": {
           "properties": {
             "visibility": {
               "type": "keyword"

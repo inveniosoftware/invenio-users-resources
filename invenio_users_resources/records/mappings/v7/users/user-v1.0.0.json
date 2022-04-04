@@ -36,16 +36,10 @@
         "index": "false"
       },
       "active": {
-        "type": "boolean",
-        "index": "false"
+        "type": "boolean"
       },
       "confirmed": {
-        "type": "boolean",
-        "index": "false"
-      },
-      "is_current_user": {
-        "type": "boolean",
-        "index": "false"
+        "type": "boolean"
       },
       "username": {
         "type": "keyword"
@@ -61,17 +55,14 @@
         "properties": {
           "full_name": {
             "type": "text"
+          },
+          "affiliations": {
+            "type": "text"
           }
         },
         "dynamic": true
       },
-      "identities": {
-        "enabled": "false"
-      },
       "preferences": {
-        "enabled": "false"
-      },
-      "access": {
         "properties": {
           "visibility": {
             "type": "keyword"
