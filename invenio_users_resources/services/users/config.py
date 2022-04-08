@@ -14,10 +14,10 @@ from invenio_records_resources.services import (
     SearchOptions,
     pagination_links,
 )
-from invenio_records_resources.services.records.params import (
+from invenio_records_resources.services.records.params import QueryStrParam, SortParam
+from invenio_records_resources.services.records.queryparser import (
     QueryParser,
-    QueryStrParam,
-    SortParam,
+    SearchFieldTransformer,
 )
 
 from ...records.api import UserAggregate
@@ -25,7 +25,6 @@ from ..common import Link
 from ..permissions import UsersPermissionPolicy
 from ..schemas import UserSchema
 from .params import FixedPagination
-from .query import FieldTransformer
 from .results import UserItem, UserList
 
 
@@ -39,7 +38,7 @@ class UserSearchOptions(SearchOptions):
 
     query_parser_cls = QueryParser.factory(
         fields=["username^2", "email^2", "profile.full_name^3", "profile.affiliations"],
-        tree_transformer_factory=FieldTransformer.factory(
+        tree_transformer_factory=SearchFieldTransformer.factory(
             mapping={
                 "affiliation": "profile.affiliations",
                 "affiliations": "profile.affiliations",

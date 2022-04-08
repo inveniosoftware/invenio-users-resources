@@ -9,10 +9,7 @@
 """User service tests."""
 
 import pytest
-from invenio_records_resources.services.errors import (
-    PermissionDeniedError,
-    QuerystringValidationError,
-)
+from invenio_records_resources.services.errors import PermissionDeniedError
 
 
 #
@@ -50,29 +47,16 @@ def test_search_public_users(user_service, user_pub):
         "name:Jose AND NOT affiliation:CERN",
         "username:inactive",
         "username:unconfirmed",
-    ],
-)
-def test_search_field_not_searchable(user_service, user_pub, query):
-    """Make sure certain fields are NOT searchable."""
-    res = user_service.search(user_pub.identity, q=query).to_dict()
-    assert res["hits"]["total"] == 0
-
-
-@pytest.mark.parametrize(
-    "query",
-    [
         "preferences.visibility:public",
         "preferences.email_visibility:restricted",
         "profile.affiliations:Plazi",
         "invalid:test",
     ],
 )
-def test_search_invalid_field(user_service, user_pub, query):
+def test_search_field_not_searchable(user_service, user_pub, query):
     """Make sure certain fields are NOT searchable."""
-    pytest.raises(
-        QuerystringValidationError,
-        user_service.search, user_pub.identity, q=query
-    )
+    res = user_service.search(user_pub.identity, q=query).to_dict()
+    assert res["hits"]["total"] == 0
 
 
 @pytest.mark.parametrize(
