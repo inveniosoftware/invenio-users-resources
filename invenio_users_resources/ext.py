@@ -98,20 +98,9 @@ class InvenioUsersResources(object):
             # it seems that the {dirty,new,deleted} sets aren't populated
             # in after_commit anymore, that's why we need to collect the
             # information here
-            updated = set(session.dirty).union(set(session.new))
-            deleted = set(session.deleted)
+            updated = session.dirty.union(session.new)
+            deleted = session.deleted
             sid = id(session)
-
-            try:
-                # session._model_changes is a dictionary that contains
-                # references to all entities changed in the transaction
-                # we use this because it seems like sometimes changes to
-                # models aren't listed in session.dirty, but are listed
-                # in this collection.
-                changes = session._model_changes.values()
-                updated = updated.union({m for (m, op) in changes if op == "update"})
-            except Exception as e:
-                app.logger.warn(f"Error while checking DB model changes: {e}")
 
             # flush the session s.t. related models are queryable
             session.flush()
