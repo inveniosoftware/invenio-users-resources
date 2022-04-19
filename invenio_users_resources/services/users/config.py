@@ -68,6 +68,7 @@ class UsersServiceConfig(RecordServiceConfig):
     search = UserSearchOptions
 
     # specific configuration
+    service_id = "users"
     record_cls = UserAggregate
     schema = UserSchema
     index_dumper = None

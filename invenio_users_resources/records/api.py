@@ -9,6 +9,7 @@
 
 """API classes for user and group management in Invenio."""
 
+from collections import defaultdict
 
 from flask import current_app
 from invenio_accounts.proxies import current_datastore
@@ -247,3 +248,24 @@ class GroupAggregate(Record):
             return None
 
         return cls.from_role(role)
+
+
+class DBUsersChangeHistory:
+    """DB Users change history storage."""
+
+    def __init__(self):
+        """constructor."""
+        # the keys are going to be the sessions, the values are going to be
+        # the sets of dirty/deleted models
+        self.updated_users = defaultdict(lambda: list())
+        self.updated_roles = defaultdict(lambda: list())
+        self.deleted_users = defaultdict(lambda: list())
+        self.deleted_roles = defaultdict(lambda: list())
+
+    def _clear_dirty_sets(self, session):
+        """Clear the dirty sets for the given session."""
+        sid = id(session)
+        self.updated_users.pop(sid, None)
+        self.updated_roles.pop(sid, None)
+        self.deleted_users.pop(sid, None)
+        self.deleted_roles.pop(sid, None)

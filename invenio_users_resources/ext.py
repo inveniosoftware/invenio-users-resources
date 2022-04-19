@@ -9,13 +9,13 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
-from collections import defaultdict
-
-from invenio_accounts.models import Role, User
+from invenio_accounts.signals import datastore_post_commit, datastore_pre_commit
 from invenio_db import db
 from sqlalchemy import event
 
 from . import config
+from .proxies import current_db_change_history
+from .records.hooks import post_commit, pre_commit
 from .resources import (
     GroupsResource,
     GroupsResourceConfig,
@@ -28,7 +28,6 @@ from .services import (
     UsersService,
     UsersServiceConfig,
 )
-from .utils import reindex_group, reindex_user, unindex_group, unindex_user
 
 
 class InvenioUsersResources(object):
@@ -44,7 +43,7 @@ class InvenioUsersResources(object):
         self.init_config(app)
         self.init_services(app)
         self.init_resources(app)
-        self.init_db_hooks(app)
+        self.init_db_hooks()
         app.extensions["invenio-users-resources"] = self
 
     def init_config(self, app):
@@ -69,72 +68,17 @@ class InvenioUsersResources(object):
             config=GroupsResourceConfig,
         )
 
-    def init_db_hooks(self, app):
+    def init_db_hooks(self):
         """Initialize the database hooks for reindexing updated users/roles."""
         # make sure that the hooks are only registered once per DB connection
         # and not once per app
         if hasattr(db, "_user_resources_hooks_registered"):
             return
         db._user_resources_hooks_registered = True
-
-        # the keys are going to be the sessions, the values are going to be
-        # the sets of dirty/deleted models
-        updated_users = defaultdict(lambda: list())
-        updated_roles = defaultdict(lambda: list())
-        deleted_users = defaultdict(lambda: list())
-        deleted_roles = defaultdict(lambda: list())
-
-        def _clear_dirty_sets(session):
-            """Clear the dirty sets for the given session."""
-            sid = id(session)
-            updated_users.pop(sid, None)
-            updated_roles.pop(sid, None)
-            deleted_users.pop(sid, None)
-            deleted_roles.pop(sid, None)
-
-        @event.listens_for(db.session, "before_commit")
-        def _before_commit(session):
-            """Find out which entities need indexing before commit."""
-            # it seems that the {dirty,new,deleted} sets aren't populated
-            # in after_commit anymore, that's why we need to collect the
-            # information here
-            updated = session.dirty.union(session.new)
-            deleted = session.deleted
-            sid = id(session)
-
-            # flush the session s.t. related models are queryable
-            session.flush()
-
-            # users need to be reindexed if their user model was updated, or
-            # their profile was changed (or even possibly deleted)
-            users1 = {u for u in updated if isinstance(u, User)}
-
-            updated_users[sid] = list(users1)
-            updated_roles[sid] = [r for r in updated if isinstance(r, Role)]
-
-            deleted_users[sid] = [u for u in deleted if isinstance(u, User)]
-            deleted_roles[sid] = [r for r in deleted if isinstance(r, Role)]
-
-        @event.listens_for(db.session, "after_commit")
-        def _after_commit(session):
-            """Reindex all modified users and roles after the DB commit."""
-            # since this function is called after the commit, no more
-            # DB operations are allowed here, not even lazy-loading of
-            # properties!
-            sid = id(session)
-            for user in updated_users[sid]:
-                reindex_user(user)
-            for role in updated_roles[sid]:
-                reindex_group(role)
-
-            for user in deleted_users[sid]:
-                unindex_user(user)
-            for role in deleted_roles[sid]:
-                unindex_group(role)
-
-            _clear_dirty_sets(session)
+        datastore_pre_commit.connect(pre_commit)
+        datastore_post_commit.connect(post_commit)
 
         @event.listens_for(db.session, "after_rollback")
         def _after_rollback(session):
             """When a session is rolled back, we don't reindex anything."""
-            _clear_dirty_sets(session)
+            current_db_change_history._clear_dirty_sets(session)

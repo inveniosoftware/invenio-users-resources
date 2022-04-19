@@ -8,8 +8,10 @@
 
 """Proxies for accessing the current Users-Resources extension."""
 
-from flask import current_app
+from flask import current_app, g
 from werkzeug.local import LocalProxy
+
+from .records.api import DBUsersChangeHistory
 
 current_user_resources = LocalProxy(
     lambda: current_app.extensions["invenio-users-resources"]
@@ -25,3 +27,15 @@ current_groups_service = LocalProxy(
     lambda: current_app.extensions["invenio-users-resources"].groups_service
 )
 """Proxy for the currently instantiated user groups service."""
+
+
+def get_db_change_history():
+    """Proxy funtion to db change history."""
+    if 'db_change_history' not in g:
+        g.db_change_history = DBUsersChangeHistory()
+
+    return g.db_change_history
+
+
+current_db_change_history = LocalProxy(get_db_change_history)
+"""Proxy for the currently instantiated users db change history."""
