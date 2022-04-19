@@ -39,6 +39,7 @@ class GroupsServiceConfig(RecordServiceConfig):
     search = GroupSearchOptions
 
     # specific configuration
+    service_id = "groups"
     record_cls = GroupAggregate
     schema = GroupSchema
     index_dumper = None

@@ -10,6 +10,7 @@
 
 from elasticsearch.exceptions import ConflictError
 from flask import current_app
+from invenio_records_resources.tasks import send_change_notifications
 
 from .proxies import current_groups_service, current_users_service
 from .records.api import GroupAggregate, UserAggregate
@@ -53,3 +54,11 @@ def unindex_group(role):
             current_groups_service.indexer.delete(group_agg)
         except ConflictError as e:
             current_app.logger.warn(f"Could not unindex group {user.id}: {e}")
+
+
+def notify_change(user):
+    """Sends a user notification change."""
+    send_change_notifications.delay(
+        "users",
+        [(user.id, str(user.id), user.version_id)]
+    )
