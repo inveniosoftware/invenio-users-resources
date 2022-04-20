@@ -13,7 +13,6 @@ from collections import defaultdict
 
 from invenio_accounts.models import Role, User
 from invenio_db import db
-from invenio_userprofiles.models import UserProfile
 from sqlalchemy import event
 
 from . import config
@@ -108,7 +107,7 @@ class InvenioUsersResources(object):
                 # references to all entities changed in the transaction
                 # we use this because it seems like sometimes changes to
                 # models aren't listed in session.dirty, but are listed
-                # in this collection, especially with UserProfiles
+                # in this collection.
                 changes = session._model_changes.values()
                 updated = updated.union({m for (m, op) in changes if op == "update"})
             except Exception as e:
@@ -120,18 +119,12 @@ class InvenioUsersResources(object):
             # users need to be reindexed if their user model was updated, or
             # their profile was changed (or even possibly deleted)
             users1 = {u for u in updated if isinstance(u, User)}
-            users2 = {p.user for p in updated if isinstance(p, UserProfile)}
-            users3 = {p.user for p in deleted if isinstance(p, UserProfile)}
 
-            updated_users[sid] = list(users1.union(users2).union(users3))
+            updated_users[sid] = list(users1)
             updated_roles[sid] = [r for r in updated if isinstance(r, Role)]
 
             deleted_users[sid] = [u for u in deleted if isinstance(u, User)]
             deleted_roles[sid] = [r for r in deleted if isinstance(r, Role)]
-
-            # force loading of user profile before the commit is done
-            for user in updated_users[sid]:
-                user.profile is None  # noqa
 
         @event.listens_for(db.session, "after_commit")
         def _after_commit(session):
