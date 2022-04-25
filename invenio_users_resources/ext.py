@@ -9,12 +9,12 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
+from invenio_accounts.proxies import current_db_change_history
 from invenio_accounts.signals import datastore_post_commit, datastore_pre_commit
 from invenio_db import db
 from sqlalchemy import event
 
 from . import config
-from .proxies import current_db_change_history
 from .records.hooks import post_commit, pre_commit
 from .resources import (
     GroupsResource,

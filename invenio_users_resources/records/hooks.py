@@ -10,15 +10,10 @@
 """Invenio users DB hooks."""
 
 from invenio_accounts.models import Role, User
+from invenio_accounts.proxies import current_db_change_history
 
-from ..proxies import current_db_change_history
-from ..utils import (
-    notify_change,
-    reindex_group,
-    reindex_user,
-    unindex_group,
-    unindex_user,
-)
+from ..services.groups.tasks import reindex_group, unindex_group
+from ..services.users.tasks import reindex_user, unindex_user
 
 
 def pre_commit(sender, session):
@@ -36,19 +31,19 @@ def pre_commit(sender, session):
 
     # users need to be reindexed if their user model was updated, or
     # their profile was changed (or even possibly deleted)
-    current_db_change_history.updated_users[sid] = [
-        u for u in updated if isinstance(u, User)
-    ]
-    current_db_change_history.updated_roles[sid] = [
-        r for r in updated if isinstance(r, Role)
-    ]
+    current_db_change_history.updated_users[sid].extend([
+        u.id for u in updated if isinstance(u, User)
+    ])
+    current_db_change_history.updated_roles[sid].extend([
+        r.id for r in updated if isinstance(r, Role)
+    ])
 
-    current_db_change_history.deleted_users[sid] = [
-        u for u in deleted if isinstance(u, User)
-    ]
-    current_db_change_history.deleted_roles[sid] = [
-        r for r in deleted if isinstance(r, Role)
-    ]
+    current_db_change_history.deleted_users[sid].extend([
+        u.id for u in deleted if isinstance(u, User)
+    ])
+    current_db_change_history.deleted_roles[sid].extend([
+        r.id for r in deleted if isinstance(r, Role)
+    ])
 
 
 def post_commit(sender, session):
@@ -57,16 +52,15 @@ def post_commit(sender, session):
     # DB operations are allowed here, not even lazy-loading of
     # properties!
     sid = id(session)
-    for user in current_db_change_history.updated_users[sid]:
-        reindex_user(user)
-        notify_change(user)
+    for user_id in current_db_change_history.updated_users[sid]:
+        reindex_user.delay(user_id)
 
-    for role in current_db_change_history.updated_roles[sid]:
-        reindex_group(role)
+    for role_id in current_db_change_history.updated_roles[sid]:
+        reindex_group.delay(role_id)
 
-    for user in current_db_change_history.deleted_users[sid]:
-        unindex_user(user)
-    for role in current_db_change_history.deleted_roles[sid]:
-        unindex_group(role)
+    for user_id in current_db_change_history.deleted_users[sid]:
+        unindex_user.delay(user_id)
+    for role_id in current_db_change_history.deleted_roles[sid]:
+        unindex_group.delay(role_id)
 
     current_db_change_history._clear_dirty_sets(session)
