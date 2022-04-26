@@ -71,6 +71,7 @@ class UsersServiceConfig(RecordServiceConfig):
     service_id = "users"
     record_cls = UserAggregate
     schema = UserSchema
+    indexer_queue_name = "users"
     index_dumper = None
 
     # links configuration
