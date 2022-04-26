@@ -81,4 +81,8 @@ class InvenioUsersResources(object):
         @event.listens_for(db.session, "after_rollback")
         def _after_rollback(session):
             """When a session is rolled back, we don't reindex anything."""
+            # this event listener is triggered when the entire transaction is
+            # rollbacked. In a case (e.g. nested transactions) when an
+            # exception is caught and then the session is commited,
+            # the sets might not reflect all the users that were changed.
             current_db_change_history._clear_dirty_sets(session)
