@@ -42,6 +42,7 @@ class GroupsServiceConfig(RecordServiceConfig):
     service_id = "groups"
     record_cls = GroupAggregate
     schema = GroupSchema
+    indexer_queue_name = "groups"
     index_dumper = None
 
     # links configuration
