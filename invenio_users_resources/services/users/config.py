@@ -22,9 +22,9 @@ from invenio_records_resources.services.records.queryparser import (
 
 from ...records.api import UserAggregate
 from ..common import Link
+from ..params import FixedPagination
 from ..permissions import UsersPermissionPolicy
 from ..schemas import UserSchema
-from .params import FixedPagination
 from .results import UserItem, UserList
 
 

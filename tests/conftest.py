@@ -17,14 +17,14 @@ fixtures are available.
 import pytest
 from flask_principal import AnonymousIdentity
 from invenio_access.permissions import any_user as any_user_need
-from invenio_accounts.models import Role
+from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
 
 from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
 )
-from invenio_users_resources.records import UserAggregate
+from invenio_users_resources.records import GroupAggregate, UserAggregate
 
 pytest_plugins = ("celery.contrib.pytest",)
 
@@ -169,13 +169,35 @@ def users(UserFixture, app, database, users_data):
     return users
 
 
+def _create_group(name, description, database):
+    """Creates a Role/Group."""
+    r = current_datastore.create_role(name=name, description=description)
+    current_datastore.commit()
+
+    return r
+
+
 @pytest.fixture(scope="module")
 def group(database):
     """A single group."""
-    r = Role(name="it-dep")
-    database.session.add(r)
-    database.session.commit()
+    r = _create_group(
+        name="it-dep", description="IT Department", database=database
+    )
+
+    GroupAggregate.index.refresh()
     return r
+
+
+@pytest.fixture(scope="module")
+def groups(database, group):
+    """A single group."""
+    roles = [group]  # it-dep
+    roles.append(_create_group(
+        name="hr-dep", description="HR Department", database=database
+    ))
+
+    GroupAggregate.index.refresh()
+    return roles
 
 
 @pytest.fixture(scope="module")
