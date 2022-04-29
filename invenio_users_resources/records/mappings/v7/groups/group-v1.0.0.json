@@ -21,11 +21,16 @@
         "type": "date"
       },
       "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "title": {
         "type": "text"
       },
-        "title": {
-          "type": "text"
-        },
       "description": {
         "type": "text"
       },

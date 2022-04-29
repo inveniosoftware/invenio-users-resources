@@ -9,14 +9,18 @@
 
 """User groups service configuration."""
 
+from flask_babelex import lazy_gettext as _
 from invenio_records_resources.services import (
     RecordServiceConfig,
     SearchOptions,
     pagination_links,
 )
+from invenio_records_resources.services.records.params import QueryStrParam, SortParam
+from invenio_records_resources.services.records.queryparser import QueryParser
 
 from ...records.api import GroupAggregate
 from ..common import Link
+from ..params import FixedPagination
 from ..permissions import GroupsPermissionPolicy
 from ..schemas import GroupSchema
 from .results import GroupItem, GroupList
@@ -25,8 +29,33 @@ from .results import GroupItem, GroupList
 class GroupSearchOptions(SearchOptions):
     """Search options."""
 
-    # TODO search params
-    params_interpreters_cls = SearchOptions.params_interpreters_cls
+    pagination_options = {
+        "default_results_per_page": 10,
+        "default_max_results": 10,
+    }
+
+    query_parser_cls = QueryParser.factory(
+        fields=["name", "title", "description"]
+    )
+
+    sort_default = 'bestmatch'
+    sort_default_no_query = 'name'
+    sort_options = {
+        "bestmatch": dict(
+            title=_('Best match'),
+            fields=['_score'],  # ES defaults to desc on `_score` field
+        ),
+        "name": dict(  # TODO: add asc/desc
+            title=_('Name'),
+            fields=['name.keyword'],
+        ),
+    }
+
+    params_interpreters_cls = [
+        QueryStrParam,
+        SortParam,
+        FixedPagination,
+    ]
 
 
 class GroupsServiceConfig(RecordServiceConfig):
