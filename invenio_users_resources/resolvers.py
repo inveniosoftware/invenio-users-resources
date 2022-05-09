@@ -40,7 +40,7 @@ class UserProxy(EntityProxy):
             "id": resolved_dict["id"],
             "full_name": profile.get("full_name", ""),
             "affiliations": profile.get("affiliations", ""),
-            "avatar_url": current_users_service.links_item_tpl.expand(
+            "avatar": current_users_service.links_item_tpl.expand(
                 fake_user_obj
             )["avatar"]
         }
