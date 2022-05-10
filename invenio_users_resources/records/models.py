@@ -93,10 +93,6 @@ class GroupAggregateModel(MockModel):
     def model_obj(self):
         """The actual model object behind this mock model."""
         if self._model_obj is None:
-            id_ = self.data.get("id")
-            name = self.data.get("name")
-            if id_ is not None:
-                self._model_obj = current_datastore.role_model.query.get(id_)
-            elif name is not None:
-                self._model_obj = current_datastore.find_role(name)
+            name = self.data.get("id")
+            self._model_obj = current_datastore.find_role(name)
         return self._model_obj

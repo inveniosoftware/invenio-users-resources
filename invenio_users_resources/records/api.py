@@ -8,6 +8,8 @@
 # details.
 
 """API classes for user and group management in Invenio."""
+import random
+import unicodedata
 
 from flask import current_app
 from invenio_accounts.proxies import current_datastore
@@ -41,10 +43,8 @@ def parse_user_data(user):
 def parse_role_data(role):
     """Parse the role's information into a dictionary."""
     data = {
-        "id": role.id,
-        "name": role.name,
-        "title": None,  # TODO
-        "description": role.description,
+        "id": role.name,  # due to flask security exposing user id
+        "name": role.description,
         "is_managed": True,  # TODO
     }
     return data
@@ -110,7 +110,8 @@ class UserAggregate(Record):
         return colors[self.id % len(colors)]
 
     @classmethod
-    def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
+    def create(cls, data, id_=None, validator=None, format_checker=None,
+               **kwargs):
         """Create a new User and store it in the database."""
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
@@ -163,8 +164,9 @@ class GroupAggregate(Record):
     """The model class for the user group aggregate."""
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
-    #       field, which is currently an integer for Role objects!
-    dumper = ElasticsearchDumper(extensions=[], model_fields={"id": ("uuid", int)})
+    #       field, which is currently a str for Role objects (role.name)!
+    dumper = ElasticsearchDumper(extensions=[],
+                                 model_fields={"id": ("uuid", str)})
 
     metadata = None
     """Disabled metadata field from the base class."""
@@ -179,12 +181,6 @@ class GroupAggregate(Record):
     name = DictField("name")
     """The group's name."""
 
-    title = DictField("title")
-    """The group's title."""
-
-    description = DictField("description")
-    """The group's description."""
-
     is_managed = DictField("is_managed")
     """If the group is managed manually."""
 
@@ -194,24 +190,23 @@ class GroupAggregate(Record):
     @property
     def avatar_chars(self):
         """Get avatar characters for user."""
-        return self.name[0].upper()
+        return self.id[0].upper()
 
     @property
     def avatar_color(self):
         """Get avatar color for user."""
         colors = current_app.config["USERS_RESOURCES_AVATAR_COLORS"]
-        return colors[self.id % len(colors)]
+        normalized_group_initial = unicodedata.normalize('NFKD', self.id[0])\
+            .encode('ascii', 'ignore')
+        return colors[int(normalized_group_initial, base=36) % len(colors)]
 
     @property
     def role(self):
         """Cache for the associated role object."""
         role = self._role
         if role is None:
-            if self.id is not None:
-                role = current_datastore.role_model.query.get(self.id)
-
-            if role is None and self.name is not None:
-                role = current_datastore.find_role(self.name)
+            if role is None and self.id is not None:
+                role = current_datastore.find_role(self.id)
 
             self._role = role
 
@@ -242,6 +237,17 @@ class GroupAggregate(Record):
         """Get the user group via the specified ID."""
         # TODO how do we want to resolve the roles? via ID or name?
         role = current_datastore.role_model.query.get(id_)
+        if role is None:
+            return None
+
+        return cls.from_role(role)
+
+    @classmethod
+    def get_record_by_name(cls, name):
+        """Get the user group via the specified ID."""
+        # TODO how do we want to resolve the roles? via ID or name?
+        role = current_datastore.role_model.query\
+            .filter_by(name=name).one_or_none()
         if role is None:
             return None
 
