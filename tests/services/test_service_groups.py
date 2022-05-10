@@ -18,8 +18,8 @@ def test_groups_sort(app, groups, group_service):
     assert res["sortBy"] == "name"
     assert res["hits"]["total"] > 0
     hits = res["hits"]["hits"]
-    assert hits[0]["name"] == "hr-dep"
-    assert hits[1]["name"] == "it-dep"
+    assert hits[0]["id"] == "hr-dep"
+    assert hits[1]["id"] == "it-dep"
 
 
 def test_groups_no_facets(app, group, group_service):
@@ -40,10 +40,9 @@ def test_groups_fixed_pagination(app, groups, group_service):
     [
         # cannot search on title because is never set
         # see TODO in parse_role_data
-        "name:it-dep",
-        "name:dep",
+        "id:it-dep",
+        "name:IT Department",
         "+name:it",
-        "description:IT",
         "IT",
     ],
 )

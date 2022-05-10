@@ -24,12 +24,6 @@
         "name": {
           "type": "text"
         },
-        "title": {
-          "type": "text"
-        },
-        "description": {
-          "type": "text"
-        },
         "provider": {
           "type": "text"
         },

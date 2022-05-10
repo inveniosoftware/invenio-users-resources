@@ -35,7 +35,7 @@ class GroupSearchOptions(SearchOptions):
     }
 
     query_parser_cls = QueryParser.factory(
-        fields=["name", "title", "description"]
+        fields=["id", "name"]
     )
 
     sort_default = 'bestmatch'
