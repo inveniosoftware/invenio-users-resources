@@ -22,6 +22,7 @@ class GroupItem(RecordItem):
         errors=None,
         links_tpl=None,
         schema=None,
+        **kwargs,
     ):
         """Constructor."""
         self._data = None
@@ -85,29 +86,6 @@ class GroupItem(RecordItem):
 
 class GroupList(RecordList):
     """List of user group results."""
-
-    def __init__(
-        self,
-        service,
-        identity,
-        results,
-        params=None,
-        links_tpl=None,
-        links_item_tpl=None,
-    ):
-        """Constructor.
-
-        :params service: a service instance
-        :params identity: an identity that performed the service request
-        :params results: the search results
-        :params params: dictionary of the query parameters
-        """
-        self._identity = identity
-        self._results = results
-        self._service = service
-        self._params = params
-        self._links_tpl = links_tpl
-        self._links_item_tpl = links_item_tpl
 
     @property
     def hits(self):
