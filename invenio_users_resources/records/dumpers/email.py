@@ -29,7 +29,7 @@ class EmailFieldDumperExt(ElasticsearchDumperExt):
         if email_visible == "public":
             data[self.field] = email
         else:
-            data[self.hidden_field] = email
+            data[self.field] = self.hidden_field
 
     def load(self, data, record_cls):
         """Load the data."""

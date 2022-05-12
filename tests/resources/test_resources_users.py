@@ -59,7 +59,7 @@ def test_read_anon_serialization(client, headers, users, username, public_email)
     if public_email:
         assert data["email"] == u.email
     else:
-        assert "email" not in data
+        assert data["email"] == "email_hidden"
     assert data["username"] == u.username
     assert data["is_current_user"] is False
     assert data["profile"] == {
