@@ -21,7 +21,8 @@ from ...records.api import UserAggregate
 @shared_task(ignore_result=True)
 def reindex_user(user_id):
     """Reindex the given user."""
-    if current_users_service.record_cls.index.exists():
+    index = current_users_service.record_cls.index
+    if current_users_service.indexer.exists(index):
         try:
             user_agg = UserAggregate.get_record(user_id)
             current_users_service.indexer.index(user_agg)
@@ -37,7 +38,8 @@ def reindex_user(user_id):
 @shared_task(ignore_result=True)
 def unindex_user(user_id):
     """Delete the given user from the index."""
-    if current_users_service.record_cls.index.exists():
+    index = current_users_service.record_cls.index
+    if current_users_service.indexer.exists(index):
         try:
             user_agg = UserAggregate.get_record(user_id)
             current_users_service.indexer.delete(user_agg)

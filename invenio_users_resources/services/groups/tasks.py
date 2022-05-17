@@ -20,7 +20,8 @@ from ...records.api import GroupAggregate
 @shared_task(ignore_result=True)
 def reindex_group(role_id):
     """Reindex the given user."""
-    if current_groups_service.record_cls.index.exists():
+    index = current_groups_service.record_cls.index
+    if current_groups_service.indexer.exists(index):
         try:
             group_agg = GroupAggregate.get_record(role_id)
             current_groups_service.indexer.index(group_agg)
@@ -31,7 +32,8 @@ def reindex_group(role_id):
 @shared_task(ignore_result=True)
 def unindex_group(role_id):
     """Unindex the given role/group."""
-    if current_groups_service.record_cls.index.exists():
+    index = current_groups_service.record_cls.index
+    if current_groups_service.indexer.exists(index):
         try:
             group_agg = GroupAggregate.get_record(role_id)
             current_groups_service.indexer.delete(group_agg)
