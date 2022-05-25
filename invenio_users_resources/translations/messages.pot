@@ -7,18 +7,26 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: invenio-users-resources 0.1.0\n"
+"Project-Id-Version: invenio-users-resources 0.1.10\n"
 "Report-Msgid-Bugs-To: info@inveniosoftware.org\n"
-"POT-Creation-Date: 2022-02-16 12:54+0100\n"
+"POT-Creation-Date: 2022-05-25 14:44+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.10.1\n"
 
-#: invenio_users_resources/services/schemas.py:20
+#: invenio_users_resources/services/schemas.py:21
 msgid "Value must be either 'public' or 'restricted'."
+msgstr ""
+
+#: invenio_users_resources/services/groups/config.py:45
+msgid "Best match"
+msgstr ""
+
+#: invenio_users_resources/services/groups/config.py:49
+msgid "Name"
 msgstr ""
 
