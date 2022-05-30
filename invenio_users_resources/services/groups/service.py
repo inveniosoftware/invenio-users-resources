@@ -23,7 +23,7 @@ class GroupsService(RecordService):
     def read(self, identity, id_):
         """Retrieve a user group."""
         # resolve and require permission
-        group = GroupAggregate.get_record(id_)
+        group = GroupAggregate.get_record_by_name(id_)
         if group is None:
             raise LookupError(f"No group with id '{id_}'.")
 
