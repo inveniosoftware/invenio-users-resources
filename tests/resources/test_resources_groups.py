@@ -9,7 +9,12 @@
 """Groups resource tests."""
 
 
-def test_group_avatar(app, client, group):
+def test_group_avatar(app, client, group, user_pub):
+    res = client.get(f"/groups/{group.name}/avatar.svg")
+    assert res.status_code == 403
+
+    user_pub.login(client)
+
     res = client.get(f"/groups/{group.name}/avatar.svg")
     assert res.status_code == 200
     assert res.mimetype == "image/svg+xml"

@@ -35,7 +35,7 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
     can_create = [SystemProcess()]
-    can_read = [AnyUser(), SystemProcess()]
-    can_search = [AnyUser(), SystemProcess()]
+    can_read = [AuthenticatedUser(), SystemProcess()]
+    can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
