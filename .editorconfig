@@ -15,10 +15,6 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
 
-# Python files
-[*.py]
-indent_size = 4
-
 # RST files (used by sphinx)
 [*.rst]
 indent_size = 4

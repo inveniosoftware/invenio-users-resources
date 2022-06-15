@@ -110,8 +110,7 @@ class UserAggregate(Record):
         return colors[self.id % len(colors)]
 
     @classmethod
-    def create(cls, data, id_=None, validator=None, format_checker=None,
-               **kwargs):
+    def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
         # NOTE: we don't use an actual database table, and as such can't
         #       use db.session.add(record.model)
@@ -165,8 +164,7 @@ class GroupAggregate(Record):
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently a str for Role objects (role.name)!
-    dumper = ElasticsearchDumper(extensions=[],
-                                 model_fields={"id": ("uuid", str)})
+    dumper = ElasticsearchDumper(extensions=[], model_fields={"id": ("uuid", str)})
 
     metadata = None
     """Disabled metadata field from the base class."""
@@ -196,8 +194,9 @@ class GroupAggregate(Record):
     def avatar_color(self):
         """Get avatar color for user."""
         colors = current_app.config["USERS_RESOURCES_AVATAR_COLORS"]
-        normalized_group_initial = unicodedata.normalize('NFKD', self.id[0])\
-            .encode('ascii', 'ignore')
+        normalized_group_initial = unicodedata.normalize("NFKD", self.id[0]).encode(
+            "ascii", "ignore"
+        )
         return colors[int(normalized_group_initial, base=36) % len(colors)]
 
     @property
@@ -246,8 +245,7 @@ class GroupAggregate(Record):
     def get_record_by_name(cls, name):
         """Get the user group via the specified ID."""
         # TODO how do we want to resolve the roles? via ID or name?
-        role = current_datastore.role_model.query\
-            .filter_by(name=name).one_or_none()
+        role = current_datastore.role_model.query.filter_by(name=name).one_or_none()
         if role is None:
             return None
 

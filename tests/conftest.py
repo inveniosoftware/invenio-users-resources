@@ -180,9 +180,7 @@ def _create_group(name, description, database):
 @pytest.fixture(scope="module")
 def group(database):
     """A single group."""
-    r = _create_group(
-        name="it-dep", description="IT Department", database=database
-    )
+    r = _create_group(name="it-dep", description="IT Department", database=database)
 
     GroupAggregate.index.refresh()
     return r
@@ -192,9 +190,9 @@ def group(database):
 def groups(database, group):
     """A single group."""
     roles = [group]  # it-dep
-    roles.append(_create_group(
-        name="hr-dep", description="HR Department", database=database
-    ))
+    roles.append(
+        _create_group(name="hr-dep", description="HR Department", database=database)
+    )
 
     GroupAggregate.index.refresh()
     return roles

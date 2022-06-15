@@ -65,8 +65,8 @@ class UsersService(RecordService):
             identity,
             params=params,
             es_preference=es_preference,
-            extra_filter=Q('term', active=True) & Q('term', confirmed=True),
-            **kwargs
+            extra_filter=Q("term", active=True) & Q("term", confirmed=True),
+            **kwargs,
         )
 
     def read(self, identity, id_):

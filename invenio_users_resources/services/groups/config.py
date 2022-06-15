@@ -34,20 +34,18 @@ class GroupSearchOptions(SearchOptions):
         "default_max_results": 10,
     }
 
-    query_parser_cls = QueryParser.factory(
-        fields=["id", "name"]
-    )
+    query_parser_cls = QueryParser.factory(fields=["id", "name"])
 
-    sort_default = 'bestmatch'
-    sort_default_no_query = 'name'
+    sort_default = "bestmatch"
+    sort_default_no_query = "name"
     sort_options = {
         "bestmatch": dict(
-            title=_('Best match'),
-            fields=['_score'],  # ES defaults to desc on `_score` field
+            title=_("Best match"),
+            fields=["_score"],  # ES defaults to desc on `_score` field
         ),
         "name": dict(  # TODO: add asc/desc
-            title=_('Name'),
-            fields=['name.keyword'],
+            title=_("Name"),
+            fields=["name.keyword"],
         ),
     }
 

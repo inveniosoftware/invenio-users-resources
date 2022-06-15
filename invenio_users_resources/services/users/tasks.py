@@ -28,8 +28,7 @@ def reindex_user(user_id):
             current_users_service.indexer.index(user_agg)
             # trigger reindexing of related records
             send_change_notifications(
-                "users",
-                [(user_agg.id, str(user_agg.id), user_agg.revision_id)]
+                "users", [(user_agg.id, str(user_agg.id), user_agg.revision_id)]
             )
         except ConflictError as e:
             current_app.logger.warn(f"Could not reindex user {user_id}: {e}")

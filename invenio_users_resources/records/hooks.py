@@ -31,19 +31,19 @@ def pre_commit(sender, session):
 
     # users need to be reindexed if their user model was updated, or
     # their profile was changed (or even possibly deleted)
-    current_db_change_history.updated_users[sid].extend([
-        u.id for u in updated if isinstance(u, User)
-    ])
-    current_db_change_history.updated_roles[sid].extend([
-        r.id for r in updated if isinstance(r, Role)
-    ])
+    current_db_change_history.updated_users[sid].extend(
+        [u.id for u in updated if isinstance(u, User)]
+    )
+    current_db_change_history.updated_roles[sid].extend(
+        [r.id for r in updated if isinstance(r, Role)]
+    )
 
-    current_db_change_history.deleted_users[sid].extend([
-        u.id for u in deleted if isinstance(u, User)
-    ])
-    current_db_change_history.deleted_roles[sid].extend([
-        r.id for r in deleted if isinstance(r, Role)
-    ])
+    current_db_change_history.deleted_users[sid].extend(
+        [u.id for u in deleted if isinstance(u, User)]
+    )
+    current_db_change_history.deleted_roles[sid].extend(
+        [r.id for r in deleted if isinstance(r, Role)]
+    )
 
 
 def post_commit(sender, session):

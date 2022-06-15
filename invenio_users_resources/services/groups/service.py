@@ -34,8 +34,7 @@ class GroupsService(RecordService):
             if hasattr(component, "read"):
                 component.read(identity, group=group)
 
-        return self.result_item(self, identity, group,
-                                links_tpl=self.links_item_tpl)
+        return self.result_item(self, identity, group, links_tpl=self.links_item_tpl)
 
     def read_avatar(self, identity, name_):
         """Get a groups's avatar."""
