@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2022 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -24,7 +25,7 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-python -m check_manifest --ignore ".*-requirements.txt"
+python -m check_manifest
 python -m sphinx.cmd.build -qnNW docs docs/_build/html
 eval "$(docker-services-cli up --db ${DB:-postgresql} --search ${SEARCH:-elasticsearch} --cache ${CACHE:-redis} --mq ${MQ:-rabbitmq} --env)"
 python -m pytest
