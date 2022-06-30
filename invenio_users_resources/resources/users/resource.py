@@ -76,5 +76,5 @@ class UsersResource(RecordResource):
             download_name=avatar.name,
             etag=avatar.etag,
             last_modified=avatar.last_modified,
-            max_age=86400 * 7,
+            max_age=avatar.max_age,
         )

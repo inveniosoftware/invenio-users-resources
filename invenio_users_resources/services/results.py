@@ -58,5 +58,5 @@ class AvatarResult:
 
     @property
     def max_age(self):
-        """Get last modified date for the response."""
-        return 86000 * 7
+        """Get max age for cached resource in seconds."""
+        return 60 * 5
