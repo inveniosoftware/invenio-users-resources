@@ -58,5 +58,7 @@ class AvatarResult:
 
     @property
     def max_age(self):
-        """Get last modified date for the response."""
-        return 86000 * 7
+        """Get time out duration for cached avatars in seconds."""
+        # As avatars are often called it should be cached to reduce the load on the user
+        # currently set to 5 minutes as a reasonable time
+        return 60 * 5
