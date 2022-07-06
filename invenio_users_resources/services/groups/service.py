@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2022 KTH Royal Institute of Technology
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 European Union.
@@ -11,6 +12,7 @@
 """Groups service."""
 
 from invenio_accounts.models import Role
+from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 
 from ...records.api import GroupAggregate
@@ -25,7 +27,8 @@ class GroupsService(RecordService):
         # resolve and require permission
         group = GroupAggregate.get_record_by_name(id_)
         if group is None:
-            raise LookupError(f"No group with id '{id_}'.")
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
 
         self.require_permission(identity, "read", record=group)
 
@@ -39,6 +42,9 @@ class GroupsService(RecordService):
     def read_avatar(self, identity, name_):
         """Get a groups's avatar."""
         group = GroupAggregate.get_record_by_name(name_)
+        if group is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
         self.require_permission(identity, "read", record=group)
         return AvatarResult(group)
 
