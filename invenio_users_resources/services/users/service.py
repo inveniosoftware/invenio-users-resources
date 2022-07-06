@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2022 KTH Royal Institute of Technology
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
@@ -12,6 +13,7 @@
 
 from elasticsearch_dsl.query import Q
 from invenio_accounts.models import User
+from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
 
@@ -74,7 +76,8 @@ class UsersService(RecordService):
         # resolve and require permission
         user = UserAggregate.get_record(id_)
         if user is None:
-            raise LookupError(f"No user with id '{id_}'.")
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
 
         self.require_permission(identity, "read", record=user)
 
@@ -88,6 +91,9 @@ class UsersService(RecordService):
     def read_avatar(self, identity, id_):
         """Get a user's avatar."""
         user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
         self.require_permission(identity, "read", record=user)
         return AvatarResult(user)
 
