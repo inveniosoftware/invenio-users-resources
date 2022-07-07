@@ -1,0 +1,77 @@
+{
+  "mappings": {
+    "dynamic": "strict",
+    "dynamic_templates": [
+        {
+          "profile": {
+            "path_match": "profile.*",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+    ],
+    "properties": {
+      "$schema": {
+        "type": "keyword",
+        "index": "false"
+      },
+      "id": {
+        "type": "keyword"
+      },
+      "version_id": {
+        "type": "integer",
+        "index": "false"
+      },
+      "uuid": {
+        "type": "keyword",
+        "index": "false"
+      },
+      "created": {
+        "type": "date",
+        "index": "false"
+      },
+      "updated": {
+        "type": "date",
+        "index": "false"
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "confirmed": {
+        "type": "boolean"
+      },
+      "username": {
+        "type": "keyword"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "email_hidden": {
+        "type": "keyword",
+        "index": "false"
+      },
+      "profile": {
+        "properties": {
+          "full_name": {
+            "type": "text"
+          },
+          "affiliations": {
+            "type": "text"
+          }
+        },
+        "dynamic": true
+      },
+      "preferences": {
+        "properties": {
+          "visibility": {
+            "type": "keyword"
+          },
+          "email_visibility": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
