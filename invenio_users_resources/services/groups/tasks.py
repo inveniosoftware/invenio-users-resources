@@ -10,8 +10,8 @@
 """Users service tasks."""
 
 from celery import shared_task
-from elasticsearch.exceptions import ConflictError
 from flask import current_app
+from invenio_search.engine import search
 
 from ...proxies import current_groups_service
 from ...records.api import GroupAggregate
@@ -25,7 +25,7 @@ def reindex_group(role_id):
         try:
             group_agg = GroupAggregate.get_record(role_id)
             current_groups_service.indexer.index(group_agg)
-        except ConflictError as e:
+        except search.exceptions.ConflictError as e:
             current_app.logger.warn(f"Could not reindex group {role_id}: {e}")
 
 
@@ -37,5 +37,5 @@ def unindex_group(role_id):
         try:
             group_agg = GroupAggregate.get_record(role_id)
             current_groups_service.indexer.delete(group_agg)
-        except ConflictError as e:
+        except search.exceptions.ConflictError as e:
             current_app.logger.warn(f"Could not unindex group {role_id}: {e}")

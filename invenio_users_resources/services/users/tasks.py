@@ -10,9 +10,9 @@
 """Users service tasks."""
 
 from celery import shared_task
-from elasticsearch.exceptions import ConflictError
 from flask import current_app
 from invenio_records_resources.tasks import send_change_notifications
+from invenio_search.engine import search
 
 from ...proxies import current_users_service
 from ...records.api import UserAggregate
@@ -30,7 +30,7 @@ def reindex_user(user_id):
             send_change_notifications(
                 "users", [(user_agg.id, str(user_agg.id), user_agg.revision_id)]
             )
-        except ConflictError as e:
+        except search.exceptions.ConflictError as e:
             current_app.logger.warn(f"Could not reindex user {user_id}: {e}")
 
 
@@ -42,5 +42,5 @@ def unindex_user(user_id):
         try:
             user_agg = UserAggregate.get_record(user_id)
             current_users_service.indexer.delete(user_agg)
-        except ConflictError as e:
+        except search.exceptions.ConflictError as e:
             current_app.logger.warn(f"Could not unindex user {user_id}: {e}")

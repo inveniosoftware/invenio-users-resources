@@ -13,8 +13,8 @@ import operator
 from functools import reduce
 from itertools import chain
 
-from elasticsearch_dsl import Q
 from invenio_records_permissions.generators import Generator, UserNeed
+from invenio_search.engine import dsl
 
 
 class IfPublic(Generator):
@@ -59,8 +59,8 @@ class IfPublic(Generator):
     def query_filter(self, **kwargs):
         """Filters for queries."""
         field = f"preferences.{self._field_name}"
-        q_public = Q("match", **{field: "public"})
-        q_restricted = Q("match", **{field: "restricted"})
+        q_public = dsl.Q("match", **{field: "public"})
+        q_restricted = dsl.Q("match", **{field: "restricted"})
         then_query = self.make_query(self.then_, **kwargs)
         else_query = self.make_query(self.else_, **kwargs)
 
@@ -105,6 +105,6 @@ class Self(Generator):
         if identity is not None:
             for need in identity.provides:
                 if need.method == "id":
-                    return Q("term", id=need.value)
+                    return dsl.Q("term", id=need.value)
 
         return []

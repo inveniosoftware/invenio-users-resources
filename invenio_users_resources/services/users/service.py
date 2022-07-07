@@ -11,11 +11,11 @@
 
 """Users service."""
 
-from elasticsearch_dsl.query import Q
 from invenio_accounts.models import User
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
+from invenio_search.engine import dsl
 
 from invenio_users_resources.services.results import AvatarResult
 
@@ -67,7 +67,7 @@ class UsersService(RecordService):
             identity,
             params=params,
             es_preference=es_preference,
-            extra_filter=Q("term", active=True) & Q("term", confirmed=True),
+            extra_filter=dsl.Q("term", active=True) & dsl.Q("term", confirmed=True),
             **kwargs,
         )
 
