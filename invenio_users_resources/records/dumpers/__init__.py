@@ -6,7 +6,7 @@
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
-"""Elasticsearch dumpers, for transforming to and from versions to index."""
+"""Search dumpers, for transforming to and from versions to index."""
 
 from .email import EmailFieldDumperExt
 
