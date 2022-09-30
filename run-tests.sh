@@ -11,7 +11,7 @@
 
 
 # Usage:
-#   env DB=postgresql12 SEARCH=opensearch1 CACHE=redis MQ=rabbitmq ./run-tests.sh
+#   env DB=postgresql12 SEARCH=opensearch2 CACHE=redis MQ=rabbitmq ./run-tests.sh
 
 # Quit on errors
 set -o errexit
