@@ -6,14 +6,14 @@
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
-"""Elasticsearch dumper for the email field."""
+"""Search dumper for the email field."""
 
 
-from invenio_records.dumpers import ElasticsearchDumperExt
+from invenio_records.dumpers import SearchDumperExt
 
 
-class EmailFieldDumperExt(ElasticsearchDumperExt):
-    """Elasticsearch dumper extension for the email field."""
+class EmailFieldDumperExt(SearchDumperExt):
+    """Search dumper extension for the email field."""
 
     def __init__(self, field):
         """Constructor."""

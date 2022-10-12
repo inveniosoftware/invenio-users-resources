@@ -14,7 +14,7 @@ import unicodedata
 from flask import current_app
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
-from invenio_records.dumpers import ElasticsearchDumper
+from invenio_records.dumpers import SearchDumper
 from invenio_records.systemfields import DictField, ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
@@ -58,17 +58,17 @@ class UserAggregate(Record):
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently an integer for User objects!
-    dumper = ElasticsearchDumper(
+    dumper = SearchDumper(
         extensions=[EmailFieldDumperExt("email")],
         model_fields={"id": ("uuid", int)},
     )
-    """Elasticsearch dumper with configured extensions."""
+    """Search dumper with configured extensions."""
 
     metadata = None
     """Disabled metadata field from the base class."""
 
     index = IndexField("users-user-v1.0.0", search_alias="users")
-    """The Elasticsearch index to use."""
+    """The search engine index to use."""
 
     # TODO
     id = ModelField("id")
@@ -164,13 +164,13 @@ class GroupAggregate(Record):
 
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently a str for Role objects (role.name)!
-    dumper = ElasticsearchDumper(extensions=[], model_fields={"id": ("uuid", str)})
+    dumper = SearchDumper(extensions=[], model_fields={"id": ("uuid", str)})
 
     metadata = None
     """Disabled metadata field from the base class."""
 
     index = IndexField("groups-group-v1.0.0", search_alias="groups")
-    """The Elasticsearch index to use."""
+    """The search engine index to use."""
 
     # TODO
     id = ModelField("id")

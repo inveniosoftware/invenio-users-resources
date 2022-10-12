@@ -11,11 +11,11 @@
 
 """Users service."""
 
-from elasticsearch_dsl.query import Q
 from invenio_accounts.models import User
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
+from invenio_search.engine import dsl
 
 from invenio_users_resources.services.results import AvatarResult
 
@@ -61,13 +61,13 @@ class UsersService(RecordService):
             self, identity, user, links_tpl=self.links_item_tpl, errors=errors
         )
 
-    def search(self, identity, params=None, es_preference=None, **kwargs):
+    def search(self, identity, params=None, search_preference=None, **kwargs):
         """Search for records matching the querystring."""
         return super().search(
             identity,
             params=params,
-            es_preference=es_preference,
-            extra_filter=Q("term", active=True) & Q("term", confirmed=True),
+            search_preference=search_preference,
+            extra_filter=dsl.Q("term", active=True) & dsl.Q("term", confirmed=True),
             **kwargs,
         )
 

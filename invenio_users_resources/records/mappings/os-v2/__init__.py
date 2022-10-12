@@ -6,8 +6,4 @@
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
-"""Search dumpers, for transforming to and from versions to index."""
-
-from .email import EmailFieldDumperExt
-
-__all__ = ("EmailFieldDumperExt",)
+"""OpenSearch version 2 mappings."""
