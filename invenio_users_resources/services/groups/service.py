@@ -50,8 +50,7 @@ class GroupsService(RecordService):
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all user groups managed by this service."""
-        for role in Role.query.all():
-            role_agg = self.record_cls.from_role(role)
-            self.indexer.index(role_agg)
+        roles = Role.query.all()
+        self.indexer.bulk_index([r.id for r in roles])
 
         return True
