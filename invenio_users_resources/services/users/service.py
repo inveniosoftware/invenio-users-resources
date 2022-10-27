@@ -99,8 +99,7 @@ class UsersService(RecordService):
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all users managed by this service."""
-        for user in User.query.all():
-            user_agg = self.record_cls.from_user(user)
-            self.indexer.index(user_agg)
+        users = User.query.all()
+        self.indexer.bulk_index([u.id for u in users])
 
         return True
