@@ -12,6 +12,7 @@ from invenio_records_permissions import BasePermissionPolicy
 from invenio_records_permissions.generators import (
     AnyUser,
     AuthenticatedUser,
+    DisableIfReadOnly,
     SystemProcess,
 )
 
@@ -21,11 +22,11 @@ from .generators import IfPublicEmail, IfPublicUser, Self
 class UsersPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
-    can_create = [SystemProcess()]
+    can_create = [SystemProcess(), DisableIfReadOnly()]
     can_read = [IfPublicUser([AnyUser()], [Self()]), SystemProcess()]
     can_search = [AuthenticatedUser(), SystemProcess()]
-    can_update = [SystemProcess()]
-    can_delete = [SystemProcess()]
+    can_update = [SystemProcess(), DisableIfReadOnly()]
+    can_delete = [SystemProcess(), DisableIfReadOnly()]
 
     can_read_email = [IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
     can_read_details = [Self(), SystemProcess()]
@@ -34,8 +35,8 @@ class UsersPermissionPolicy(BasePermissionPolicy):
 class GroupsPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
-    can_create = [SystemProcess()]
+    can_create = [SystemProcess(), DisableIfReadOnly()]
     can_read = [AuthenticatedUser(), SystemProcess()]
     can_search = [AuthenticatedUser(), SystemProcess()]
-    can_update = [SystemProcess()]
-    can_delete = [SystemProcess()]
+    can_update = [SystemProcess(), DisableIfReadOnly()]
+    can_delete = [SystemProcess(), DisableIfReadOnly()]
