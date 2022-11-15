@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 1.0.1 (released 2022-11-15)
+
+- use bulk indexing for `rebuild_index` method in users/groups
+
 Version 1.0.0
 
 - Initial public release.
