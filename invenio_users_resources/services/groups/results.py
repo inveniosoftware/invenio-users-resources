@@ -45,7 +45,7 @@ class GroupItem(RecordItem):
     @property
     def links(self):
         """Get links for this result item."""
-        return self._links_tpl.expand(self._group)
+        return self._links_tpl.expand(self._identity, self._group)
 
     @property
     def _obj(self):
@@ -108,7 +108,7 @@ class GroupList(RecordList):
 
             # inject the links
             if self._links_item_tpl:
-                projection["links"] = self._links_item_tpl.expand(group)
+                projection["links"] = self._links_item_tpl.expand(self._identity, group)
 
             yield projection
 
@@ -128,6 +128,6 @@ class GroupList(RecordList):
         if self._params:
             res["sortBy"] = self._params["sort"]
             if self._links_tpl:
-                res["links"] = self._links_tpl.expand(self.pagination)
+                res["links"] = self._links_tpl.expand(self._identity, self.pagination)
 
         return res
