@@ -36,9 +36,9 @@ class UserProxy(EntityProxy):
         """Select which fields to return when resolving the reference."""
         profile = resolved_dict.get("profile", {})
         fake_user_obj = SimpleNamespace(id=resolved_dict["id"])
-        avatar = current_users_service.links_item_tpl.expand(
-            identity, fake_user_obj
-        )["avatar"]
+        avatar = current_users_service.links_item_tpl.expand(identity, fake_user_obj)[
+            "avatar"
+        ]
         return {
             "id": resolved_dict["id"],
             "username": resolved_dict["username"],
