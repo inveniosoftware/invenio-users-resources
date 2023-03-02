@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 1.1.0 (released 2023-03-02)
+
+- remove deprecated flask-babelex dependency and imports
+
 Version 1.0.2 (released 2022-12-01)
 
 - Add identity to links template expand method
