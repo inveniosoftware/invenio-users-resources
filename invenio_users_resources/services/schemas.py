@@ -91,3 +91,9 @@ class UserGhostSchema(Schema):
         dump_only=True,
     )
     is_ghost = fields.Boolean(dump_only=True)
+
+
+class NotificationPreferences(Schema):
+    """Schema for notification preferences."""
+
+    enabled: fields.Bool()
