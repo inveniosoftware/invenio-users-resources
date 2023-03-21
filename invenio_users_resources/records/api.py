@@ -37,6 +37,10 @@ def parse_user_data(user):
 
     data["preferences"].setdefault("visibility", "restricted")
     data["preferences"].setdefault("email_visibility", "restricted")
+    default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE", "en")
+    data["preferences"].setdefault("locale", default_locale)
+    data["preferences"].setdefault("timezone", "Europe/Zurich")
+
     return data
 
 

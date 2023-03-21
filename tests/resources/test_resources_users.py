@@ -32,7 +32,13 @@ def test_read_self_serialization(client, headers, users, user_pub):
         "full_name": "Jose Benito Gonzalez Lopez",
         "affiliations": "CERN",
     }
-    assert data["preferences"] == {"email_visibility": "public", "visibility": "public"}
+
+    assert data["preferences"] == {
+        "email_visibility": "public",
+        "visibility": "public",
+        "timezone": "Europe/Zurich",
+        "locale": "en",
+    }
     assert "created" in data
     assert "updated" in data
     assert "revision_id" in data

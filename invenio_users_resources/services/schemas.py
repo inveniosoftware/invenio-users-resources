@@ -9,6 +9,11 @@
 
 """User and user group schemas."""
 
+from invenio_accounts.profiles.schemas import (
+    validate_locale,
+    validate_timezone,
+    validate_visibility,
+)
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services.records.schema import BaseRecordSchema
 from marshmallow import Schema, ValidationError, fields
@@ -16,19 +21,13 @@ from marshmallow_utils.fields import SanitizedUnicode
 from marshmallow_utils.permissions import FieldPermissionsMixin
 
 
-def validate_visibility(value):
-    """Check if the value is a valid visibility setting."""
-    if value not in ["public", "restricted"]:
-        raise ValidationError(
-            message=str(_("Value must be either 'public' or 'restricted'."))
-        )
-
-
 class UserPreferencesSchema(Schema):
     """Schema for user preferences."""
 
     visibility = fields.String(validate=validate_visibility)
     email_visibility = fields.String(validate=validate_visibility)
+    locale = fields.String(validate=validate_locale)
+    timezone = fields.String(validate=validate_timezone)
 
 
 class UserProfileSchema(Schema):
