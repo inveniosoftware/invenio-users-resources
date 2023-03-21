@@ -2,14 +2,22 @@
   "mappings": {
     "dynamic": "strict",
     "dynamic_templates": [
-        {
-          "profile": {
-            "path_match": "profile.*",
-            "mapping": {
-              "type": "keyword"
-            }
+      {
+        "profile": {
+          "path_match": "profile.*",
+          "mapping": {
+            "type": "keyword"
           }
         }
+      },
+      {
+        "preferences": {
+          "path_match": "preferences.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
     ],
     "properties": {
       "$schema": {
@@ -69,8 +77,17 @@
           },
           "email_visibility": {
             "type": "keyword"
+          },
+          "locale": {
+            "type": "keyword",
+            "index": "false"
+          },
+          "timezone": {
+            "type": "keyword",
+            "index": "false"
           }
-        }
+        },
+        "dynamic": true
       }
     }
   }
