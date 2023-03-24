@@ -12,10 +12,8 @@
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services.records.schema import BaseRecordSchema
 from marshmallow import Schema, ValidationError, fields
+from marshmallow_utils.fields import SanitizedUnicode
 from marshmallow_utils.permissions import FieldPermissionsMixin
-from marshmallow_utils.fields import (
-    SanitizedUnicode,
-)
 
 
 def validate_visibility(value):
