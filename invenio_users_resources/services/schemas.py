@@ -13,6 +13,9 @@ from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services.records.schema import BaseRecordSchema
 from marshmallow import Schema, ValidationError, fields
 from marshmallow_utils.permissions import FieldPermissionsMixin
+from marshmallow_utils.fields import (
+    SanitizedUnicode,
+)
 
 
 def validate_visibility(value):
@@ -78,3 +81,16 @@ class GroupSchema(BaseRecordSchema):
     description = fields.String()
     provider = fields.String(dump_only=True)
     is_managed = fields.Boolean(dump_only=True)
+
+
+class UserGhostSchema(Schema):
+    """user ghost schema."""
+
+    id = SanitizedUnicode(dump_only=True)
+    profile = fields.Constant(
+        {
+            "full_name": _("Deleted user"),
+        },
+        dump_only=True,
+    )
+    is_ghost = fields.Boolean(dump_only=True)

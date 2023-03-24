@@ -13,9 +13,13 @@ from types import SimpleNamespace
 
 from flask_principal import UserNeed
 from invenio_accounts.models import User
-from invenio_records_resources.references.resolvers import EntityProxy, EntityResolver
+from invenio_records_resources.references.entity_resolvers import (
+    EntityProxy,
+    EntityResolver,
+)
 
 from .proxies import current_users_service
+from .services.schemas import UserGhostSchema
 from .services.users.config import UsersServiceConfig
 
 
@@ -31,6 +35,10 @@ class UserProxy(EntityProxy):
         """Get the UserNeed for the referenced user."""
         user_id = int(self._parse_ref_dict_id())
         return [UserNeed(user_id)]
+
+    def ghost_record(self, value):
+        """Return default representation of not resolved community."""
+        return UserGhostSchema().dump(value)
 
     def pick_resolved_fields(self, identity, resolved_dict):
         """Select which fields to return when resolving the reference."""
