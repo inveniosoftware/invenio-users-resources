@@ -37,18 +37,16 @@ class UserSearchOptions(SearchOptions):
     }
 
     query_parser_cls = QueryParser.factory(
+        tree_transformer_cls=SearchFieldTransformer,
         fields=["username^2", "email^2", "profile.full_name^3", "profile.affiliations"],
-        tree_transformer_factory=SearchFieldTransformer.factory(
-            mapping={
-                "affiliation": "profile.affiliations",
-                "affiliations": "profile.affiliations",
-                "email": "email",
-                "full_name": "profile.full_name",
-                "fullname": "profile.full_name",
-                "name": "profile.full_name",
-                "username": "username",
-            }
-        ),
+        allow_list=["username", "email"],  # mapped fields are added on the query parser
+        mapping={
+            "affiliation": "profile.affiliations",
+            "affiliations": "profile.affiliations",
+            "full_name": "profile.full_name",
+            "fullname": "profile.full_name",
+            "name": "profile.full_name",
+        },
     )
 
     params_interpreters_cls = [
