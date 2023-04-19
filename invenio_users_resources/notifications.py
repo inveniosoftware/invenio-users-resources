@@ -9,48 +9,52 @@
 """User specific resources for notifications."""
 
 
-from invenio_accounts.models import User
 from invenio_notifications.models import Recipient
+from invenio_notifications.services.builders import RecipientBackendGenerator
 from invenio_notifications.services.filters import RecipientFilter
+from invenio_records.dictutils import dict_lookup
 
 
 class UserPreferencesRecipientFilter(RecipientFilter):
     """Recipient filter for notifications being enabled at all."""
 
-    @classmethod
-    def __call___(cls, notification, recipients):
+    def __call__(self, notification, recipients):
         """Filter recipients."""
-        recipients = [
-            r
-            for r in recipients
-            if r.get("data", {})
-            .get("preferences", {})
-            .get("notifications", {})
-            .get("enabled", False)
-        ]
+        for key in list(recipients.keys()):
+            r = recipients[key]
+            if not (
+                r.data.get("preferences", {})
+                .get("notifications", {})
+                .get("enabled", False)
+            ):
+                del recipients[key]
+
         return recipients
 
 
 class UserRecipient:
+    """User recipient generator for a notification."""
+
     def __init__(self, key):
         """Ctor."""
         self.key = key
 
     def __call__(self, notification, recipients):
         """Update required recipient information and add backend id."""
-        user = notification[self.key]
-        if isinstance(user, User):
-            if user.preferences["notifications"]["enabled"]:
-                recipients[user.id] = Recipient(data=user.dump())
-        else:
-            recipients[user.get("id")] = Recipient(data=user)
+        user = dict_lookup(notification.context, self.key)
+        if user.get("preferences", {}).get("notifications", {}).get("enabled", True):
+            recipients[user["id"]] = Recipient(data=user)
         return recipients
 
 
-class UserEmailBackend:
-    def __call__(self, notification, recipient):
+class UserEmailBackend(RecipientBackendGenerator):
+    """User related email backend generator for a notification."""
+
+    def __call__(self, notification, recipient, backends):
         """Update required recipient information and add backend id."""
+        backends.append("email")
         return "email"
+        # NOTE: Not sure about the backend payload yet. Is it needed?
         # user = recipient.data
         # rec.backends.append(
         #     {
