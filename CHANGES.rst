@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 1.3.0 (2023-04-20)
+
+- upgrade invenio-records-resources
+- fix query parser method call with allowlist
+
 Version 1.2.0 (2023-03-24)
 
 - bump invenio-records-resources to v2.0.0
