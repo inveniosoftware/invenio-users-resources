@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 1.5.0 (2023-04-25)
+
+- add user locale preferences
+
 Version 1.4.0 (2023-04-25)
 
 - upgrade invenio-records-resources
