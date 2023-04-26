@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 1.5.1 (2023-04-26)
+
+- add explicit dependency of invenio-accounts
+
 Version 1.5.0 (2023-04-25)
 
 - add user locale preferences
