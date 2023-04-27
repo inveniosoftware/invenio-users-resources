@@ -16,7 +16,7 @@ from invenio_accounts.models import User
 from invenio_records_resources.references.entity_resolvers import (
     EntityProxy,
     EntityResolver,
-    ResultItemResolver,
+    ServiceResultResolver,
 )
 
 from .proxies import current_users_service
@@ -86,7 +86,7 @@ class UserResolver(EntityResolver):
         return UserProxy(self, ref_dict)
 
 
-class UserResultItemResolver(ResultItemResolver):
+class UserResultItemResolver(ServiceResultResolver):
     """Resolver for user result items."""
 
     type_id = "user"
@@ -94,7 +94,6 @@ class UserResultItemResolver(ResultItemResolver):
     def __init__(self):
         """Ctor."""
         super().__init__(
-            UsersServiceConfig.result_item_cls,
-            UsersServiceConfig.service_id,
+            service_id=UsersServiceConfig.service_id,
             type_key=self.type_id,
         )

@@ -9,8 +9,12 @@
 """User specific resources for notifications."""
 
 
+from invenio_notifications.backends.email import EmailNotificationBackend
 from invenio_notifications.models import Recipient
-from invenio_notifications.services.builders import RecipientBackendGenerator
+from invenio_notifications.services.builders import (
+    RecipientBackendGenerator,
+    RecipientGenerator,
+)
 from invenio_notifications.services.filters import RecipientFilter
 from invenio_records.dictutils import dict_lookup
 
@@ -32,7 +36,7 @@ class UserPreferencesRecipientFilter(RecipientFilter):
         return recipients
 
 
-class UserRecipient:
+class UserRecipient(RecipientGenerator):
     """User recipient generator for a notification."""
 
     def __init__(self, key):
@@ -42,8 +46,7 @@ class UserRecipient:
     def __call__(self, notification, recipients):
         """Update required recipient information and add backend id."""
         user = dict_lookup(notification.context, self.key)
-        if user.get("preferences", {}).get("notifications", {}).get("enabled", True):
-            recipients[user["id"]] = Recipient(data=user)
+        recipients[user["id"]] = Recipient(data=user)
         return recipients
 
 
@@ -52,13 +55,6 @@ class UserEmailBackend(RecipientBackendGenerator):
 
     def __call__(self, notification, recipient, backends):
         """Update required recipient information and add backend id."""
-        backends.append("email")
-        return "email"
-        # NOTE: Not sure about the backend payload yet. Is it needed?
-        # user = recipient.data
-        # rec.backends.append(
-        #     {
-        #         "backend": "email",
-        #         "to": f"{user.profile.full_name} <{user.email}>",
-        #     }
-        # )
+        backend_id = EmailNotificationBackend.id
+        backends.append(backend_id)
+        return backend_id
