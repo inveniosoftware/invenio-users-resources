@@ -9,12 +9,8 @@
 """User specific resources for notifications."""
 
 
-from invenio_notifications.backends.email import EmailNotificationBackend
 from invenio_notifications.models import Recipient
-from invenio_notifications.services.builders import (
-    RecipientBackendGenerator,
-    RecipientGenerator,
-)
+from invenio_notifications.services.builders import RecipientGenerator
 from invenio_notifications.services.filters import RecipientFilter
 from invenio_records.dictutils import dict_lookup
 
@@ -48,13 +44,3 @@ class UserRecipient(RecipientGenerator):
         user = dict_lookup(notification.context, self.key)
         recipients[user["id"]] = Recipient(data=user)
         return recipients
-
-
-class UserEmailBackend(RecipientBackendGenerator):
-    """User related email backend generator for a notification."""
-
-    def __call__(self, notification, recipient, backends):
-        """Update required recipient information and add backend id."""
-        backend_id = EmailNotificationBackend.id
-        backends.append(backend_id)
-        return backend_id
