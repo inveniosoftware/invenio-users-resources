@@ -40,6 +40,12 @@ def parse_user_data(user):
     default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE", "en")
     data["preferences"].setdefault("locale", default_locale)
     data["preferences"].setdefault("timezone", "Europe/Zurich")
+    data["preferences"].setdefault(
+        "notifications",
+        {
+            "enabled": True,
+        },
+    )
 
     return data
 
