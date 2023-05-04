@@ -96,4 +96,4 @@ class UserGhostSchema(Schema):
 class NotificationPreferences(Schema):
     """Schema for notification preferences."""
 
-    enabled: fields.Bool()
+    enabled = fields.Bool()
