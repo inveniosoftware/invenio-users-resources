@@ -8,35 +8,75 @@
 
 """Notification related tests."""
 
-from copy import deepcopy
-
 from invenio_notifications.models import Notification, Recipient
 
-from invenio_users_resources.notifications import UserPreferencesRecipientFilter
+from invenio_users_resources.notifications import (
+    UserPreferencesRecipientFilter,
+    UserRecipient,
+)
 from invenio_users_resources.records.api import UserAggregate
 
 
-def test_user_recipient_filter(user_pub):
+def test_user_recipient_generator(user_notification_disabled, user_notification_enabled):
+    generator_disabled = UserRecipient(key="disabled")
+    generator_enabled = UserRecipient(key="enabled")
+
+    user_notifications_disabled = UserAggregate.from_user(user_notification_disabled.user).dumps()
+    user_notifications_enabled = UserAggregate.from_user(
+        user_notification_enabled.user
+    ).dumps()
+
+    n = Notification(
+        type="",
+        context={
+            "disabled": user_notifications_disabled,
+            "enabled": user_notifications_enabled,
+        },
+    )
+
+    recipients = {}
+
+    generator_disabled(n, recipients=recipients)
+    assert 1 == len(recipients)
+    assert user_notifications_disabled["id"] in recipients.keys()
+
+    generator_enabled(n, recipients=recipients)
+    assert 2 == len(recipients)
+    assert [
+        user_notifications_disabled["id"],
+        user_notifications_enabled["id"],
+    ] == list(recipients)
+
+    # checking that user does not get added twice
+    generator_disabled(n, recipients=recipients)
+    assert 2 == len(recipients)
+    assert [
+        user_notifications_disabled["id"],
+        user_notifications_enabled["id"],
+    ] == list(recipients)
+
+
+def test_user_recipient_filter(user_notification_disabled, user_notification_enabled):
     """Test user recipient filter for notifications."""
-    preferences_filter = UserPreferencesRecipientFilter()
 
-    u = UserAggregate.from_user(user_pub.user).dumps()
-
-    user_notifications_enabled = deepcopy(u)
-    user_notifications_enabled["preferences"]["notifications"] = {"enabled": True}
-    user_notifications_disabled = deepcopy(u)
-    user_notifications_disabled["preferences"]["notifications"] = {"enabled": False}
+    user_notifications_disabled = UserAggregate.from_user(user_notification_disabled.user).dumps()
+    user_notifications_enabled = UserAggregate.from_user(
+        user_notification_enabled.user
+    ).dumps()
 
     n = Notification(type="", context={})
-    recipient_enabled = Recipient(data=user_notifications_enabled)
-    recipient_disabled = Recipient(data=user_notifications_disabled)
+    recipient_enabled = Recipient(data=user_notifications_disabled)
+    recipient_disabled = Recipient(data=user_notifications_enabled)
 
+    recipients = {
+        user_notifications_disabled["id"]: recipient_disabled,
+        user_notifications_enabled["id"]: recipient_enabled,
+    }
+
+    preferences_filter = UserPreferencesRecipientFilter()
     filtered_recipients = preferences_filter(
         notification=n,
-        recipients={
-            user_notifications_disabled["id"]: recipient_disabled,
-            user_notifications_enabled["id"]: recipient_enabled,
-        },
+        recipients=recipients,
     )
 
     assert 1 == len(filtered_recipients)
