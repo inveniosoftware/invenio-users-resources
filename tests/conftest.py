@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2023 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -19,14 +20,25 @@ from flask_principal import AnonymousIdentity
 from invenio_access.permissions import any_user as any_user_need
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
+from marshmallow import fields
 
 from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
 )
 from invenio_users_resources.records import GroupAggregate, UserAggregate
+from invenio_users_resources.services.schemas import (
+    NotificationPreferences,
+    UserPreferencesSchema,
+)
 
 pytest_plugins = ("celery.contrib.pytest",)
+
+
+class UserPreferencesNotificationsSchema(UserPreferencesSchema):
+    """Schema extending preferences with notification preferences."""
+
+    notifications = fields.Nested(NotificationPreferences)
 
 
 #
@@ -43,6 +55,8 @@ def app_config(app_config):
     ] = "invenio_jsonschemas.proxies.current_refresolver_store"
     # Variable not used. We set it to silent warnings
     app_config["JSONSCHEMAS_HOST"] = "not-used"
+    # setting preferences schema to test notifications
+    app_config["ACCOUNTS_USER_PREFERENCES_SCHEMA"] = UserPreferencesNotificationsSchema
 
     return app_config
 
@@ -146,6 +160,36 @@ def users_data():
             },
             "active": False,
         },
+        {
+            "username": "notification_enabled",
+            "email": "notification-enabled@inveniosoftware.org",
+            "profile": {
+                "full_name": "Mr. Worldwide",
+                "affiliations": "World",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "public",
+                "notifications": {
+                    "enabled": True,
+                },
+            },
+        },
+        {
+            "username": "notification_disabled",
+            "email": "notification-disabled@inveniosoftware.org",
+            "profile": {
+                "full_name": "Loner",
+                "affiliations": "Home",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "public",
+                "notifications": {
+                    "enabled": False,
+                },
+            },
+        },
     ]
 
 
@@ -226,3 +270,15 @@ def user_inactive(users):
 def user_unconfirmed(users):
     """Unconfirmed user."""
     return users["unconfirmed"]
+
+
+@pytest.fixture(scope="module")
+def user_notification_enabled(users):
+    """User with notfications enabled."""
+    return users["notification_enabled"]
+
+
+@pytest.fixture(scope="module")
+def user_notification_disabled(users):
+    """User with notfications disabled."""
+    return users["notification_disabled"]
