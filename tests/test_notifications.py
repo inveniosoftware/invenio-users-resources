@@ -10,10 +10,8 @@
 
 from invenio_notifications.models import Notification, Recipient
 
-from invenio_users_resources.notifications import (
-    UserPreferencesRecipientFilter,
-    UserRecipient,
-)
+from invenio_users_resources.notifications.filters import UserPreferencesRecipientFilter
+from invenio_users_resources.notifications.generators import UserRecipient
 from invenio_users_resources.records.api import UserAggregate
 
 
