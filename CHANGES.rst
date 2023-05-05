@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 1.6.0 (2023-05-05)
+
+- add notifications
+- add User notifications preferences
+
 Version 1.5.1 (2023-04-26)
 
 - add explicit dependency of invenio-accounts
