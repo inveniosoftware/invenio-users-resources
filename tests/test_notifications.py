@@ -17,11 +17,15 @@ from invenio_users_resources.notifications import (
 from invenio_users_resources.records.api import UserAggregate
 
 
-def test_user_recipient_generator(user_notification_disabled, user_notification_enabled):
+def test_user_recipient_generator(
+    user_notification_disabled, user_notification_enabled
+):
     generator_disabled = UserRecipient(key="disabled")
     generator_enabled = UserRecipient(key="enabled")
 
-    user_notifications_disabled = UserAggregate.from_user(user_notification_disabled.user).dumps()
+    user_notifications_disabled = UserAggregate.from_user(
+        user_notification_disabled.user
+    ).dumps()
     user_notifications_enabled = UserAggregate.from_user(
         user_notification_enabled.user
     ).dumps()
@@ -59,14 +63,16 @@ def test_user_recipient_generator(user_notification_disabled, user_notification_
 def test_user_recipient_filter(user_notification_disabled, user_notification_enabled):
     """Test user recipient filter for notifications."""
 
-    user_notifications_disabled = UserAggregate.from_user(user_notification_disabled.user).dumps()
+    user_notifications_disabled = UserAggregate.from_user(
+        user_notification_disabled.user
+    ).dumps()
     user_notifications_enabled = UserAggregate.from_user(
         user_notification_enabled.user
     ).dumps()
 
     n = Notification(type="", context={})
-    recipient_enabled = Recipient(data=user_notifications_disabled)
-    recipient_disabled = Recipient(data=user_notifications_enabled)
+    recipient_enabled = Recipient(data=user_notifications_enabled)
+    recipient_disabled = Recipient(data=user_notifications_disabled)
 
     recipients = {
         user_notifications_disabled["id"]: recipient_disabled,
