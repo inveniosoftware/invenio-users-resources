@@ -53,9 +53,10 @@ def parse_user_data(user):
 def parse_role_data(role):
     """Parse the role's information into a dictionary."""
     data = {
-        "id": role.name,  # due to flask security exposing user id
-        "name": role.description,
-        "is_managed": True,  # TODO
+        "id": role.id,
+        "name": role.name,
+        "description": role.description,
+        "is_managed": role.is_managed,
     }
     return data
 
@@ -187,6 +188,9 @@ class GroupAggregate(Record):
     """The data-layer id."""
 
     name = DictField("name")
+    """The group's name."""
+
+    description = DictField("description")
     """The group's name."""
 
     is_managed = DictField("is_managed")
