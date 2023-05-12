@@ -28,6 +28,9 @@
           }
         }
       },
+      "description": {
+        "type": "text"
+      },
       "provider": {
         "type": "text"
       },
