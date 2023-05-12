@@ -9,13 +9,17 @@
 
 """User and user group schemas."""
 
+from invenio_access.permissions import system_user_id
 from invenio_accounts.profiles.schemas import (
     validate_locale,
     validate_timezone,
     validate_visibility,
 )
 from invenio_i18n import lazy_gettext as _
-from invenio_records_resources.services.records.schema import BaseRecordSchema
+from invenio_records_resources.services.records.schema import (
+    BaseGhostSchema,
+    BaseRecordSchema,
+)
 from marshmallow import Schema, ValidationError, fields
 from marshmallow_utils.fields import SanitizedUnicode
 from marshmallow_utils.permissions import FieldPermissionsMixin
@@ -80,8 +84,8 @@ class GroupSchema(BaseRecordSchema):
     is_managed = fields.Boolean(dump_only=True)
 
 
-class UserGhostSchema(Schema):
-    """user ghost schema."""
+class UserGhostSchema(BaseGhostSchema):
+    """User ghost schema."""
 
     id = SanitizedUnicode(dump_only=True)
     profile = fields.Constant(
@@ -90,7 +94,20 @@ class UserGhostSchema(Schema):
         },
         dump_only=True,
     )
-    is_ghost = fields.Boolean(dump_only=True)
+    username = fields.Constant(_("Deleted user"), dump_only=True)
+
+
+class SystemUserSchema(BaseGhostSchema):
+    """System user schema."""
+
+    id = fields.Constant(system_user_id, dump_only=True)
+    profile = fields.Constant(
+        {
+            "full_name": _("System"),
+        },
+        dump_only=True,
+    )
+    username = fields.Constant(_("System"), dump_only=True)
 
 
 class NotificationPreferences(Schema):

@@ -12,14 +12,16 @@
 from types import SimpleNamespace
 
 from flask_principal import UserNeed
+from invenio_access.permissions import system_process, system_user_id
 from invenio_accounts.models import User
 from invenio_records_resources.references.entity_resolvers import (
     EntityProxy,
     EntityResolver,
 )
+from sqlalchemy.exc import NoResultFound
 
 from .proxies import current_users_service
-from .services.schemas import UserGhostSchema
+from .services.schemas import SystemUserSchema, UserGhostSchema
 from .services.users.config import UsersServiceConfig
 
 
@@ -27,18 +29,32 @@ class UserProxy(EntityProxy):
     """Resolver proxy for a User entity."""
 
     def _resolve(self):
-        """Resolve the User from the proxy's reference dict."""
-        user_id = int(self._parse_ref_dict_id())
-        return User.query.get(user_id)
+        """Resolve the User from the proxy's reference dict, or system_identity."""
+        user_id = self._parse_ref_dict_id()
+        if user_id == system_user_id:  # system_user_id is a string: "system"
+            return self.system_record()
+        else:
+            try:
+                return User.query.get(int(user_id))
+            except NoResultFound:
+                return self.ghost_record({"id": user_id})
 
     def get_needs(self, ctx=None):
         """Get the UserNeed for the referenced user."""
-        user_id = int(self._parse_ref_dict_id())
-        return [UserNeed(user_id)]
+        user_id = self._parse_ref_dict_id()
+        if user_id == system_user_id:
+            return [system_process]
+        else:
+            return [UserNeed(int(user_id))]
 
     def ghost_record(self, value):
-        """Return default representation of not resolved community."""
+        """Return default representation of not resolved user."""
         return UserGhostSchema().dump(value)
+
+    def system_record(self):
+        """Return the representation of system user."""
+        default_constant_values = {}
+        return SystemUserSchema().dump(default_constant_values)
 
     def pick_resolved_fields(self, identity, resolved_dict):
         """Select which fields to return when resolving the reference."""
