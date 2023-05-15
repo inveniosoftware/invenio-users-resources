@@ -21,8 +21,8 @@ def pre_commit(sender, session):
     # it seems that the {dirty,new,deleted} sets aren't populated
     # in after_commit anymore, that's why we need to collect the
     # information here.
-    # session is a scoped_session and does not have _model_changes
-    # so we have rely only on .dirty
+    # session is a scoped_session and does not have _model_changes,
+    # so we have to rely only on .dirty
     updated = session.dirty.union(session.new)
     deleted = session.deleted
     sid = id(session)
@@ -31,19 +31,17 @@ def pre_commit(sender, session):
 
     # users need to be reindexed if their user model was updated, or
     # their profile was changed (or even possibly deleted)
-    current_db_change_history.updated_users[sid].extend(
-        [u.id for u in updated if isinstance(u, User)]
-    )
-    current_db_change_history.updated_roles[sid].extend(
-        [r.id for r in updated if isinstance(r, Role)]
-    )
+    for item in updated:
+        if isinstance(item, User):
+            current_db_change_history.add_updated_user(sid, item.id)
+        if isinstance(item, Role):
+            current_db_change_history.add_updated_role(sid, item.id)
 
-    current_db_change_history.deleted_users[sid].extend(
-        [u.id for u in deleted if isinstance(u, User)]
-    )
-    current_db_change_history.deleted_roles[sid].extend(
-        [r.id for r in deleted if isinstance(r, Role)]
-    )
+    for item in deleted:
+        if isinstance(item, User):
+            current_db_change_history.add_deleted_user(sid, item.id)
+        if isinstance(item, Role):
+            current_db_change_history.add_deleted_role(sid, item.id)
 
 
 def post_commit(sender, session):
@@ -52,15 +50,15 @@ def post_commit(sender, session):
     # DB operations are allowed here, not even lazy-loading of
     # properties!
     sid = id(session)
-    for user_id in current_db_change_history.updated_users[sid]:
-        reindex_user.delay(user_id)
+    if current_db_change_history.sessions.get(sid):
+        for user_id in current_db_change_history.sessions[sid].updated_users:
+            reindex_user.delay(user_id)
 
-    for role_id in current_db_change_history.updated_roles[sid]:
-        reindex_group.delay(role_id)
+        for role_id in current_db_change_history.sessions[sid].updated_roles:
+            reindex_group.delay(role_id)
 
-    for user_id in current_db_change_history.deleted_users[sid]:
-        unindex_user.delay(user_id)
-    for role_id in current_db_change_history.deleted_roles[sid]:
-        unindex_group.delay(role_id)
+        for user_id in current_db_change_history.sessions[sid].deleted_users:
+            unindex_user.delay(user_id)
 
-    current_db_change_history._clear_dirty_sets(session)
+        for role_id in current_db_change_history.sessions[sid].deleted_roles:
+            unindex_group.delay(role_id)
