@@ -85,4 +85,4 @@ class InvenioUsersResources(object):
             # rollbacked. In a case (e.g. nested transactions) when an
             # exception is caught and then the session is commited,
             # the sets might not reflect all the users that were changed.
-            current_db_change_history._clear_dirty_sets(session)
+            current_db_change_history.clear_dirty_sets(session)

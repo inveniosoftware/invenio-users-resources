@@ -191,7 +191,7 @@ class GroupAggregate(Record):
     """The group's name."""
 
     description = DictField("description")
-    """The group's name."""
+    """The group's description."""
 
     is_managed = DictField("is_managed")
     """If the group is managed manually."""

@@ -213,9 +213,11 @@ def users(UserFixture, app, database, users_data):
     return users
 
 
-def _create_group(name, description, database):
+def _create_group(id, name, description, is_managed, database):
     """Creates a Role/Group."""
-    r = current_datastore.create_role(name=name, description=description)
+    r = current_datastore.create_role(
+        id=id, name=name, description=description, is_managed=is_managed
+    )
     current_datastore.commit()
 
     return r
@@ -224,19 +226,37 @@ def _create_group(name, description, database):
 @pytest.fixture(scope="module")
 def group(database):
     """A single group."""
-    r = _create_group(name="it-dep", description="IT Department", database=database)
+    r = _create_group(
+        id="it-dep",
+        name="it-dep",
+        description="IT Department",
+        is_managed=True,
+        database=database,
+    )
 
     GroupAggregate.index.refresh()
     return r
 
 
 @pytest.fixture(scope="module")
-def groups(database, group):
+def group2(database):
     """A single group."""
-    roles = [group]  # it-dep
-    roles.append(
-        _create_group(name="hr-dep", description="HR Department", database=database)
+    r = _create_group(
+        id="hr-dep",
+        name="hr-dep",
+        description="HR Department",
+        is_managed=True,
+        database=database,
     )
+
+    GroupAggregate.index.refresh()
+    return r
+
+
+@pytest.fixture(scope="module")
+def groups(database, group, group2):
+    """A single group."""
+    roles = [group, group2]
 
     GroupAggregate.index.refresh()
     return roles
