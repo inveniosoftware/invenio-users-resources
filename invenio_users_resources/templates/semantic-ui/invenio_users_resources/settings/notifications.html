@@ -1,0 +1,77 @@
+{# -*- coding: utf-8 -*-
+
+This file is part of Invenio.
+Copyright (C) 2023 Graz University of Technology.
+
+Invenio-Users-Resources is free software; you can redistribute it and/or
+modify it under the terms of the MIT License; see LICENSE file for more
+details.
+#}
+
+{% from "invenio_userprofiles/settings/_macros.html" import render_field, form_errors %}
+
+{%- block settings_content scoped %}
+
+<div class="ui segments">
+  <div class="ui segment secondary">
+    <i class="bell icon"></i>
+    <strong class="header item">{{ _("Notifications") }}</strong>
+  </div>
+  <div class="ui segment">
+    <form {% if not read_only %}method="POST" {% endif %} name="notifications_form" class="ui form">
+
+      <div class="ui four column grid">
+        <div class="two column row">
+          <div class="column">
+            {%- set form = notifications_form %}
+            {%- for field in form %}
+              {%- if field.widget.input_type == 'hidden' %}
+                {{ field() }}
+              {%- endif %}
+            {%- endfor %}
+
+            {% set enabled_field = form.enabled %}
+
+            <div class="field">
+              <label for="{{ enabled_field.id }}">{{ enabled_field.label }}</label>
+              <p><small>{{ enabled_field.description }}</small></p>
+
+              <div class="ui toggle checkbox">
+                <input type="checkbox" name="{{ enabled_field.id }}" id="{{ enabled_field.id }}" {{ 'checked' if
+                  current_user.preferences.get("notifications", {})["enabled"] else "" }}>
+                <label></label>
+              </div>
+            </div>
+
+          </div>
+          <div class="column">
+            {%- set profile_url = url_for('invenio_userprofiles.profile') %}
+
+            <div class="field">
+              <label>{{ _("Notifications email") }}</label>
+              <p><small>
+                  {% trans %}
+                  We use your primary email address to notify you on. You can change your email on
+                  your <a href="{{ profile_url }}">profile settings</a>
+                  {% endtrans %}
+                </small></p>
+
+              <div class="ui basic label large">{{ current_user.email }}</div>
+            </div>
+          </div>
+          {{ form.id }}
+          <div class="one column row">
+            <div class="form-actions">
+              <a href="./" class="ui button"><i class="close icon"></i> {{ _('Cancel') }}</a>
+              <button type="submit" name="submit" value="{{ form._prefix }}" class="ui primary button"><i
+                  class="check icon"></i>
+                {{ _('Update notification preferences') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
