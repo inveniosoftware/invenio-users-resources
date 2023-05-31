@@ -10,6 +10,8 @@
 """Invenio module providing management APIs for users and roles/groups."""
 
 
+from invenio_users_resources.services.schemas import UserSchema
+
 USERS_RESOURCES_AVATAR_COLORS = [
     "#e06055",
     "#ff8a65",
@@ -39,3 +41,6 @@ USERS_RESOURCES_AVATAR_COLORS = [
     "#55526f",
     "#67635a",
 ]
+
+USERS_RESOURCES_SERVICE_SCHEMA = UserSchema
+"""Schema used by the users service."""
