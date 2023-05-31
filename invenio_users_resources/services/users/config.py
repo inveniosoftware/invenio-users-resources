@@ -14,6 +14,7 @@ from invenio_records_resources.services import (
     SearchOptions,
     pagination_links,
 )
+from invenio_records_resources.services.base.config import ConfiguratorMixin, FromConfig
 from invenio_records_resources.services.records.params import QueryStrParam, SortParam
 from invenio_records_resources.services.records.queryparser import (
     QueryParser,
@@ -56,7 +57,7 @@ class UserSearchOptions(SearchOptions):
     ]
 
 
-class UsersServiceConfig(RecordServiceConfig):
+class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     """Requests service configuration."""
 
     # common configuration
@@ -68,7 +69,7 @@ class UsersServiceConfig(RecordServiceConfig):
     # specific configuration
     service_id = "users"
     record_cls = UserAggregate
-    schema = UserSchema
+    schema = FromConfig("USERS_RESOURCES_SERVICE_SCHEMA", UserSchema)
     indexer_queue_name = "users"
     index_dumper = None
 
