@@ -67,10 +67,13 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     def is_self(self, obj):
         """Determine if identity is the current identity."""
         current_identity = self.context["identity"]
+
+        _id = obj.get("id") or obj.id
+
         return (
-            obj.id is not None
+            _id is not None
             and current_identity.id is not None
-            and str(obj.id) == str(current_identity.id)
+            and str(_id) == str(current_identity.id)
         )
 
 
