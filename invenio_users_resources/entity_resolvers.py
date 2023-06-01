@@ -21,7 +21,7 @@ from invenio_records_resources.references.entity_resolvers import (
 from sqlalchemy.exc import NoResultFound
 
 from .proxies import current_users_service
-from .services.schemas import SystemUserSchema, UserGhostSchema
+from .services.schemas import SystemUserSchema, UserGhostSchema, UserSchema
 from .services.users.config import UsersServiceConfig
 
 
@@ -63,16 +63,26 @@ class UserProxy(EntityProxy):
         avatar = current_users_service.links_item_tpl.expand(identity, fake_user_obj)[
             "avatar"
         ]
-        return {
+        obj = {
+            "identity": identity,
             "id": resolved_dict["id"],
-            "username": resolved_dict["username"],
+            "username": resolved_dict.get("username", ""),
             "email": resolved_dict.get("email", ""),
             "profile": {
                 "full_name": profile.get("full_name", ""),
                 "affiliations": profile.get("affiliations", ""),
             },
+            "preferences": resolved_dict.get("preferences", {}),
             "links": {"avatar": avatar},
         }
+
+        resolved_dict["identity"] = identity
+
+        serialized_user = UserSchema(context=resolved_dict).dump(obj)
+
+        # Cannot serialize this field in the schema as it not part of the user schema
+        serialized_user["is_ghost"] = resolved_dict.get("is_ghost", False)
+        return serialized_user
 
 
 class UserResolver(EntityResolver):
