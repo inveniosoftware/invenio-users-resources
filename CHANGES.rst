@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 1.7.0 (2023-06-02)
+
+- schemas: add system user schema
+
 Version 1.6.0 (2023-05-05)
 
 - add notifications
