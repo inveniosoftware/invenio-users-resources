@@ -8,6 +8,12 @@
 Changes
 =======
 
+Version 1.8.0 (2023-06-06)
+
+- forms: add notification preferences form and handle
+- ui: add notification settings preferences template
+- config: allow configuration of user schema
+
 Version 1.7.0 (2023-06-02)
 
 - schemas: add system user schema
