@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2023-2024 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -115,3 +116,39 @@ class InvenioUsersResources(object):
             action = ep.load()
             assert callable(action)
             registry.setdefault(action_name, []).append(action)
+
+
+def finalize_app(app):
+    """Finalize app.
+
+    NOTE: replace former @record_once decorator
+    """
+    init(app)
+
+
+def api_finalize_app(app):
+    """Finalize app for api.
+
+    NOTE: replace former @record_once decorator
+    """
+    init(app)
+
+
+def init(app):
+    """Init app.
+
+    Register services - cannot be done in extension because
+    Invenio-Records-Resources might not have been initialized.
+    """
+    rr_ext = app.extensions["invenio-records-resources"]
+    ext = app.extensions["invenio-users-resources"]
+    idx_ext = app.extensions["invenio-indexer"]
+
+    # services
+    rr_ext.registry.register(ext.users_service)
+    rr_ext.registry.register(ext.groups_service)
+    rr_ext.registry.register(ext.domains_service)
+
+    idx_ext.registry.register(ext.users_service.indexer, indexer_id="users")
+    idx_ext.registry.register(ext.groups_service.indexer, indexer_id="groups")
+    idx_ext.registry.register(ext.domains_service.indexer, indexer_id="domains")
