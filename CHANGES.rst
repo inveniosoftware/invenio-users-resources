@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 1.9.0 (2023-06-15)
+
+- groups: add description field
+- hooks: refactor updating db change history on user or role change
+
 Version 1.8.0 (2023-06-06)
 
 - forms: add notification preferences form and handle
