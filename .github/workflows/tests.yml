@@ -16,31 +16,31 @@ on:
     branches: master
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '0 3 * * 6'
+    - cron: "0 3 * * 6"
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason'
+        description: "Reason"
         required: false
-        default: 'Manual trigger'
+        default: "Manual trigger"
 
 jobs:
   Tests:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-          # You can add/remove combinations e.g. `dev` requirements or `postgresql13` by adding
-          # a new item to the following lists.
-          # You can see the complete list of services and versions that are available at:
-          # https://docker-services-cli.readthedocs.io/en/latest/configuration.html
-          python-version: [3.7, 3.8, 3.9]
-          requirements-level: [pypi]
-          cache-service: [redis]
-          db-service: [postgresql10, postgresql13, mysql5, mysql8]
-          mq-service: [rabbitmq]
-          search-service: [opensearch2,elasticsearch7]
+        # You can add/remove combinations e.g. `dev` requirements or `postgresql13` by adding
+        # a new item to the following lists.
+        # You can see the complete list of services and versions that are available at:
+        # https://docker-services-cli.readthedocs.io/en/latest/configuration.html
+        python-version: [3.7, 3.8, 3.9]
+        requirements-level: [pypi]
+        cache-service: [redis]
+        db-service: [postgresql10, postgresql13, mysql8]
+        mq-service: [rabbitmq]
+        search-service: [opensearch2, elasticsearch7]
 
-          exclude:
+        exclude:
           - python-version: 3.7
             db-service: postgresql13
 
@@ -53,23 +53,12 @@ jobs:
           - python-version: 3.9
             db-service: postgresql10
 
-          - python-version: 3.8
-            db-service: mysql5
-
-          - python-version: 3.9
-            db-service: mysql5
-          include:
+        include:
           - db-service: postgresql10
             DB_EXTRAS: "postgresql"
 
           - db-service: postgresql13
             DB_EXTRAS: "postgresql"
-
-          - db-service: mysql5
-            DB_EXTRAS: "mysql"
-
-          - db-service: mysql8
-            DB_EXTRAS: "mysql"
 
           - search-service: opensearch2
             SEARCH_EXTRAS: "opensearch2"

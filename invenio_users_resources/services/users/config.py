@@ -9,12 +9,14 @@
 
 """Users service configuration."""
 
-from invenio_records_resources.services import (
-    RecordServiceConfig,
-    SearchOptions,
-    pagination_links,
+from invenio_records_resources.services import RecordServiceConfig, pagination_links
+from invenio_records_resources.services.base.config import (
+    ConfiguratorMixin,
+    FromConfig,
+    FromConfigSearchOptions,
+    SearchOptionsMixin,
 )
-from invenio_records_resources.services.base.config import ConfiguratorMixin, FromConfig
+from invenio_records_resources.services.records.config import SearchOptions
 from invenio_records_resources.services.records.params import QueryStrParam, SortParam
 from invenio_records_resources.services.records.queryparser import (
     QueryParser,
@@ -29,14 +31,13 @@ from ..schemas import UserSchema
 from .results import UserItem, UserList
 
 
-class UserSearchOptions(SearchOptions):
+class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     """Search options."""
 
     pagination_options = {
         "default_results_per_page": 10,
         "default_max_results": 10,
     }
-
     query_parser_cls = QueryParser.factory(
         tree_transformer_cls=SearchFieldTransformer,
         fields=["username^2", "email^2", "profile.full_name^3", "profile.affiliations"],
@@ -64,8 +65,12 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     permission_policy_cls = UsersPermissionPolicy
     result_item_cls = UserItem
     result_list_cls = UserList
-    search = UserSearchOptions
-
+    search = FromConfigSearchOptions(
+        "USERS_RESOURCES_SEARCH",
+        "USERS_RESOURCES_SORT_OPTIONS",
+        None,
+        search_option_cls=UserSearchOptions,
+    )
     # specific configuration
     service_id = "users"
     record_cls = UserAggregate

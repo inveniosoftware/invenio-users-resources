@@ -9,6 +9,7 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
+from invenio_i18n import lazy_gettext as _
 
 from invenio_users_resources.services.schemas import UserSchema
 
@@ -44,3 +45,27 @@ USERS_RESOURCES_AVATAR_COLORS = [
 
 USERS_RESOURCES_SERVICE_SCHEMA = UserSchema
 """Schema used by the users service."""
+
+USERS_RESOURCES_SEARCH = {
+    "facets": [],
+    "sort": [
+        "email",
+        "username",
+    ],
+}
+"""User search configuration (i.e list of banners)"""
+
+USERS_RESOURCES_SORT_OPTIONS = {
+    "username": dict(
+        title=_("Username"),
+        fields=["username"],
+    ),
+    "email": dict(
+        title=_("Email"),
+        fields=["email"],
+    ),
+}
+"""Definitions of available Users sort options. """
+
+USERS_RESOURCES_ADMINISTRATION_ENABLED = False
+"""Enable the user administration"""
