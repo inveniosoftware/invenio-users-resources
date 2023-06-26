@@ -12,8 +12,9 @@
 from invenio_accounts.models import Role, User
 from invenio_accounts.proxies import current_db_change_history
 
-from ..services.groups.tasks import reindex_group, unindex_group
-from ..services.users.tasks import reindex_user, unindex_user
+from ..proxies import current_groups_service, current_users_service
+from ..services.groups.tasks import reindex_groups, unindex_groups
+from ..services.users.tasks import reindex_users, unindex_users
 
 
 def pre_commit(sender, session):
@@ -50,15 +51,18 @@ def post_commit(sender, session):
     # DB operations are allowed here, not even lazy-loading of
     # properties!
     sid = id(session)
+
     if current_db_change_history.sessions.get(sid):
-        for user_id in current_db_change_history.sessions[sid].updated_users:
-            reindex_user.delay(user_id)
+        # Handle updates
+        current_session = list(current_db_change_history.sessions[sid].updated_users)
+        current_users_service.indexer.bulk_index(current_session)
 
-        for role_id in current_db_change_history.sessions[sid].updated_roles:
-            reindex_group.delay(role_id)
+        group_ids_updated = list(current_db_change_history.sessions[sid].updated_roles)
+        current_groups_service.indexer.bulk_index(group_ids_updated)
 
-        for user_id in current_db_change_history.sessions[sid].deleted_users:
-            unindex_user.delay(user_id)
+        # Handle deletes
+        user_ids_deleted = list(current_db_change_history.sessions[sid].deleted_users)
+        current_users_service.indexer.bulk_delete(user_ids_deleted)
 
-        for role_id in current_db_change_history.sessions[sid].deleted_roles:
-            unindex_group.delay(role_id)
+        group_ids_deleted = list(current_db_change_history.sessions[sid].deleted_roles)
+        current_groups_service.indexer.bulk_delete(group_ids_deleted)
