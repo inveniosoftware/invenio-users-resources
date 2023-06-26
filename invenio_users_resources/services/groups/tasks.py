@@ -18,24 +18,22 @@ from ...records.api import GroupAggregate
 
 
 @shared_task(ignore_result=True)
-def reindex_group(role_id):
-    """Reindex the given user."""
+def reindex_groups(group_ids):
+    """Reindex the given groups."""
     index = current_groups_service.record_cls.index
     if current_groups_service.indexer.exists(index):
         try:
-            group_agg = GroupAggregate.get_record(role_id)
-            current_groups_service.indexer.index(group_agg)
+            current_groups_service.indexer.bulk_index(group_ids)
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not reindex group {role_id}: {e}")
+            current_app.logger.warn(f"Could not bulk-reindex groups: {e}")
 
 
 @shared_task(ignore_result=True)
-def unindex_group(role_id):
-    """Unindex the given role/group."""
+def unindex_groups(group_ids):
+    """Unindex the given groups."""
     index = current_groups_service.record_cls.index
     if current_groups_service.indexer.exists(index):
         try:
-            group_agg = GroupAggregate.get_record(role_id)
-            current_groups_service.indexer.delete(group_agg)
+            current_groups_service.indexer.bulk_delete(group_ids)
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not unindex group {role_id}: {e}")
+            current_app.logger.warn(f"Could not bulk-unindex groups: {e}")

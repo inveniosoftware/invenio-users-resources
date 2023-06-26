@@ -19,28 +19,38 @@ from ...records.api import UserAggregate
 
 
 @shared_task(ignore_result=True)
-def reindex_user(user_id):
+def reindex_users(user_ids):
     """Reindex the given user."""
     index = current_users_service.record_cls.index
     if current_users_service.indexer.exists(index):
         try:
-            user_agg = UserAggregate.get_record(user_id)
-            current_users_service.indexer.index(user_agg)
+            user_agg = {
+                user_id: UserAggregate.get_record(user_id) for user_id in user_ids
+            }
+            current_users_service.indexer.bulk_index(user_ids)
+
             # trigger reindexing of related records
             send_change_notifications(
-                "users", [(user_agg.id, str(user_agg.id), user_agg.revision_id)]
+                "users",
+                [
+                    (
+                        user_agg[user_id].id,
+                        str(user_agg[user_id].id),
+                        user_agg[user_id].revision_id,
+                    )
+                    for user_id in user_ids
+                ],
             )
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not reindex user {user_id}: {e}")
+            current_app.logger.warn(f"Could not bulk-reindex users: {e}")
 
 
 @shared_task(ignore_result=True)
-def unindex_user(user_id):
+def unindex_users(user_ids):
     """Delete the given user from the index."""
     index = current_users_service.record_cls.index
     if current_users_service.indexer.exists(index):
         try:
-            user_agg = UserAggregate.get_record(user_id)
-            current_users_service.indexer.delete(user_agg)
+            current_users_service.indexer.bulk_delete(user_ids)
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not unindex user {user_id}: {e}")
+            current_app.logger.warn(f"Could not bulk-unindex users: {e}")

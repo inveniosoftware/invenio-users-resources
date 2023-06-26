@@ -26,7 +26,7 @@ from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
 )
-from invenio_users_resources.records import GroupAggregate, UserAggregate
+from invenio_users_resources.records import GroupAggregate
 from invenio_users_resources.services.schemas import (
     NotificationPreferences,
     UserPreferencesSchema,
@@ -209,7 +209,8 @@ def users(UserFixture, app, database, users_data):
         )
         u.create(app, database)
         users[obj["username"]] = u
-    UserAggregate.index.refresh()
+    current_users_service.indexer.process_bulk_queue()
+    current_users_service.record_cls.index.refresh()
     return users
 
 
@@ -233,8 +234,6 @@ def group(database):
         is_managed=True,
         database=database,
     )
-
-    GroupAggregate.index.refresh()
     return r
 
 
@@ -248,8 +247,6 @@ def group2(database):
         is_managed=True,
         database=database,
     )
-
-    GroupAggregate.index.refresh()
     return r
 
 
@@ -258,7 +255,8 @@ def groups(database, group, group2):
     """A single group."""
     roles = [group, group2]
 
-    GroupAggregate.index.refresh()
+    current_groups_service.indexer.process_bulk_queue()
+    current_groups_service.record_cls.index.refresh()
     return roles
 
 
