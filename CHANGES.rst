@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.0.0 (2023-06-30)
+
+- changing the groups tasks interface to use bulk indexing as default
+
 Version 1.9.0 (2023-06-15)
 
 - groups: add description field
