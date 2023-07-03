@@ -180,7 +180,7 @@ class GroupAggregate(Record):
     metadata = None
     """Disabled metadata field from the base class."""
 
-    index = IndexField("groups-group-v1.0.0", search_alias="groups")
+    index = IndexField("groups-group-v2.0.0", search_alias="groups")
     """The search engine index to use."""
 
     # TODO
