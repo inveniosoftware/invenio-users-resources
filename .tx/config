@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2023 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -23,9 +24,9 @@
 #    $ tx pull -a
 
 [main]
-host = https://www.transifex.com
+host = https://app.transifex.com
 
-[invenio.invenio-users-resources-messages]
+[o:inveniosoftware:p:invenio:r:invenio-users-resources-messages]
 file_filter = invenio_users_resources/translations/<lang>/LC_MESSAGES/messages.po
 source_file = invenio_users_resources/translations/messages.pot
 source_lang = en
