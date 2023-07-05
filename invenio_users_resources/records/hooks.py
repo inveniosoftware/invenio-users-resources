@@ -12,7 +12,6 @@
 from invenio_accounts.models import Role, User
 from invenio_accounts.proxies import current_db_change_history
 
-from ..proxies import current_groups_service, current_users_service
 from ..services.groups.tasks import reindex_groups, unindex_groups
 from ..services.users.tasks import reindex_users, unindex_users
 
@@ -54,15 +53,15 @@ def post_commit(sender, session):
 
     if current_db_change_history.sessions.get(sid):
         # Handle updates
-        current_session = list(current_db_change_history.sessions[sid].updated_users)
-        current_users_service.indexer.bulk_index(current_session)
+        user_ids_updated = list(current_db_change_history.sessions[sid].updated_users)
+        reindex_users.delay(user_ids_updated)
 
         group_ids_updated = list(current_db_change_history.sessions[sid].updated_roles)
-        current_groups_service.indexer.bulk_index(group_ids_updated)
+        reindex_groups.delay(group_ids_updated)
 
         # Handle deletes
         user_ids_deleted = list(current_db_change_history.sessions[sid].deleted_users)
-        current_users_service.indexer.bulk_delete(user_ids_deleted)
+        unindex_users.delay(user_ids_deleted)
 
         group_ids_deleted = list(current_db_change_history.sessions[sid].deleted_roles)
-        current_groups_service.indexer.bulk_delete(group_ids_deleted)
+        unindex_groups.delay(group_ids_deleted)
