@@ -12,6 +12,7 @@
 """Groups service."""
 
 from invenio_accounts.models import Role
+from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 
@@ -50,7 +51,8 @@ class GroupsService(RecordService):
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all user groups managed by this service."""
-        roles = Role.query.all()
+        roles = db.session.query(Role.id).yield_per(1000)
+
         self.indexer.bulk_index([r.id for r in roles])
 
         return True

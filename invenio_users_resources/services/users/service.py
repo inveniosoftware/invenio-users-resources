@@ -12,6 +12,7 @@
 """Users service."""
 
 from invenio_accounts.models import User
+from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
@@ -99,7 +100,6 @@ class UsersService(RecordService):
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all users managed by this service."""
-        users = User.query.all()
+        users = db.session.query(User.id).yield_per(1000)
         self.indexer.bulk_index([u.id for u in users])
-
         return True
