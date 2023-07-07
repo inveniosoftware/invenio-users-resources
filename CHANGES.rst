@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.1.0 (2023-07-07)
+
+- administration: add users administration panel
+
 Version 2.0.1 (2023-07-05)
 
 - fix post_commit hooks
