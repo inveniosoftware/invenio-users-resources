@@ -50,7 +50,7 @@ class UsersListView(AdminResourceListView):
     @staticmethod
     def disabled():
         """Disable the view on demand."""
-        return current_app.config["USERS_RESOURCES_ADMINISTRATION_DISABLED"]
+        return not current_app.config["USERS_RESOURCES_ADMINISTRATION_ENABLED"]
 
 
 class UsersDetailView(AdminResourceDetailView):

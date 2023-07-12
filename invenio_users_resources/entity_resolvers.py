@@ -63,8 +63,7 @@ class UserProxy(EntityProxy):
         avatar = current_users_service.links_item_tpl.expand(identity, fake_user_obj)[
             "avatar"
         ]
-        obj = {
-            "identity": identity,
+        serialized_user = {
             "id": resolved_dict["id"],
             "username": resolved_dict.get("username", ""),
             "email": resolved_dict.get("email", ""),
@@ -72,16 +71,9 @@ class UserProxy(EntityProxy):
                 "full_name": profile.get("full_name", ""),
                 "affiliations": profile.get("affiliations", ""),
             },
-            "preferences": resolved_dict.get("preferences", {}),
             "links": {"avatar": avatar},
         }
 
-        resolved_dict["identity"] = identity
-
-        serialized_user = UserSchema(context=resolved_dict).dump(obj)
-
-        # Cannot serialize this field in the schema as it not part of the user schema
-        serialized_user["is_ghost"] = resolved_dict.get("is_ghost", False)
         return serialized_user
 
 
