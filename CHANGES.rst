@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.1.1 (2023-07-12)
+
+- users: make username optional on expansion
+
 Version 2.1.0 (2023-07-07)
 
 - administration: add users administration panel
