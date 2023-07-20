@@ -33,6 +33,9 @@ def parse_user_data(user):
         "confirmed": user.confirmed_at is not None,
         "preferences": dict(user.preferences or {}),
         "profile": dict(user.user_profile or {}),
+        "blocked_at": user.blocked_at,
+        "suspended_at": user.suspended_at,
+        "verified_at": user.verified_at,
     }
 
     data["preferences"].setdefault("visibility", "restricted")
@@ -99,6 +102,12 @@ class UserAggregate(Record):
     confirmed = DictField("confirmed")
 
     preferences = DictField("preferences")
+
+    blocked_at = DictField("blocked_at")
+
+    suspended_at = DictField("suspended_at")
+
+    verified_at = DictField("verified_at")
 
     @property
     def avatar_chars(self):

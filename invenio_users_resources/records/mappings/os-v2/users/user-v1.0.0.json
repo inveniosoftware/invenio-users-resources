@@ -49,6 +49,15 @@
       "confirmed": {
         "type": "boolean"
       },
+      "blocked_at": {
+        "type": "date"
+      },
+      "suspended_at": {
+        "type": "date"
+      },
+      "verified_at": {
+        "type": "date"
+      },
       "username": {
         "type": "keyword"
       },

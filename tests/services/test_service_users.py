@@ -9,6 +9,7 @@
 """User service tests."""
 
 import pytest
+from invenio_access.permissions import system_identity
 from invenio_records_resources.services.errors import PermissionDeniedError
 
 
@@ -136,3 +137,93 @@ def test_read_self(user_service, users, username):
     assert res["email"] == user.email
     # Avatar can also be seen.
     user_service.read_avatar(user.identity, user.id)
+
+
+def test_search_permissions(app, db, user_service, user_moderator, user_res):
+    """Test service search for permissions."""
+    # User can search for himself
+    search = user_service.search(
+        user_res.identity, q=f"username:{user_res._user.username}"
+    )
+    assert search.total > 0
+    # TODO user should see  moderation fields such as 'verified_at'?
+
+    # User can't search for non-confirmed users
+    with pytest.raises(PermissionDeniedError):
+        user_service.search_all(user_res.identity, user_res.id)
+
+    # Moderator can search for any user
+    search = user_service.search_all(
+        user_moderator.identity, q=f"username:{user_res._user.username}"
+    )
+    assert search.total > 0
+
+
+def test_block(app, db, user_service, user_moderator, user_res):
+    """Test user block."""
+
+    with pytest.raises(PermissionDeniedError):
+        user_service.block(user_res.identity, user_res.id)
+
+    blocked = user_service.block(user_moderator.identity, user_res.id)
+    assert blocked
+
+    ur = user_service.read(user_res.identity, user_res.id)
+    # User can't see when it was blocked
+    assert not "blocked_at" in ur.data
+    # But can see it's not active
+    assert ur.data["active"] is False
+
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    # Moderator can see the blocked_at time
+    assert ur.data["blocked_at"] is not None
+
+    # TODO user is blocked, the user should not be able to search.
+    # search = user_service.search(user_res.identity, q=f"username:{ur._user.username}")
+    # assert search.total == 0
+
+    # Moderator can still search for the user
+    search = user_service.search_all(
+        user_moderator.identity, q=f"username:{user_res._user.username}"
+    )
+    assert search.total > 0
+
+
+def test_approve(user_service, user_res, user_moderator):
+    """Test approval of an user."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.block(user_res.identity, user_res.id)
+
+    approved = user_service.approve(user_moderator.identity, user_res.id)
+    assert approved
+
+    ur = user_service.read(user_res.identity, user_res.id)
+    # User can't see when it was approved
+    assert not "verified_at" in ur.data
+    # But can see it's active
+    assert ur.data["active"] is True
+
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    # Moderator can see when it was approved
+    assert "verified_at" in ur.data
+
+
+def test_suspend(user_service, user_res, user_moderator):
+    """Test suspension of an user."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.block(user_res.identity, user_res.id)
+
+    suspended = user_service.suspend(user_moderator.identity, user_res.id)
+    assert suspended
+
+    ur = user_service.read(user_res.identity, user_res.id)
+    # User can't see when it was suspended
+    assert not "suspended_at" in ur.data
+    # But can see it's not active
+    assert ur.data["active"] is False
+
+    # Moderator can still search for the user
+    search = user_service.search_all(
+        user_moderator.identity, q=f"username:{user_res._user.username}"
+    )
+    assert search.total > 0

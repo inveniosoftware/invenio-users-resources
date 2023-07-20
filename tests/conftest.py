@@ -17,11 +17,14 @@ fixtures are available.
 
 import pytest
 from flask_principal import AnonymousIdentity
+from invenio_access.models import ActionRoles
 from invenio_access.permissions import any_user as any_user_need
+from invenio_accounts.models import Role
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
 from marshmallow import fields
 
+from invenio_users_resources.permissions import user_moderation_action
 from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
@@ -100,6 +103,23 @@ def anon_identity():
     identity = AnonymousIdentity()
     identity.provides.add(any_user_need)
     return identity
+
+
+@pytest.fixture(scope="module")
+def user_moderator(UserFixture, app, database, users):
+    """Admin user for requests."""
+    action_name = user_moderation_action.value
+    moderator = users["user_moderator"]
+
+    role = Role(name=action_name)
+    database.session.add(role)
+
+    action_role = ActionRoles.create(action=user_moderation_action, role=role)
+    database.session.add(action_role)
+
+    moderator.user.roles.append(role)
+    database.session.commit()
+    return moderator
 
 
 @pytest.fixture(scope="module")
@@ -190,6 +210,21 @@ def users_data():
                 },
             },
         },
+        {
+            "username": "user_moderator",
+            "email": "user_moderator@inveniosoftware.org",
+            "profile": {
+                "full_name": "Mr",
+                "affiliations": "Admin",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "public",
+                "notifications": {
+                    "enabled": False,
+                },
+            },
+        },
     ]
 
 
@@ -211,6 +246,7 @@ def users(UserFixture, app, database, users_data):
         users[obj["username"]] = u
     current_users_service.indexer.process_bulk_queue()
     current_users_service.record_cls.index.refresh()
+    database.session.commit()
     return users
 
 
@@ -300,3 +336,9 @@ def user_notification_enabled(users):
 def user_notification_disabled(users):
     """User with notfications disabled."""
     return users["notification_disabled"]
+
+
+@pytest.fixture(scope="module")
+def user_admin(users):
+    """User with notfications disabled."""
+    return users["admin_user"]
