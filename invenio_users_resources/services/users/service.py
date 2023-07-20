@@ -10,12 +10,17 @@
 # details.
 
 """Users service."""
+from datetime import datetime
 
 from invenio_accounts.models import User
 from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
-from invenio_records_resources.services.uow import RecordCommitOp, unit_of_work
+from invenio_records_resources.services.uow import (
+    RecordCommitOp,
+    RecordIndexOp,
+    unit_of_work,
+)
 from invenio_search.engine import dsl
 
 from invenio_users_resources.services.results import AvatarResult
@@ -72,6 +77,25 @@ class UsersService(RecordService):
             **kwargs,
         )
 
+    def search_all(
+        self,
+        identity,
+        params=None,
+        search_preference=None,
+        extra_filters=None,
+        **kwargs
+    ):
+        """Search for all users, without restrictions."""
+        self.require_permission(identity, "search_all")
+
+        return super().search(
+            identity,
+            params=params,
+            search_preference=search_preference,
+            extra_filter=extra_filters,
+            **kwargs,
+        )
+
     def read(self, identity, id_):
         """Retrieve a user."""
         # resolve and require permission
@@ -102,4 +126,64 @@ class UsersService(RecordService):
         """Reindex all users managed by this service."""
         users = db.session.query(User.id).yield_per(1000)
         self.indexer.bulk_index([u.id for u in users])
+        return True
+
+    @unit_of_work()
+    def block(self, identity, id_, uow=None):
+        """Blocks an user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+
+        self.require_permission(identity, "block", record=user)
+
+        user.model.active = False
+        user.model.blocked_at = datetime.now()
+        user.model.verified_at = None
+        user.model.suspended_at = None
+
+        user.commit()
+
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        return True
+
+    @unit_of_work()
+    def approve(self, identity, id_, uow=None):
+        """Approves an user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+
+        self.require_permission(identity, "approve", record=user)
+
+        user.model.active = True
+        user.model.blocked_at = None
+        user.model.verified_at = datetime.now()
+        user.model.suspended_at = None
+
+        user.commit()
+
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        return True
+
+    @unit_of_work()
+    def suspend(self, identity, id_, uow=None):
+        """Approves an user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+
+        self.require_permission(identity, "suspend", record=user)
+
+        user.model.active = False
+        user.model.blocked_at = None
+        user.model.verified_at = None
+        user.model.suspended_at = datetime.now()
+
+        user.commit()
+
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
         return True

@@ -21,7 +21,7 @@ from invenio_records_resources.services.records.schema import (
     BaseRecordSchema,
 )
 from marshmallow import Schema, ValidationError, fields
-from marshmallow_utils.fields import SanitizedUnicode
+from marshmallow_utils.fields import ISODateString, SanitizedUnicode
 from marshmallow_utils.permissions import FieldPermissionsMixin
 
 
@@ -52,6 +52,9 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
         "active": "read_details",
         "confirmed": "read_details",
         "preferences": "read_details",
+        "blocked_at": "read_moderation_details",
+        "suspended_at": "read_moderation_details",
+        "verified_at": "read_moderation_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
@@ -63,6 +66,10 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     username = fields.String()
     profile = fields.Dict()
     preferences = fields.Nested(UserPreferencesSchema)
+
+    blocked_at = ISODateString()
+    suspended_at = ISODateString()
+    verified_at = ISODateString()
 
     def is_self(self, obj):
         """Determine if identity is the current identity."""

@@ -16,6 +16,8 @@ from itertools import chain
 from invenio_records_permissions.generators import Generator, UserNeed
 from invenio_search.engine import dsl
 
+from invenio_users_resources.permissions import user_moderation_action, user_moderator
+
 
 class IfPublic(Generator):
     """Generator for different permissions based on the visibility settings."""
@@ -108,3 +110,23 @@ class Self(Generator):
                     return dsl.Q("term", id=need.value)
 
         return []
+
+
+class UserModeration(Generator):
+    """Allows user-management."""
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [user_moderation_action]
+
+    def query_filter(self, identity=None, **kwargs):
+        """Filters for current identity as system process."""
+        if user_moderator in identity.provides:
+            # TODO we might want to have an umbrella "user_moderation" for some fields
+            return dsl.Q("match_all")
+        else:
+            return []

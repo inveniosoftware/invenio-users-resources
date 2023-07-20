@@ -72,6 +72,42 @@ class MockModel(dict, ABC):
         # TODO
         return False
 
+    @property
+    def blocked_at(self):
+        """Date when the user was blocked, if any."""
+        return self.model_obj.blocked_at
+
+    @blocked_at.setter
+    def blocked_at(self, value):
+        self.model_obj.blocked_at = value
+
+    @property
+    def suspended_at(self):
+        """Date when the user was suspended, if any."""
+        return self.model_obj.suspended_at
+
+    @suspended_at.setter
+    def suspended_at(self, value):
+        self.model_obj.suspended_at = value
+
+    @property
+    def verified_at(self):
+        """Date when the user was verified, if any."""
+        return self.model_obj.verified_at
+
+    @verified_at.setter
+    def verified_at(self, value):
+        self.model_obj.verified_at = value
+
+    @property
+    def active(self):
+        """Boolean flag to determine if a user is active."""
+        return self.model_obj.active
+
+    @active.setter
+    def active(self, value):
+        self.model_obj.active = value
+
 
 class UserAggregateModel(MockModel):
     """Mock model for glueing together various parts of user info."""
