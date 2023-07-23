@@ -23,6 +23,7 @@ from sqlalchemy.exc import NoResultFound
 from .proxies import current_users_service
 from .services.schemas import SystemUserSchema, UserGhostSchema, UserSchema
 from .services.users.config import UsersServiceConfig
+from .permissions import user_moderation_action
 
 
 class UserProxy(EntityProxy):
@@ -101,3 +102,31 @@ class UserResolver(EntityResolver):
     def _get_entity_proxy(self, ref_dict):
         """Return a UserProxy for the given reference dict."""
         return UserProxy(self, ref_dict)
+
+
+class UserModerationProxy(UserProxy):
+    """Resolver proxy for a User Moderation entity."""
+
+    def get_needs(self, ctx=None):
+        """Return user moderaction action need."""
+        # System process need is also valid for UserModeration actions
+        return [user_moderation_action, system_process]
+
+
+class UserModerationResolver(UserResolver):
+    """User moderation entity resolver.
+
+    The entity resolver enables Invenio-Requests to understand moderators as
+    receiver, as well as system process, enabling actions on requests.
+    """
+
+    type_id = "user_moderation"
+    """Type identifier for this resolver."""
+
+    def _reference_entity(self, entity):
+        """Create a reference dict for the given user."""
+        return {"user_moderation": str(entity.id)}
+
+    def _get_entity_proxy(self, ref_dict):
+        """Return a UserModerationProxy for the given reference dict."""
+        return UserModerationProxy(self, ref_dict)
