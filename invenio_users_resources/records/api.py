@@ -34,7 +34,6 @@ def parse_user_data(user):
         "preferences": dict(user.preferences or {}),
         "profile": dict(user.user_profile or {}),
         "blocked_at": user.blocked_at,
-        "suspended_at": user.suspended_at,
         "verified_at": user.verified_at,
     }
 
@@ -104,8 +103,6 @@ class UserAggregate(Record):
     preferences = DictField("preferences")
 
     blocked_at = DictField("blocked_at")
-
-    suspended_at = DictField("suspended_at")
 
     verified_at = DictField("verified_at")
 

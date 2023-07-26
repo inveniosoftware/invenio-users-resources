@@ -52,9 +52,8 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
         "active": "read_details",
         "confirmed": "read_details",
         "preferences": "read_details",
-        "blocked_at": "read_moderation_details",
-        "suspended_at": "read_moderation_details",
-        "verified_at": "read_moderation_details",
+        "blocked_at": "read_system_details",
+        "verified_at": "read_system_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
@@ -68,7 +67,6 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     preferences = fields.Nested(UserPreferencesSchema)
 
     blocked_at = ISODateString()
-    suspended_at = ISODateString()
     verified_at = ISODateString()
 
     def is_self(self, obj):

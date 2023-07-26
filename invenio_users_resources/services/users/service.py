@@ -136,12 +136,11 @@ class UsersService(RecordService):
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
 
-        self.require_permission(identity, "block", record=user)
+        self.require_permission(identity, "manage", record=user)
 
         user.model.active = False
-        user.model.blocked_at = datetime.now()
+        user.model.blocked_at = datetime.utcnow()
         user.model.verified_at = None
-        user.model.suspended_at = None
 
         user.commit()
 
@@ -156,12 +155,11 @@ class UsersService(RecordService):
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
 
-        self.require_permission(identity, "approve", record=user)
+        self.require_permission(identity, "manage", record=user)
 
         user.model.active = True
         user.model.blocked_at = None
-        user.model.verified_at = datetime.now()
-        user.model.suspended_at = None
+        user.model.verified_at = datetime.utcnow()
 
         user.commit()
 
@@ -169,19 +167,18 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
-    def suspend(self, identity, id_, uow=None):
-        """Approves an user."""
+    def deactivate(self, identity, id_, uow=None):
+        """Deactivates an user."""
         user = UserAggregate.get_record(id_)
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
 
-        self.require_permission(identity, "suspend", record=user)
+        self.require_permission(identity, "manage", record=user)
 
         user.model.active = False
         user.model.blocked_at = None
         user.model.verified_at = None
-        user.model.suspended_at = datetime.now()
 
         user.commit()
 

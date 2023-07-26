@@ -6,11 +6,8 @@
 # it under the terms of the MIT License; see LICENSE file for more details.
 """Users resources generic needs and permissions."""
 
-from flask_principal import RoleNeed
 from invenio_access import action_factory
-from invenio_access.permissions import Permission
 
-user_moderation_action = action_factory("user-moderation")
-user_moderation_permission = Permission(user_moderation_action)
+USER_MANAGEMENT_ACTION_NAME = "administration-moderation"
 
-user_moderator = RoleNeed("user-moderation")
+user_management_action = action_factory(USER_MANAGEMENT_ACTION_NAME)

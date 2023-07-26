@@ -11,19 +11,20 @@
 
 from types import SimpleNamespace
 
-from flask_principal import UserNeed
+from flask_principal import RoleNeed, UserNeed
 from invenio_access.permissions import system_process, system_user_id
-from invenio_accounts.models import User
+from invenio_accounts.models import Role, User
 from invenio_records_resources.references.entity_resolvers import (
     EntityProxy,
     EntityResolver,
 )
 from sqlalchemy.exc import NoResultFound
 
+from .permissions import user_management_action
 from .proxies import current_users_service
+from .services.groups.config import GroupsServiceConfig
 from .services.schemas import SystemUserSchema, UserGhostSchema, UserSchema
 from .services.users.config import UsersServiceConfig
-from .permissions import user_moderation_action
 
 
 class UserProxy(EntityProxy):
@@ -104,29 +105,54 @@ class UserResolver(EntityResolver):
         return UserProxy(self, ref_dict)
 
 
-class UserModerationProxy(UserProxy):
-    """Resolver proxy for a User Moderation entity."""
+class GroupProxy(EntityProxy):
+    """Resolver proxy for a Role entity."""
+
+    def _resolve(self):
+        """Resolve the User from the proxy's reference dict, or system_identity."""
+        # Resolves to role name, not id
+        role_id = self._parse_ref_dict_id()
+        try:
+            return Role.query.filter(
+                Role.name == role_id  # TODO to be changed to role id
+            ).one()
+        except NoResultFound:
+            return {}
+
+    def pick_resolved_fields(self, identity, resolved_dict):
+        """Select which fields to return when resolving the reference."""
+        serialized_role = {}
+
+        return serialized_role
 
     def get_needs(self, ctx=None):
-        """Return user moderaction action need."""
-        # System process need is also valid for UserModeration actions
-        return [user_moderation_action, system_process]
+        """Return needs based on the given roles."""
+        role_id = self._parse_ref_dict_id()
+        return [RoleNeed(role_id)]
 
 
-class UserModerationResolver(UserResolver):
-    """User moderation entity resolver.
+class GroupResolver(EntityResolver):
+    """Group entity resolver."""
 
-    The entity resolver enables Invenio-Requests to understand moderators as
-    receiver, as well as system process, enabling actions on requests.
-    """
-
-    type_id = "user_moderation"
+    type_id = "group"
     """Type identifier for this resolver."""
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__(GroupsServiceConfig.service_id)
+
+    def matches_reference_dict(self, ref_dict):
+        """Check if the reference dict references a role."""
+        return self._parse_ref_dict_type(ref_dict) == self.type_id
 
     def _reference_entity(self, entity):
         """Create a reference dict for the given user."""
-        return {"user_moderation": str(entity.id)}
+        return {"group": str(entity.id)}
+
+    def matches_entity(self, entity):
+        """Check if the entity is a Role."""
+        return isinstance(entity, Role)
 
     def _get_entity_proxy(self, ref_dict):
-        """Return a UserModerationProxy for the given reference dict."""
-        return UserModerationProxy(self, ref_dict)
+        """Return a GroupProxy for the given reference dict."""
+        return GroupProxy(self, ref_dict)
