@@ -24,7 +24,7 @@ from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
 from marshmallow import fields
 
-from invenio_users_resources.permissions import user_moderation_action
+from invenio_users_resources.permissions import user_management_action
 from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
@@ -108,13 +108,13 @@ def anon_identity():
 @pytest.fixture(scope="module")
 def user_moderator(UserFixture, app, database, users):
     """Admin user for requests."""
-    action_name = user_moderation_action.value
+    action_name = user_management_action.value
     moderator = users["user_moderator"]
 
     role = Role(name=action_name)
     database.session.add(role)
 
-    action_role = ActionRoles.create(action=user_moderation_action, role=role)
+    action_role = ActionRoles.create(action=user_management_action, role=role)
     database.session.add(action_role)
 
     moderator.user.roles.append(role)

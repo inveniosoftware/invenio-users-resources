@@ -10,20 +10,29 @@
 
 from invenio_records_permissions import BasePermissionPolicy
 from invenio_records_permissions.generators import (
+    AdminAction,
     AnyUser,
     AuthenticatedUser,
     SystemProcess,
 )
 
-from .generators import IfPublicEmail, IfPublicUser, Self, UserModeration
+from invenio_users_resources.permissions import user_management_action
+
+from .generators import IfPublicEmail, IfPublicUser, Self
+
+UserManager = AdminAction(user_management_action)
 
 
 class UsersPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
     can_create = [SystemProcess()]
-    can_read = [UserModeration(), IfPublicUser([AnyUser()], [Self()]), SystemProcess()]
-    can_search = [UserModeration(), AuthenticatedUser(), SystemProcess()]
+    can_read = [
+        UserManager,
+        IfPublicUser([AnyUser()], [Self()]),
+        SystemProcess(),
+    ]
+    can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
@@ -31,11 +40,9 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_read_details = [Self(), SystemProcess()]
 
     # Moderation permissions
-    can_block = [UserModeration(), SystemProcess()]
-    can_approve = [UserModeration(), SystemProcess()]
-    can_suspend = [UserModeration(), SystemProcess()]
-    can_search_all = [UserModeration(), SystemProcess()]
-    can_read_moderation_details = [UserModeration(), SystemProcess()]
+    can_manage = [UserManager, SystemProcess()]
+    can_search_all = [UserManager, SystemProcess()]
+    can_read_system_details = [UserManager, SystemProcess()]
 
 
 class GroupsPermissionPolicy(BasePermissionPolicy):

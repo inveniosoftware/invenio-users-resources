@@ -146,7 +146,6 @@ def test_search_permissions(app, db, user_service, user_moderator, user_res):
         user_res.identity, q=f"username:{user_res._user.username}"
     )
     assert search.total > 0
-    # TODO user should see  moderation fields such as 'verified_at'?
 
     # User can't search for non-confirmed users
     with pytest.raises(PermissionDeniedError):
@@ -208,18 +207,16 @@ def test_approve(user_service, user_res, user_moderator):
     assert "verified_at" in ur.data
 
 
-def test_suspend(user_service, user_res, user_moderator):
-    """Test suspension of an user."""
+def test_deactivate(user_service, user_res, user_moderator):
+    """Test deactivation of an user."""
     with pytest.raises(PermissionDeniedError):
         user_service.block(user_res.identity, user_res.id)
 
-    suspended = user_service.suspend(user_moderator.identity, user_res.id)
-    assert suspended
+    deactivated = user_service.deactivate(user_moderator.identity, user_res.id)
+    assert deactivated
 
     ur = user_service.read(user_res.identity, user_res.id)
-    # User can't see when it was suspended
-    assert not "suspended_at" in ur.data
-    # But can see it's not active
+    # User can see it's not active
     assert ur.data["active"] is False
 
     # Moderator can still search for the user
