@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.1.2 (2023-07-31)
+
+- settings notifications: Layout and a11y fixes
+
 Version 2.1.1 (2023-07-12)
 
 - users: make username optional on expansion
