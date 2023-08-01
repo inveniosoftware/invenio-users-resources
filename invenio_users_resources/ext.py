@@ -9,6 +9,7 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
+from importlib_metadata import entry_points
 from invenio_accounts.proxies import current_db_change_history
 from invenio_accounts.signals import datastore_post_commit, datastore_pre_commit
 from invenio_db import db
@@ -44,6 +45,7 @@ class InvenioUsersResources(object):
         self.init_services(app)
         self.init_resources(app)
         self.init_db_hooks()
+        self.init_actions_registry()
         app.extensions["invenio-users-resources"] = self
 
     def init_config(self, app):
@@ -86,3 +88,20 @@ class InvenioUsersResources(object):
             # exception is caught and then the session is commited,
             # the sets might not reflect all the users that were changed.
             current_db_change_history.clear_dirty_sets(session)
+
+    def init_actions_registry(self):
+        """Initialises moderation actions registry."""
+        self.actions_registry = {}
+        self._register_entry_point(
+            self.actions_registry,
+            "invenio_users_resources.moderation.actions",
+        )
+
+    def _register_entry_point(self, registry, ep_name):
+        """Load entry points into the given registry."""
+        for ep in set(entry_points(group=ep_name)):
+            # Entry point has the action as the name (e.g. invenio_users_resources.moderation.actions.block = ... , 'block' is the name)
+            action_name = ep.name
+            action = ep.load()
+            assert callable(action)
+            registry.setdefault(action_name, []).append(action)

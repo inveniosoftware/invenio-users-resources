@@ -25,3 +25,8 @@ current_groups_service = LocalProxy(
     lambda: current_app.extensions["invenio-users-resources"].groups_service
 )
 """Proxy for the currently instantiated user groups service."""
+
+current_actions_registry = LocalProxy(
+    lambda: current_app.extensions["invenio-users-resources"].actions_registry
+)
+"""Proxy for the currently instantiated actions registry."""

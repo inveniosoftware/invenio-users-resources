@@ -107,6 +107,11 @@ class UserAggregate(Record):
     verified_at = DictField("verified_at")
 
     @property
+    def is_verified(self):
+        """Computed property for user verification status."""
+        return self.verified_at is not None
+
+    @property
     def avatar_chars(self):
         """Get avatar characters for user."""
         text = None
