@@ -19,11 +19,13 @@ from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import (
     RecordCommitOp,
     RecordIndexOp,
+    TaskOp,
     unit_of_work,
 )
 from invenio_search.engine import dsl
 
 from invenio_users_resources.services.results import AvatarResult
+from invenio_users_resources.services.users.tasks import execute_moderation_actions
 
 from ...records.api import UserAggregate
 
@@ -130,7 +132,7 @@ class UsersService(RecordService):
 
     @unit_of_work()
     def block(self, identity, id_, uow=None):
-        """Blocks an user."""
+        """Blocks a user."""
         user = UserAggregate.get_record(id_)
         if user is None:
             # return 403 even on empty resource due to security implications
@@ -144,12 +146,15 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        uow.register(RecordIndexOp(user, indexer=self.indexer))
+
+        # Register a task to execute callback actions asynchronously, after committing the user
+        uow.register(TaskOp(execute_moderation_actions, user.id, "block"))
         return True
 
     @unit_of_work()
-    def approve(self, identity, id_, uow=None):
-        """Approves an user."""
+    def restore(self, identity, id_, uow=None):
+        """Restores a user."""
         user = UserAggregate.get_record(id_)
         if user is None:
             # return 403 even on empty resource due to security implications
@@ -163,12 +168,38 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        # User is blocked from now on, "after" actions are executed separately.
+        uow.register(RecordIndexOp(user, indexer=self.indexer))
+
+        # Register a task to execute callback actions asynchronously, after committing the user
+        uow.register(TaskOp(execute_moderation_actions, user.id, "restore"))
+        return True
+
+    @unit_of_work()
+    def approve(self, identity, id_, uow=None):
+        """Approves a user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+
+        self.require_permission(identity, "manage", record=user)
+
+        user.model.active = True
+        user.model.blocked_at = None
+        user.model.verified_at = datetime.utcnow()
+
+        user.commit()
+
+        uow.register(RecordIndexOp(user, indexer=self.indexer))
+
+        # Register a task to execute callback actions asynchronously, after committing the user
+        uow.register(TaskOp(execute_moderation_actions, user.id, "approve"))
         return True
 
     @unit_of_work()
     def deactivate(self, identity, id_, uow=None):
-        """Deactivates an user."""
+        """Deactivates a user."""
         user = UserAggregate.get_record(id_)
         if user is None:
             # return 403 even on empty resource due to security implications
@@ -182,5 +213,5 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        uow.register(RecordIndexOp(user, indexer=self.indexer))
         return True

@@ -12,6 +12,20 @@ import pytest
 from invenio_access.permissions import system_identity
 from invenio_records_resources.services.errors import PermissionDeniedError
 
+from invenio_users_resources.proxies import current_actions_registry
+
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_action_registry(monkeypatch, user_service):
+    """Mocks action to registry entirely.
+
+    Monkeypatches the registry to be modified only for testing.
+    """
+
+    for key in current_actions_registry:
+        monkeypatch.setitem(current_actions_registry, key, [])
+    return True
+
 
 #
 # Search
@@ -224,3 +238,86 @@ def test_deactivate(user_service, user_res, user_moderator):
         user_moderator.identity, q=f"username:{user_res._user.username}"
     )
     assert search.total > 0
+
+
+def test_non_existent_user_management(user_service, user_moderator):
+    """Try to manage a non-existent user."""
+    fake_user_id = 1000
+    funcs = [
+        user_service.block,
+        user_service.approve,
+        user_service.deactivate,
+        user_service.restore,
+    ]
+    for f in funcs:
+        with pytest.raises(PermissionDeniedError):
+            f(user_moderator.identity, fake_user_id)
+
+
+def test_restore(user_service, user_res, user_moderator):
+    """Test restore of a user."""
+    blocked = user_service.block(user_moderator.identity, user_res.id)
+    assert blocked
+
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    assert ur.data["active"] == False
+    assert ur.data["blocked_at"] is not None
+
+    restored = user_service.restore(user_moderator.identity, user_res.id)
+    assert restored
+
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    assert ur.data["active"] == True
+    assert ur.data["verified_at"] is not None
+    assert not "blocked_at" in ur.data
+
+
+def test_moderation_callbacks_success(
+    user_service, user_res, user_moderator, monkeypatch
+):
+    """Test moderation actions (post block / restore)."""
+
+    def _block_action(user_id, uow=None):
+        """Action to execute after blocking a user."""
+        # This action is not useful at all, is just a way of testing that it is executed when blocking a user
+        user_service.approve(system_identity, user_id, uow=uow)
+
+    monkeypatch.setitem(current_actions_registry, "block", [_block_action])
+    blocked = user_service.block(user_moderator.identity, user_res.id)
+    assert blocked
+
+    # Registered action will approve the user, not block them.
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    assert ur.data["active"] == True
+
+
+def test_moderation_callbacks_failure(
+    user_service, user_res, user_moderator, monkeypatch
+):
+    """Test moderation actions (post block).
+
+    This aims to test multiple behaviours:
+    - If a callback fails, no changes are committed.
+    - Even if a callback fails, the user block is committed.
+    """
+
+    def _block_action_success(user_id, uow=None):
+        """Action to execute after blocking a user."""
+        user_service.approve(system_identity, user_id, uow=uow)
+
+    def _block_action_failure(user_id, uow=None):
+        """Action raises an exception."""
+        raise Exception("Callback failed")
+
+    monkeypatch.setitem(
+        current_actions_registry,
+        "block",
+        [_block_action_success, _block_action_failure],
+    )
+    blocked = user_service.block(user_moderator.identity, user_res.id)
+    assert blocked
+
+    # Registered callbacks will fail and their result won't be committed.
+    ur = user_service.read(user_moderator.identity, user_res.id)
+    assert ur.data["active"] == False
+    assert "blocked_at" in ur.data
