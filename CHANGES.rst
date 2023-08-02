@@ -8,6 +8,12 @@
 Changes
 =======
 
+Version 2.2.0 (2023-08-02)
+
+- users: added user moderation actions
+- users: added user moderation permissions
+- users: added user moderation request entity resolution
+
 Version 2.1.2 (2023-07-31)
 
 - settings notifications: Layout and a11y fixes
