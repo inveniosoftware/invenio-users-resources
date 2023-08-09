@@ -1,5 +1,5 @@
 ..
-    Copyright (C) 2022 CERN.
+    Copyright (C) 2023 CERN.
 
     Invenio-Users-Resources is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -7,6 +7,11 @@
 
 Changes
 =======
+
+Version 2.3.0 (2023-08-09)
+
+- add actions registry
+- add post action task operation on user block/restore/approve
 
 Version 2.2.0 (2023-08-02)
 
