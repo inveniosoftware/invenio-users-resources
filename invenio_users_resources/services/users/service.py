@@ -146,7 +146,7 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer))
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(TaskOp(execute_moderation_actions, user.id, "block"))
@@ -169,7 +169,7 @@ class UsersService(RecordService):
         user.commit()
 
         # User is blocked from now on, "after" actions are executed separately.
-        uow.register(RecordIndexOp(user, indexer=self.indexer))
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(TaskOp(execute_moderation_actions, user.id, "restore"))
@@ -191,7 +191,7 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer))
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(TaskOp(execute_moderation_actions, user.id, "approve"))
@@ -213,5 +213,5 @@ class UsersService(RecordService):
 
         user.commit()
 
-        uow.register(RecordIndexOp(user, indexer=self.indexer))
+        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
         return True
