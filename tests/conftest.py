@@ -287,9 +287,22 @@ def group2(database):
 
 
 @pytest.fixture(scope="module")
-def groups(database, group, group2):
-    """A single group."""
-    roles = [group, group2]
+def not_managed_group(database):
+    """An unmanaged group."""
+    r = _create_group(
+        id="not-managed-dep",
+        name="not-managed-dep",
+        description="A group which is not managed",
+        is_managed=False,
+        database=database,
+    )
+    return r
+
+
+@pytest.fixture(scope="module")
+def groups(database, group, group2, not_managed_group):
+    """Available indexed groups."""
+    roles = [group, group2, not_managed_group]
 
     current_groups_service.indexer.process_bulk_queue()
     current_groups_service.record_cls.index.refresh()

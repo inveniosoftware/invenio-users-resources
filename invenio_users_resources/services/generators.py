@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2023 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -111,7 +112,7 @@ class Self(Generator):
         return []
 
 
-class IfNotManaged(Generator):
+class IfGroupNotManaged(Generator):
     """Generator for managed group access."""
 
     def __init__(self, then_, else_):
@@ -151,7 +152,7 @@ class IfNotManaged(Generator):
     def query_filter(self, **kwargs):
         """Filters for queries."""
         q_all = dsl.Q("match_all")
-        q_public = dsl.Q("match", **{self._field_name: False})
+        q_not_managed = dsl.Q("match", **{self._field_name: False})
         then_query = self.make_query(self.then_, **kwargs)
         else_query = self.make_query(self.else_, **kwargs)
 
@@ -162,4 +163,4 @@ class IfNotManaged(Generator):
                 if need in identity.provides:
                     return q_all & else_query
 
-        return q_public & then_query
+        return q_not_managed & then_query
