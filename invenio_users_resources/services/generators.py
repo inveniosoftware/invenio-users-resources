@@ -13,6 +13,7 @@ import operator
 from functools import reduce
 from itertools import chain
 
+from invenio_records.dictutils import dict_lookup
 from invenio_records_permissions.generators import Generator, UserNeed
 from invenio_search.engine import dsl
 
@@ -108,3 +109,57 @@ class Self(Generator):
                     return dsl.Q("term", id=need.value)
 
         return []
+
+
+class IfNotManaged(Generator):
+    """Generator for managed group access."""
+
+    def __init__(self, then_, else_):
+        """Constructor."""
+        self._field_name = "is_managed"
+        self.then_ = then_
+        self.else_ = else_
+
+    def _generators(self, record):
+        """Get the "then" or "else" generators."""
+        if record is None:
+            return self.else_
+
+        is_managed = dict_lookup(record, self._field_name)
+        return self.then_ if not is_managed else self.else_
+
+    def needs(self, record=None, **kwargs):
+        """Set of Needs granting permission."""
+        needs_chain = chain.from_iterable(
+            [g.needs(record=record, **kwargs) for g in self._generators(record)]
+        )
+        return list(set(needs_chain))
+
+    def excludes(self, record=None, **kwargs):
+        """Set of Needs denying permission."""
+        needs_chain = chain.from_iterable(
+            [g.excludes(record=record, **kwargs) for g in self._generators(record)]
+        )
+        return list(set(needs_chain))
+
+    def make_query(self, generators, **kwargs):
+        """Make a query for one set of generators."""
+        queries = [g.query_filter(**kwargs) for g in generators]
+        queries = [q for q in queries if q]
+        return reduce(operator.or_, queries) if queries else None
+
+    def query_filter(self, **kwargs):
+        """Filters for queries."""
+        q_all = dsl.Q("match_all")
+        q_public = dsl.Q("match", **{self._field_name: False})
+        then_query = self.make_query(self.then_, **kwargs)
+        else_query = self.make_query(self.else_, **kwargs)
+
+        identity = kwargs.get("identity", None)
+
+        if identity:
+            for need in self.needs(**kwargs):
+                if need in identity.provides:
+                    return q_all & else_query
+
+        return q_public & then_query
