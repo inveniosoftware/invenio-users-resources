@@ -9,16 +9,21 @@
 """Groups resource tests."""
 
 
-def test_group_avatar(app, client, group, user_pub):
-    res = client.get(f"/groups/{group.name}/avatar.svg")
+def test_group_avatar(app, client, group, not_managed_group, user_pub):
+    res = client.get(f"/groups/{not_managed_group.name}/avatar.svg")
     assert res.status_code == 403
 
     user_pub.login(client)
 
-    res = client.get(f"/groups/{group.name}/avatar.svg")
+    # unmanaged group can be retrieved
+    res = client.get(f"/groups/{not_managed_group.name}/avatar.svg")
     assert res.status_code == 200
     assert res.mimetype == "image/svg+xml"
     data = res.get_data()
+
+    # managed group can *not* be retrieved
+    res = client.get(f"/groups/{group.name}/avatar.svg")
+    assert res.status_code == 403
 
 
 # TODO: test conditional requests
