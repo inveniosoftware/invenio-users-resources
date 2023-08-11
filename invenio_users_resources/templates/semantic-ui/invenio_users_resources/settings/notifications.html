@@ -37,7 +37,7 @@ details.
 
                 <div class="ui toggle on-off checkbox">
                   <input type="checkbox" name="{{ enabled_field.id }}" id="{{ enabled_field.id }}" {{ 'checked' if
-                    current_user.preferences.get("notifications", {})["enabled"] else "" }}>
+                    current_user.preferences.get("notifications", {}).get("enabled", True) else "" }}>
                   <label></label>
                 </div>
               </div>
