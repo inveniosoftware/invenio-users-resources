@@ -169,6 +169,9 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
+    @lock_user_moderation(
+        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
+    )
     def restore(self, identity, id_, uow=None):
         """Restores a user."""
         user = UserAggregate.get_record(id_)
@@ -194,6 +197,9 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
+    @lock_user_moderation(
+        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
+    )
     def approve(self, identity, id_, uow=None):
         """Approves a user."""
         user = UserAggregate.get_record(id_)
@@ -218,6 +224,9 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
+    @lock_user_moderation(
+        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
+    )
     def deactivate(self, identity, id_, uow=None):
         """Deactivates a user."""
         user = UserAggregate.get_record(id_)
