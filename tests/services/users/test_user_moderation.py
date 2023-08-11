@@ -12,45 +12,31 @@ These tests are separate from the service because this module will test collater
 """
 
 import time
+from unittest.mock import MagicMock
 
 import pytest
 from invenio_access.permissions import system_identity
 from invenio_cache.lock import CachedMutex
-from invenio_cache.proxies import current_cache
 
 from invenio_users_resources.proxies import current_actions_registry
 
 
-@pytest.fixture(scope="function", autouse=True)
-def clear_cache():
-    """Clear cache after each test in this module.
-
-    Locking is done using cache, therefore the cache must be cleared after each test to make sure that locks from previous tests are cleared.
-    """
-    current_cache.cache.clear()
-
-
 def test_moderation_callbacks_success(
-    user_service, user_res, user_moderator, monkeypatch
+    user_service, user_res, user_moderator, monkeypatch, clear_cache
 ):
     """Test moderation actions (post block / restore)."""
 
-    def _block_action(user_id, uow=None):
-        """Action to execute after blocking a user."""
-        # This action is not useful at all, is just a way of testing that it is executed when blocking a user
-        user_service.approve(system_identity, user_id, uow=uow)
-
-    monkeypatch.setitem(current_actions_registry, "block", [_block_action])
+    mocked_method = MagicMock(return_value=True)
+    monkeypatch.setitem(current_actions_registry, "block", [mocked_method])
     blocked = user_service.block(user_moderator.identity, user_res.id)
     assert blocked
 
-    # Registered action will approve the user, not block them.
-    ur = user_service.read(user_moderator.identity, user_res.id)
-    assert ur.data["active"] == True
+    # Verify that the callback was called once
+    mocked_method.assert_called_once()
 
 
 def test_moderation_callbacks_failure(
-    user_service, user_res, user_moderator, monkeypatch
+    user_service, user_res, user_moderator, monkeypatch, clear_cache
 ):
     """Test moderation actions (post block).
 
@@ -82,41 +68,36 @@ def test_moderation_callbacks_failure(
 
 
 def test_moderation_callbacks_lock(
-    app, user_service, user_res, user_moderator, monkeypatch
+    app, user_service, user_res, user_moderator, monkeypatch, clear_cache
 ):
     """Tests the 'simplest' flow for user moderation in terms of locks (e.g. mutex).
 
     This test validates the basic flow of user moderation in terms of locks. The scenario involves the following steps:
 
         1. A user is blocked by a moderator.
-        2. An action is executed after blocking the user (approved in this case).
+        2. An action is executed after blocking the user (nothing happens).
         3. The test checks that the user's lock is removed by the celery task, indicating successful moderation.
         4. The test verifies that the user's data is consistent (user is approved and not blocked).
     """
 
-    def _block_action_success(user_id, uow=None):
-        """Action to execute after blocking a user."""
-        user_service.approve(system_identity, user_id, uow=uow)
-
+    mocked_method = MagicMock(return_value=True)
     monkeypatch.setitem(
         current_actions_registry,
         "block",
-        [_block_action_success],
+        [mocked_method],
     )
 
     blocked = user_service.block(user_moderator.identity, user_res.id)
     assert blocked
+
+    # Verify the callback was called. After this, the lock should be released.
+    mocked_method.assert_called_once()
 
     # If the lock does not exist, it was removed by the celery task
     lock_prefix = app.config["USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX"]
     lock_id = f"{lock_prefix}.{user_res.id}"
     lock = CachedMutex(lock_id)
     assert not lock.exists()
-
-    # The after action was executed
-    ur = user_service.read(user_moderator.identity, user_res.id)
-    assert ur.data["active"] == True
-    assert "blocked_at" not in ur.data
 
 
 @pytest.mark.parametrize(
@@ -132,6 +113,7 @@ def test_moderation_callbacks_lock_renewal(
     default_timeout,
     renewal_timeout,
     expected_lock_state,
+    clear_cache,
 ):
     """Tests whether the lock is renewed after moderating a user.
 
