@@ -112,6 +112,11 @@ class UserAggregate(Record):
         return self.verified_at is not None
 
     @property
+    def is_blocked(self):
+        """Computed property for blocked status."""
+        return self.blocked_at is not None
+
+    @property
     def avatar_chars(self):
         """Get avatar characters for user."""
         text = None

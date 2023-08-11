@@ -11,12 +11,19 @@
 
 from celery import shared_task
 from flask import current_app
+from invenio_cache.decorators import lock_if_renew
+from invenio_cache.lock import CachedMutex
 from invenio_records_resources.services.uow import UnitOfWork
 from invenio_records_resources.tasks import send_change_notifications
 from invenio_search.engine import search
+from werkzeug.local import LocalProxy
 
 from ...proxies import current_actions_registry, current_users_service
 from ...records.api import UserAggregate
+
+renewal_timeout = LocalProxy(
+    lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_RENEWAL_TIMEOUT")
+)
 
 
 @shared_task(ignore_result=True)
@@ -57,12 +64,25 @@ def unindex_users(user_ids):
             current_app.logger.warn(f"Could not bulk-unindex users: {e}")
 
 
-@shared_task(ignore_result=True)
-def execute_moderation_actions(user_id, action):
+@shared_task(ignore_result=True, acks_late=True, retry=True)
+@lock_if_renew(
+    lock_prefix="user_moderation_lock",
+    arg_name="user_id",
+    timeout=renewal_timeout,
+    lock_cls=CachedMutex,
+)
+def execute_moderation_actions(user_id=None, action=None):
     """Execute moderation actions.
 
     Callbacks share the same UOW to guarantee data consistency.
     If any callback fails, then the error is logged and the UOW rolledback.
+
+    Why ``acks_late``:
+     - in case the worker fails unexpectedly.
+    Why ``retry``:
+        - if a task fails to acquire the lock, it raises an exception. It can be retried later, maybe the lock is released by then.
+
+    The decorator ``lock_if_renew`` will renew the existing lock on the user.
     """
     actions = current_actions_registry.get(action, [])
 
