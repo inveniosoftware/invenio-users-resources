@@ -22,6 +22,7 @@ from invenio_access.permissions import any_user as any_user_need
 from invenio_accounts.models import Role
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
+from invenio_cache.proxies import current_cache
 from marshmallow import fields
 
 from invenio_users_resources.permissions import user_management_action
@@ -355,3 +356,12 @@ def user_notification_disabled(users):
 def user_admin(users):
     """User with notfications disabled."""
     return users["admin_user"]
+
+
+@pytest.fixture(scope="function")
+def clear_cache():
+    """Clear cache after each test in this module.
+
+    Locking is done using cache, therefore the cache must be cleared after each test to make sure that locks from previous tests are cleared.
+    """
+    current_cache.cache.clear()
