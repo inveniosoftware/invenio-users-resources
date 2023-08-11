@@ -12,6 +12,7 @@
 """Users service."""
 from datetime import datetime
 
+from flask import current_app
 from invenio_accounts.models import User
 from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
@@ -23,11 +24,21 @@ from invenio_records_resources.services.uow import (
     unit_of_work,
 )
 from invenio_search.engine import dsl
+from werkzeug.local import LocalProxy
 
+from invenio_users_resources.services.decorators import lock_user_moderation
 from invenio_users_resources.services.results import AvatarResult
 from invenio_users_resources.services.users.tasks import execute_moderation_actions
 
 from ...records.api import UserAggregate
+
+mod_lock_prefix = LocalProxy(
+    lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX")
+)
+
+mod_lock_timeout = LocalProxy(
+    lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT")
+)
 
 
 class UsersService(RecordService):
@@ -85,7 +96,7 @@ class UsersService(RecordService):
         params=None,
         search_preference=None,
         extra_filters=None,
-        **kwargs
+        **kwargs,
     ):
         """Search for all users, without restrictions."""
         self.require_permission(identity, "search_all")
@@ -131,6 +142,9 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
+    @lock_user_moderation(
+        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
+    )
     def block(self, identity, id_, uow=None):
         """Blocks a user."""
         user = UserAggregate.get_record(id_)
@@ -149,7 +163,9 @@ class UsersService(RecordService):
         uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
-        uow.register(TaskOp(execute_moderation_actions, user.id, "block"))
+        uow.register(
+            TaskOp(execute_moderation_actions, user_id=user.id, action="block")
+        )
         return True
 
     @unit_of_work()
@@ -172,7 +188,9 @@ class UsersService(RecordService):
         uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
-        uow.register(TaskOp(execute_moderation_actions, user.id, "restore"))
+        uow.register(
+            TaskOp(execute_moderation_actions, user_id=user.id, action="restore")
+        )
         return True
 
     @unit_of_work()
@@ -194,7 +212,9 @@ class UsersService(RecordService):
         uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
-        uow.register(TaskOp(execute_moderation_actions, user.id, "approve"))
+        uow.register(
+            TaskOp(execute_moderation_actions, user_id=user.id, action="approve")
+        )
         return True
 
     @unit_of_work()
