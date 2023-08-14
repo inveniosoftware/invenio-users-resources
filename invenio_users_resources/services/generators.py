@@ -10,61 +10,41 @@
 
 """Permission generators for users and groups."""
 
-import operator
-from functools import reduce
-from itertools import chain
 
 from invenio_records.dictutils import dict_lookup
-from invenio_records_permissions.generators import Generator, UserNeed
+from invenio_records_permissions.generators import (
+    ConditionalGenerator,
+    Generator,
+    UserNeed,
+)
 from invenio_search.engine import dsl
 
 
-class IfPublic(Generator):
+class IfPublic(ConditionalGenerator):
     """Generator for different permissions based on the visibility settings."""
 
-    def __init__(self, field_name, then_, else_):
+    def __init__(self, field_name, then_, else_, **kwargs):
         """Constructor."""
+        super().__init__(then_=then_, else_=else_, **kwargs)
         self._field_name = field_name
-        self.then_ = then_
-        self.else_ = else_
 
-    def _generators(self, record):
-        """Get the "then" or "else" generators."""
+    def _condition(self, record=None, **kwargs):
+        """Condition to choose generators set."""
         if record is None:
-            return self.else_
+            return False
 
         visibility = record.preferences.get(self._field_name, "restricted")
         is_public = visibility == "public"
 
-        return self.then_ if is_public else self.else_
-
-    def needs(self, record=None, **kwargs):
-        """Set of Needs granting permission."""
-        needs_chain = chain.from_iterable(
-            [g.needs(record=record, **kwargs) for g in self._generators(record)]
-        )
-        return list(set(needs_chain))
-
-    def excludes(self, record=None, **kwargs):
-        """Set of Needs denying permission."""
-        needs_chain = chain.from_iterable(
-            [g.excludes(record=record, **kwargs) for g in self._generators(record)]
-        )
-        return list(set(needs_chain))
-
-    def make_query(self, generators, **kwargs):
-        """Make a query for one set of generators."""
-        queries = [g.query_filter(**kwargs) for g in generators]
-        queries = [q for q in queries if q]
-        return reduce(operator.or_, queries) if queries else None
+        return is_public
 
     def query_filter(self, **kwargs):
         """Filters for queries."""
         field = f"preferences.{self._field_name}"
         q_public = dsl.Q("match", **{field: "public"})
         q_restricted = dsl.Q("match", **{field: "restricted"})
-        then_query = self.make_query(self.then_, **kwargs)
-        else_query = self.make_query(self.else_, **kwargs)
+        then_query = self._make_query(self.then_, **kwargs)
+        else_query = self._make_query(self.else_, **kwargs)
 
         if then_query and else_query:
             return (q_public & then_query) | (q_restricted & else_query)
@@ -112,49 +92,28 @@ class Self(Generator):
         return []
 
 
-class IfGroupNotManaged(Generator):
+class IfGroupNotManaged(ConditionalGenerator):
     """Generator for managed group access."""
 
-    def __init__(self, then_, else_):
+    def __init__(self, then_, else_, **kwargs):
         """Constructor."""
+        super().__init__(then_=then_, else_=else_, **kwargs)
         self._field_name = "is_managed"
-        self.then_ = then_
-        self.else_ = else_
 
-    def _generators(self, record):
-        """Get the "then" or "else" generators."""
+    def _condition(self, record, **kwargs):
+        """Condition to choose generators set."""
         if record is None:
-            return self.else_
+            return False
 
         is_managed = dict_lookup(record, self._field_name)
-        return self.then_ if not is_managed else self.else_
-
-    def needs(self, record=None, **kwargs):
-        """Set of Needs granting permission."""
-        needs_chain = chain.from_iterable(
-            [g.needs(record=record, **kwargs) for g in self._generators(record)]
-        )
-        return list(set(needs_chain))
-
-    def excludes(self, record=None, **kwargs):
-        """Set of Needs denying permission."""
-        needs_chain = chain.from_iterable(
-            [g.excludes(record=record, **kwargs) for g in self._generators(record)]
-        )
-        return list(set(needs_chain))
-
-    def make_query(self, generators, **kwargs):
-        """Make a query for one set of generators."""
-        queries = [g.query_filter(**kwargs) for g in generators]
-        queries = [q for q in queries if q]
-        return reduce(operator.or_, queries) if queries else None
+        return not is_managed
 
     def query_filter(self, **kwargs):
         """Filters for queries."""
         q_all = dsl.Q("match_all")
         q_not_managed = dsl.Q("match", **{self._field_name: False})
-        then_query = self.make_query(self.then_, **kwargs)
-        else_query = self.make_query(self.else_, **kwargs)
+        then_query = self._make_query(self.then_, **kwargs)
+        else_query = self._make_query(self.else_, **kwargs)
 
         identity = kwargs.get("identity", None)
 
