@@ -38,6 +38,10 @@ class UsersResource(RecordResource):
             route("GET", routes["list"], self.search),
             route("GET", routes["item"], self.read),
             route("GET", routes["item-avatar"], self.avatar),
+            route("POST", routes["approve"], self.approve),
+            route("POST", routes["block"], self.block),
+            route("POST", routes["restore"], self.restore),
+            route("POST", routes["deactivate"], self.deactivate),
         ]
 
     @request_search_args
@@ -78,3 +82,39 @@ class UsersResource(RecordResource):
             last_modified=avatar.last_modified,
             max_age=avatar.max_age,
         )
+
+    @request_view_args
+    def approve(self):
+        """Read a user."""
+        self.service.approve(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 200
+
+    @request_view_args
+    def block(self):
+        """Read a user."""
+        self.service.block(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 200
+
+    @request_view_args
+    def restore(self):
+        """Read a user."""
+        self.service.restore(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 200
+
+    @request_view_args
+    def deactivate(self):
+        """Read a user."""
+        self.service.deactivate(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 200
