@@ -98,6 +98,52 @@ def test_user_avatar(client, user_pub):
     data = res.get_data()
 
 
+#
+# Management / moderation
+#
+
+
+def test_approve_user(client, headers, user_pub, user_moderator, db):
+    """Tests approve user endpoint."""
+    client = user_moderator.login(client)
+    res = client.post(f"/users/{user_pub.id}/approve", headers=headers)
+    assert res.status_code == 200
+
+    res = client.get(f"/users/{user_pub.id}")
+    assert res.status_code == 200
+    assert res.json["verified_at"] is not None
+
+
+def test_block_user(client, headers, user_pub, user_moderator, db):
+    """Tests block user endpoint."""
+    client = user_moderator.login(client)
+    res = client.post(f"/users/{user_pub.id}/block", headers=headers)
+    assert res.status_code == 200
+
+    res = client.get(f"/users/{user_pub.id}")
+    assert res.status_code == 200
+    assert res.json["blocked_at"] is not None
+
+
+def test_deactivate_user(client, headers, user_pub, user_moderator, db):
+    """Tests deactivate user endpoint."""
+    client = user_moderator.login(client)
+    res = client.post(f"/users/{user_pub.id}/deactivate", headers=headers)
+    assert res.status_code == 200
+
+    res = client.get(f"/users/{user_pub.id}")
+    assert res.status_code == 200
+    assert res.json["active"] == False
+
+
+def test_management_permissions(client, headers, user_pub, db):
+    """Test permissions at the resource level."""
+    client = user_pub.login(client)
+    res = client.post(f"/users/{user_pub.id}/deactivate", headers=headers)
+    assert res.status_code == 403
+
+
 # TODO: test conditional requests
 # TODO: test caching headers
 # TODO: test invalid identifiers
+# TODO: test concurrency for management actions (block then restore and vice-versa)

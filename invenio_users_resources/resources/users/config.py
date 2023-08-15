@@ -28,6 +28,10 @@ class UsersResourceConfig(RecordResourceConfig):
         "list": "",
         "item": "/<id>",
         "item-avatar": "/<id>/avatar.svg",
+        "approve": "/<id>/approve",
+        "block": "/<id>/block",
+        "restore": "/<id>/restore",
+        "deactivate": "/<id>/deactivate",
     }
 
     request_view_args = {
