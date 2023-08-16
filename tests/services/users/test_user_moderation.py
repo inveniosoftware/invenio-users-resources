@@ -19,6 +19,7 @@ from invenio_access.permissions import system_identity
 from invenio_cache.lock import CachedMutex
 
 from invenio_users_resources.proxies import current_actions_registry
+from invenio_users_resources.services.users.lock import ModerationMutex
 
 
 def test_moderation_callbacks_success(
@@ -94,9 +95,7 @@ def test_moderation_callbacks_lock(
     mocked_method.assert_called_once()
 
     # If the lock does not exist, it was removed by the celery task
-    lock_prefix = app.config["USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX"]
-    lock_id = f"{lock_prefix}.{user_res.id}"
-    lock = CachedMutex(lock_id)
+    lock = ModerationMutex(user_res.id)
     assert not lock.exists()
 
 
@@ -136,9 +135,7 @@ def test_moderation_callbacks_lock_renewal(
         """Action to execute after blocking a user."""
         time.sleep(default_timeout)
 
-        lock_prefix = app.config["USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX"]
-        lock_id = f"{lock_prefix}.{user_res.id}"
-        lock = CachedMutex(lock_id)
+        lock = ModerationMutex(user_id)
         assert lock.exists() == expected_lock_state
 
     monkeypatch.setitem(

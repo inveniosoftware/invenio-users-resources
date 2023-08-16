@@ -162,6 +162,17 @@ class UserAggregate(Record):
         return self
 
     @classmethod
+    def activate(cls, id_):
+        """Activates the current user.
+
+        Activation of the user is proxied through the datastore.
+        """
+        user = current_datastore.get_user(id_)
+        if user is None:
+            return False
+        return current_datastore.activate_user(user)
+
+    @classmethod
     def deactivate(cls, id_):
         """Deactivates the current user.
 

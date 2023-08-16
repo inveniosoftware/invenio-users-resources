@@ -176,7 +176,9 @@ def test_search_permissions(app, db, user_service, user_moderator, user_res):
     assert search.total > 0
 
 
-def test_block(app, db, user_service, user_moderator, user_res, clear_cache):
+def test_block(
+    app, db, user_service, user_moderator, user_res, clear_cache, search_clear
+):
     """Test user block."""
 
     with pytest.raises(PermissionDeniedError):
@@ -206,7 +208,9 @@ def test_block(app, db, user_service, user_moderator, user_res, clear_cache):
     assert search.total > 0
 
 
-def test_approve(user_service, user_res, user_moderator, clear_cache):
+def test_approve(
+    app, db, user_service, user_res, user_moderator, clear_cache, search_clear
+):
     """Test approval of an user."""
     with pytest.raises(PermissionDeniedError):
         user_service.block(user_res.identity, user_res.id)
@@ -225,7 +229,7 @@ def test_approve(user_service, user_res, user_moderator, clear_cache):
     assert "verified_at" in ur.data
 
 
-def test_deactivate(user_service, user_res, user_moderator, clear_cache):
+def test_deactivate(app, db, user_service, user_res, user_moderator, clear_cache):
     """Test deactivation of an user."""
     with pytest.raises(PermissionDeniedError):
         user_service.block(user_res.identity, user_res.id)
@@ -244,7 +248,7 @@ def test_deactivate(user_service, user_res, user_moderator, clear_cache):
     assert search.total > 0
 
 
-def test_non_existent_user_management(user_service, user_moderator):
+def test_non_existent_user_management(app, db, user_service, user_moderator):
     """Try to manage a non-existent user."""
     fake_user_id = 1000
     funcs = [
@@ -258,7 +262,7 @@ def test_non_existent_user_management(user_service, user_moderator):
             f(user_moderator.identity, fake_user_id)
 
 
-def test_restore(user_service, user_res, user_moderator, clear_cache):
+def test_restore(app, db, user_service, user_res, user_moderator, clear_cache):
     """Test restore of a user."""
     blocked = user_service.block(user_moderator.identity, user_res.id)
     assert blocked

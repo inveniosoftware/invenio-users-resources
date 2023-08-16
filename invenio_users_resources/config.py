@@ -70,9 +70,6 @@ USERS_RESOURCES_SORT_OPTIONS = {
 USERS_RESOURCES_ADMINISTRATION_ENABLED = False
 """Enable the user administration"""
 
-USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX = "user_moderation_lock"
-"""Prefix to be used for the generation of the lock id on users."""
-
 USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT = 30
 """Default timeout, in seconds, to lock a user when moderating."""
 
