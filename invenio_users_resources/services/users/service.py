@@ -26,15 +26,11 @@ from invenio_records_resources.services.uow import (
 from invenio_search.engine import dsl
 from werkzeug.local import LocalProxy
 
-from invenio_users_resources.services.decorators import lock_user_moderation
 from invenio_users_resources.services.results import AvatarResult
 from invenio_users_resources.services.users.tasks import execute_moderation_actions
 
 from ...records.api import UserAggregate
-
-mod_lock_prefix = LocalProxy(
-    lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_KEY_PREFIX")
-)
+from .lock import ModerationMutex
 
 mod_lock_timeout = LocalProxy(
     lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT")
@@ -142,9 +138,6 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
-    @lock_user_moderation(
-        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
-    )
     def block(self, identity, id_, uow=None):
         """Blocks a user."""
         user = UserAggregate.get_record(id_)
@@ -153,6 +146,9 @@ class UsersService(RecordService):
             raise PermissionDeniedError()
 
         self.require_permission(identity, "manage", record=user)
+
+        # Throws if not acquired
+        ModerationMutex(id_).acquire()
 
         UserAggregate.deactivate(id_)
         user.model.blocked_at = datetime.utcnow()
@@ -169,9 +165,6 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
-    @lock_user_moderation(
-        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
-    )
     def restore(self, identity, id_, uow=None):
         """Restores a user."""
         user = UserAggregate.get_record(id_)
@@ -181,7 +174,10 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
-        user.model.active = True
+        # Throws if not acquired
+        ModerationMutex(id_).acquire()
+
+        UserAggregate.activate(id_)
         user.model.blocked_at = None
         user.model.verified_at = datetime.utcnow()
 
@@ -197,9 +193,6 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
-    @lock_user_moderation(
-        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
-    )
     def approve(self, identity, id_, uow=None):
         """Approves a user."""
         user = UserAggregate.get_record(id_)
@@ -209,7 +202,10 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
-        user.model.active = True
+        # Throws if not acquired
+        ModerationMutex(id_).acquire()
+
+        UserAggregate.activate(id_)
         user.model.blocked_at = None
         user.model.verified_at = datetime.utcnow()
 
@@ -224,9 +220,6 @@ class UsersService(RecordService):
         return True
 
     @unit_of_work()
-    @lock_user_moderation(
-        lock_prefix=mod_lock_prefix, arg_name="id_", timeout=mod_lock_timeout
-    )
     def deactivate(self, identity, id_, uow=None):
         """Deactivates a user."""
         user = UserAggregate.get_record(id_)
@@ -235,6 +228,9 @@ class UsersService(RecordService):
             raise PermissionDeniedError()
 
         self.require_permission(identity, "manage", record=user)
+
+        # Throws if not acquired
+        ModerationMutex(id_).acquire()
 
         UserAggregate.deactivate(id_)
         user.model.blocked_at = None

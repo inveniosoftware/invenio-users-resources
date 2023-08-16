@@ -11,12 +11,12 @@
 
 from celery import shared_task
 from flask import current_app
-from invenio_cache.decorators import lock_if_renew
-from invenio_cache.lock import CachedMutex
 from invenio_records_resources.services.uow import UnitOfWork
 from invenio_records_resources.tasks import send_change_notifications
 from invenio_search.engine import search
 from werkzeug.local import LocalProxy
+
+from invenio_users_resources.services.users.lock import ModerationMutex
 
 from ...proxies import current_actions_registry, current_users_service
 from ...records.api import UserAggregate
@@ -65,12 +65,6 @@ def unindex_users(user_ids):
 
 
 @shared_task(ignore_result=True, acks_late=True, retry=True)
-@lock_if_renew(
-    lock_prefix="user_moderation_lock",
-    arg_name="user_id",
-    timeout=renewal_timeout,
-    lock_cls=CachedMutex,
-)
 def execute_moderation_actions(user_id=None, action=None):
     """Execute moderation actions.
 
@@ -80,20 +74,23 @@ def execute_moderation_actions(user_id=None, action=None):
     Why ``acks_late``:
      - in case the worker fails unexpectedly.
     Why ``retry``:
-        - if a task fails to acquire the lock, it raises an exception. It can be retried later, maybe the lock is released by then.
-
-    The decorator ``lock_if_renew`` will renew the existing lock on the user.
+        - if a task fails, it can be retried afterwards.
     """
     actions = current_actions_registry.get(action, [])
 
-    # Create a uow that is shared by all the callables
-    uow = UnitOfWork()
-    try:
-        for callback in actions:
-            callback(user_id, uow=uow)
-        # Commit the uow when all the callbacks succeeded
-        uow.commit()
-    except Exception as e:
-        current_app.logger.warn(f"Could not execute action '{action}' for user: {e}")
-        # If a callback fails, rollback the whole operation and stop processing more callbacks
-        uow.rollback()
+    with ModerationMutex(user_id) as lock:
+        lock.acquire_or_renew(renewal_timeout)
+
+        # Create a uow that is shared by all the callables
+        uow = UnitOfWork()
+        try:
+            for callback in actions:
+                callback(user_id, uow=uow)
+            # Commit the uow when all the callbacks succeeded
+            uow.commit()
+        except Exception as e:
+            current_app.logger.warn(
+                f"Could not execute action '{action}' for user: {e}"
+            )
+            # If a callback fails, rollback the operation and stop processing callbacks
+            uow.rollback()
