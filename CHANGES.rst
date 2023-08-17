@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.4.0 (2023-08-17)
+
+- template: set default value notifications enabled to True
+
 Version 2.3.0 (2023-08-09)
 
 - add actions registry
