@@ -140,7 +140,7 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
-        user.model.active = False
+        UserAggregate.deactivate(id_)
         user.model.blocked_at = datetime.utcnow()
         user.model.verified_at = None
 
@@ -207,7 +207,7 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
-        user.model.active = False
+        UserAggregate.deactivate(id_)
         user.model.blocked_at = None
         user.model.verified_at = None
 
