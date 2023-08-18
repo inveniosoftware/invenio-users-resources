@@ -157,6 +157,17 @@ class UserAggregate(Record):
         return self
 
     @classmethod
+    def deactivate(cls, id_):
+        """Deactivates the current user.
+
+        Deactivation of the user is proxied through the datastore.
+        """
+        user = current_datastore.get_user(id_)
+        if user is None:
+            return False
+        return current_datastore.deactivate_user(user)
+
+    @classmethod
     def from_user(cls, user):
         """Create the user aggregate from the given user."""
         # TODO
