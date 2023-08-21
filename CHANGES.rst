@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 2.5.0 (2023-08-21)
+
+- user moderation: add resource endpoints
+- user moderation: use datastore to deactivate users immediately
+
 Version 2.4.0 (2023-08-17)
 
 - template: set default value notifications enabled to True
