@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 2.6.0 (2023-08-30)
+
+- user moderation: added lock mechanism
+
 Version 2.5.0 (2023-08-21)
 
 - user moderation: add resource endpoints
