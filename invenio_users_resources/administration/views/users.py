@@ -33,7 +33,7 @@ class UsersListView(AdminResourceListView):
     resource_config = "users_resource"
     title = "User management"
     menu_label = "Users"
-    category = "User management"
+    category = "Moderation"
     pid_path = "id"
     icon = "users"
 

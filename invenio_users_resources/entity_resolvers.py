@@ -23,7 +23,7 @@ from sqlalchemy.exc import NoResultFound
 from .permissions import user_management_action
 from .proxies import current_users_service
 from .services.groups.config import GroupsServiceConfig
-from .services.schemas import SystemUserSchema, UserGhostSchema, UserSchema
+from .services.schemas import SystemUserSchema, UserGhostSchema
 from .services.users.config import UsersServiceConfig
 
 
