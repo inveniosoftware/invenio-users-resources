@@ -29,14 +29,14 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_create = [SystemProcess()]
     can_read = [
         UserManager,
-        IfPublicUser([AnyUser()], [Self()]),
+        IfPublicUser(then_=[AnyUser()], else_=[Self()]),
         SystemProcess(),
     ]
     can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
-    can_read_email = [IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
+    can_read_email = [UserManager, IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
     can_read_details = [UserManager, Self(), SystemProcess()]
 
     # Moderation permissions
