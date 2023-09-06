@@ -73,7 +73,11 @@ class UserProxy(EntityProxy):
                 "full_name": profile.get("full_name", ""),
                 "affiliations": profile.get("affiliations", ""),
             },
-            "links": {"avatar": avatar},
+            "links": resolved_dict.get("links"),
+            "blocked_at": resolved_dict.get("blocked_at"),
+            "verified_at": resolved_dict.get("verified_at"),
+            "confirmed_at": resolved_dict.get("confirmed_at"),
+            "active": resolved_dict.get("active")
         }
 
         return serialized_user

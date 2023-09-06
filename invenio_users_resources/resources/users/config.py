@@ -14,6 +14,15 @@ from invenio_records_resources.resources import (
     RecordResourceConfig,
     SearchRequestArgsSchema,
 )
+from marshmallow import fields
+
+
+class UsersSearchRequestArgsSchema(SearchRequestArgsSchema):
+    """Add parameter to parse tags."""
+
+    is_active = fields.Boolean()
+    is_blocked = fields.Boolean()
+    is_verified = fields.Boolean()
 
 
 #
@@ -26,6 +35,7 @@ class UsersResourceConfig(RecordResourceConfig):
     url_prefix = "/users"
     routes = {
         "list": "",
+        "moderation_search": "/moderation",
         "item": "/<id>",
         "item-avatar": "/<id>/avatar.svg",
         "approve": "/<id>/approve",
@@ -38,4 +48,4 @@ class UsersResourceConfig(RecordResourceConfig):
         "id": ma.fields.Str(),
     }
 
-    request_search_args = SearchRequestArgsSchema
+    request_search_args = UsersSearchRequestArgsSchema
