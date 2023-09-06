@@ -87,12 +87,12 @@ class UsersService(RecordService):
         )
 
     def search_all(
-        self,
-        identity,
-        params=None,
-        search_preference=None,
-        extra_filters=None,
-        **kwargs,
+            self,
+            identity,
+            params=None,
+            search_preference=None,
+            extra_filters=None,
+            **kwargs,
     ):
         """Search for all users, without restrictions."""
         self.require_permission(identity, "search_all")
@@ -109,6 +109,7 @@ class UsersService(RecordService):
         """Retrieve a user."""
         # resolve and require permission
         user = UserAggregate.get_record(id_)
+        # TODO - email user issue
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()

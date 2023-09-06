@@ -47,13 +47,13 @@ USERS_RESOURCES_SERVICE_SCHEMA = UserSchema
 """Schema used by the users service."""
 
 USERS_RESOURCES_SEARCH = {
-    "facets": [],
     "sort": [
         "email",
         "username",
+        "email_domain",
     ],
 }
-"""User search configuration (i.e list of banners)"""
+"""User search configuration (i.e list of banners)."""
 
 USERS_RESOURCES_SORT_OPTIONS = {
     "username": dict(
@@ -63,6 +63,10 @@ USERS_RESOURCES_SORT_OPTIONS = {
     "email": dict(
         title=_("Email"),
         fields=["email"],
+    ),
+    "email_domain": dict(
+        title=_("Email domain"),
+        fields=["email.domain"],
     ),
 }
 """Definitions of available Users sort options. """

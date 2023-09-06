@@ -17,12 +17,18 @@ from invenio_records_resources.services.base.config import (
     SearchOptionsMixin,
 )
 from invenio_records_resources.services.records.config import SearchOptions
-from invenio_records_resources.services.records.params import QueryStrParam, SortParam
+from invenio_records_resources.services.records.params import (
+    QueryStrParam,
+    SortParam,
+    FacetsParam,
+    FilterParam,
+)
 from invenio_records_resources.services.records.queryparser import (
     QueryParser,
     SearchFieldTransformer,
 )
 
+from .search_params import ModerationFilterParam
 from ...records.api import UserAggregate
 from ..common import Link
 from ..params import FixedPagination
@@ -55,6 +61,10 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
         QueryStrParam,
         SortParam,
         FixedPagination,
+        FacetsParam,
+        ModerationFilterParam.factory(param="is_blocked", field="blocked_at"),
+        ModerationFilterParam.factory(param="is_verified", field="verified_at"),
+        ModerationFilterParam.factory(param="is_active", field="active"),
     ]
 
 
@@ -71,6 +81,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
         None,
         search_option_cls=UserSearchOptions,
     )
+    # search = UserSearchOptions
     # specific configuration
     service_id = "users"
     record_cls = UserAggregate
@@ -82,6 +93,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     links_item = {
         "self": Link("{+api}/users/{id}"),
         "avatar": Link("{+api}/users/{id}/avatar.svg"),
+        # TODO missing moderation actions based on permissions
     }
     links_search = pagination_links("{+api}/users{?args*}")
 

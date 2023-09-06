@@ -42,6 +42,7 @@ class UsersResource(RecordResource):
             route("POST", routes["block"], self.block),
             route("POST", routes["restore"], self.restore),
             route("POST", routes["deactivate"], self.deactivate),
+            route("GET", routes["moderation_search"], self.search_all),
         ]
 
     @request_search_args
@@ -50,6 +51,18 @@ class UsersResource(RecordResource):
     def search(self):
         """Perform a search over users."""
         hits = self.service.search(
+            identity=g.identity,
+            params=resource_requestctx.args,
+            search_preference=search_preference(),
+        )
+        return hits.to_dict(), 200
+
+    @request_search_args
+    @request_view_args
+    @response_handler(many=True)
+    def search_all(self):
+        """Perform a search over users."""
+        hits = self.service.search_all(
             identity=g.identity,
             params=resource_requestctx.args,
             search_preference=search_preference(),

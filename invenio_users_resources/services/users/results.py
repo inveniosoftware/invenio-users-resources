@@ -122,6 +122,7 @@ class UserList(RecordList):
                 "total": self.total,
             }
         }
+
         if self.aggregations:
             res["aggregations"] = self.aggregations
 
