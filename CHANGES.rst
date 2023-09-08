@@ -8,6 +8,15 @@
 Changes
 =======
 
+Version 3.0.0 (2023-09-08)
+
+- mappings: updated analyzers for user emails (breaking change)
+
+- administration: remove user admin views
+- search: add email domain and affiliation facets
+- resources: expose search all
+- permissions: allow moderators to read emails
+
 Version 2.6.0 (2023-08-30)
 
 - user moderation: added lock mechanism
