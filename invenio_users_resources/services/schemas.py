@@ -50,15 +50,16 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
         "updated": "read_details",
         "revision_id": "read_details",
         "active": "read_details",
-        "confirmed_at": "read_details",
+        "confirmed": "read_details",
         "preferences": "read_details",
         "blocked_at": "read_system_details",
         "verified_at": "read_system_details",
+        "confirmed_at": "read_system_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
     active = fields.Boolean()
-    confirmed_at = fields.Boolean(dump_only=True)
+    confirmed = fields.Boolean(dump_only=True)
     is_current_user = fields.Method("is_self", dump_only=True)
 
     email = fields.String()
@@ -68,6 +69,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 
     blocked_at = ISODateString()
     verified_at = ISODateString()
+    confirmed_at = ISODateString()
 
     def is_self(self, obj):
         """Determine if identity is the current identity."""

@@ -1,23 +1,50 @@
 {
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "email_domains": {
+          "type": "pattern_replace",
+          "pattern": ".*@(.*)",
+          "replacement": "$1"
+        }
+      },
+      "analyzer": {
+        "email_domains": {
+          "char_filter": [
+            "email_domains"
+          ],
+          "tokenizer": "uax_url_email",
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
+        },
+        "email": {
+          "type": "custom",
+          "tokenizer": "uax_url_email"
+        }
+      }
+    }
+  },
   "mappings": {
     "dynamic": "strict",
     "dynamic_templates": [
-        {
-          "profile": {
-            "path_match": "profile.*",
-            "mapping": {
-              "type": "keyword"
-            }
-          }
-        },
-        {
-          "preferences": {
-            "path_match": "preferences.*",
-            "mapping": {
-              "type": "keyword"
-            }
+      {
+        "profile": {
+          "path_match": "profile.*",
+          "mapping": {
+            "type": "keyword"
           }
         }
+      },
+      {
+        "preferences": {
+          "path_match": "preferences.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
     ],
     "properties": {
       "$schema": {
@@ -59,7 +86,16 @@
         "type": "keyword"
       },
       "email": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "email",
+        "fielddata": true,
+        "fields": {
+          "domain": {
+            "type": "text",
+            "analyzer": "email_domains",
+            "fielddata": true
+          }
+        }
       },
       "email_hidden": {
         "type": "keyword",
@@ -71,7 +107,12 @@
             "type": "text"
           },
           "affiliations": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         },
         "dynamic": true
@@ -86,11 +127,11 @@
           },
           "locale": {
             "type": "keyword",
-            "index":"false"
+            "index": "false"
           },
           "timezone": {
             "type": "keyword",
-            "index":"false"
+            "index": "false"
           },
           "notifications": {
             "properties": {
