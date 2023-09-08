@@ -12,6 +12,7 @@
 from invenio_i18n import lazy_gettext as _
 
 from invenio_users_resources.services.schemas import UserSchema
+from invenio_users_resources.services.users import facets
 
 USERS_RESOURCES_AVATAR_COLORS = [
     "#e06055",
@@ -52,6 +53,7 @@ USERS_RESOURCES_SEARCH = {
         "username",
         "email_domain",
     ],
+    "facets": ["email_domain", "affiliations"],
 }
 """User search configuration (i.e list of banners)."""
 
@@ -70,6 +72,22 @@ USERS_RESOURCES_SORT_OPTIONS = {
     ),
 }
 """Definitions of available Users sort options. """
+
+USERS_RESOURCES_SEARCH_FACETS = {
+    "email_domain": {
+        "facet": facets.email_domain,
+        "ui": {
+            "field": "email.domain",
+        },
+    },
+    "affiliations": {
+        "facet": facets.affiliations,
+        "ui": {
+            "field": "profile.affiliations.keyword",
+        },
+    },
+}
+"""Invenio requests facets."""
 
 USERS_RESOURCES_ADMINISTRATION_ENABLED = False
 """Enable the user administration"""

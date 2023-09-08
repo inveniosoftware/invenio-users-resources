@@ -36,7 +36,11 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
-    can_read_email = [UserManager, IfPublicEmail([AnyUser()], [Self()]), SystemProcess()]
+    can_read_email = [
+        UserManager,
+        IfPublicEmail([AnyUser()], [Self()]),
+        SystemProcess(),
+    ]
     can_read_details = [UserManager, Self(), SystemProcess()]
 
     # Moderation permissions

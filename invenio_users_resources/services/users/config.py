@@ -18,23 +18,23 @@ from invenio_records_resources.services.base.config import (
 )
 from invenio_records_resources.services.records.config import SearchOptions
 from invenio_records_resources.services.records.params import (
+    FacetsParam,
     QueryStrParam,
     SortParam,
-    FacetsParam,
-    FilterParam,
 )
 from invenio_records_resources.services.records.queryparser import (
     QueryParser,
     SearchFieldTransformer,
 )
 
-from .search_params import ModerationFilterParam
 from ...records.api import UserAggregate
 from ..common import Link
 from ..params import FixedPagination
 from ..permissions import UsersPermissionPolicy
 from ..schemas import UserSchema
+from ..users import facets
 from .results import UserItem, UserList
+from .search_params import ModerationFilterParam
 
 
 class UserSearchOptions(SearchOptions, SearchOptionsMixin):
@@ -67,6 +67,11 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
         ModerationFilterParam.factory(param="is_active", field="active"),
     ]
 
+    facets = {
+        "email_domain": facets.email_domain,
+        "affiliations": facets.affiliations,
+    }
+
 
 class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     """Requests service configuration."""
@@ -78,7 +83,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     search = FromConfigSearchOptions(
         "USERS_RESOURCES_SEARCH",
         "USERS_RESOURCES_SORT_OPTIONS",
-        None,
+        "USERS_RESOURCES_SEARCH_FACETS",
         search_option_cls=UserSearchOptions,
     )
     # search = UserSearchOptions

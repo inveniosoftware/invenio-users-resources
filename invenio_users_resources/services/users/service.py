@@ -87,12 +87,12 @@ class UsersService(RecordService):
         )
 
     def search_all(
-            self,
-            identity,
-            params=None,
-            search_preference=None,
-            extra_filters=None,
-            **kwargs,
+        self,
+        identity,
+        params=None,
+        search_preference=None,
+        extra_filters=None,
+        **kwargs,
     ):
         """Search for all users, without restrictions."""
         self.require_permission(identity, "search_all")

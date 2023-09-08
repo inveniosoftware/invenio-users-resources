@@ -20,7 +20,6 @@ from invenio_records_resources.references.entity_resolvers import (
 )
 from sqlalchemy.exc import NoResultFound
 
-from .permissions import user_management_action
 from .proxies import current_users_service
 from .services.groups.config import GroupsServiceConfig
 from .services.schemas import SystemUserSchema, UserGhostSchema
@@ -65,6 +64,9 @@ class UserProxy(EntityProxy):
         avatar = current_users_service.links_item_tpl.expand(identity, fake_user_obj)[
             "avatar"
         ]
+        # TODO trying to recreate the user item here, there must be a better way!
+        links = resolved_dict.get("links")
+        links["avatar"] = avatar
         serialized_user = {
             "id": resolved_dict["id"],
             "username": resolved_dict.get("username", ""),
@@ -77,7 +79,8 @@ class UserProxy(EntityProxy):
             "blocked_at": resolved_dict.get("blocked_at"),
             "verified_at": resolved_dict.get("verified_at"),
             "confirmed_at": resolved_dict.get("confirmed_at"),
-            "active": resolved_dict.get("active")
+            "active": resolved_dict.get("active"),
+            "is_current_user": resolved_dict.get("is_current_user"),
         }
 
         return serialized_user
