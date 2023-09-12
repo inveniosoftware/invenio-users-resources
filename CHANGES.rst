@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 3.0.1 (2023-09-11)
+
+- resolvers: fix links serialization
+- resolvers: added ghost record for groups.
+
 Version 3.0.0 (2023-09-08)
 
 - mappings: updated analyzers for user emails (breaking change)
