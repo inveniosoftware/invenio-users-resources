@@ -65,7 +65,7 @@ class UserProxy(EntityProxy):
             "avatar"
         ]
         # TODO trying to recreate the user item here, there must be a better way!
-        links = resolved_dict.get("links")
+        links = resolved_dict.get("links", {})
         links["avatar"] = avatar
         serialized_user = {
             "id": resolved_dict["id"],
@@ -75,7 +75,7 @@ class UserProxy(EntityProxy):
                 "full_name": profile.get("full_name", ""),
                 "affiliations": profile.get("affiliations", ""),
             },
-            "links": resolved_dict.get("links"),
+            "links": links,
             "blocked_at": resolved_dict.get("blocked_at"),
             "verified_at": resolved_dict.get("verified_at"),
             "confirmed_at": resolved_dict.get("confirmed_at"),
