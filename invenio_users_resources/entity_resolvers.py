@@ -137,6 +137,16 @@ class GroupProxy(EntityProxy):
         role_id = self._parse_ref_dict_id()
         return [RoleNeed(role_id)]
 
+    def ghost_record(self, value):
+        """Return default representation of not resolved group.
+
+        .. note::
+
+            Only groups that are not indexed should need this. Non-indexed groups include groups that were not created by users
+            e.g. user-moderation.
+        """
+        return {}
+
 
 class GroupResolver(EntityResolver):
     """Group entity resolver."""
