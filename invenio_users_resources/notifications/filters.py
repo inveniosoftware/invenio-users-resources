@@ -18,11 +18,11 @@ class UserPreferencesRecipientFilter(RecipientFilter):
         """Filter recipients."""
         for key in list(recipients.keys()):
             r = recipients[key]
-            if not (
-                r.data.get("preferences", {})
-                .get("notifications", {})
-                .get("enabled", False)
-            ):
+            prefeferences = r.data.get("preferences")
+            if not prefeferences:
+                continue
+
+            if not (prefeferences.get("notifications", {}).get("enabled", True)):
                 del recipients[key]
 
         return recipients
