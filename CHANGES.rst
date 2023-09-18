@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 3.0.2 (2023-09-18)
+
+- models: avoid flushing when getting records
+
 Version 3.0.1 (2023-09-11)
 
 - resolvers: fix links serialization
