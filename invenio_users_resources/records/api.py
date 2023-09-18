@@ -189,9 +189,10 @@ class UserAggregate(Record):
         # TODO
         data = parse_user_data(user)
 
-        model = cls.model_cls(data, model_obj=user)
-        user_agg = cls(data, model=model)
-        return user_agg
+        with db.session.no_autoflush:
+            model = cls.model_cls(data, model_obj=user)
+            user_agg = cls(data, model=model)
+            return user_agg
 
     @classmethod
     def get_record(cls, id_):
@@ -278,10 +279,11 @@ class GroupAggregate(Record):
         # TODO
         data = parse_role_data(role)
 
-        model = cls.model_cls(data, model_obj=role)
-        role_agg = cls(data, model=model)
-        role_agg._role = role
-        return role_agg
+        with db.session.no_autoflush:
+            model = cls.model_cls(data, model_obj=role)
+            role_agg = cls(data, model=model)
+            role_agg._role = role
+            return role_agg
 
     @classmethod
     def get_record(cls, id_):

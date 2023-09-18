@@ -77,7 +77,7 @@ class UsersService(RecordService):
         )
 
     def search(self, identity, params=None, search_preference=None, **kwargs):
-        """Search for records matching the querystring."""
+        """Search for active and confirmed users, matching the querystring."""
         return super().search(
             identity,
             params=params,
