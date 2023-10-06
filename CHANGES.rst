@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 3.1.0 (2023-10-06)
+
+- notifications add email and conditional user recipient generators
+
 Version 3.0.2 (2023-09-18)
 
 - models: avoid flushing when getting records
