@@ -167,7 +167,8 @@ class UserAggregate(Record):
 
         Activation of the user is proxied through the datastore.
         """
-        user = current_datastore.get_user(id_)
+        with db.session.no_autoflush:
+            user = current_datastore.get_user(id_)
         if user is None:
             return False
         return current_datastore.activate_user(user)
@@ -178,7 +179,8 @@ class UserAggregate(Record):
 
         Deactivation of the user is proxied through the datastore.
         """
-        user = current_datastore.get_user(id_)
+        with db.session.no_autoflush:
+            user = current_datastore.get_user(id_)
         if user is None:
             return False
         return current_datastore.deactivate_user(user)
@@ -199,7 +201,8 @@ class UserAggregate(Record):
         """Get the user via the specified ID."""
         # TODO the the datastore.get_user() method will resolve both
         #      ID as well as email, which we do not necessarily want
-        user = current_datastore.get_user(id_)
+        with db.session.no_autoflush:
+            user = current_datastore.get_user(id_)
         if user is None:
             return None
 
