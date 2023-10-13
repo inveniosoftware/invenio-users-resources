@@ -11,6 +11,7 @@
 from abc import ABC, abstractmethod
 
 from invenio_accounts.proxies import current_datastore
+from invenio_db import db
 
 
 class MockModel(dict, ABC):
@@ -109,7 +110,8 @@ class UserAggregateModel(MockModel):
         if self._model_obj is None:
             id_ = self.data.get("id")
             email = self.data.get("email")
-            self._model_obj = current_datastore.get_user(id_ or email)
+            with db.session.no_autoflush:
+                self._model_obj = current_datastore.get_user(id_ or email)
         return self._model_obj
 
 
