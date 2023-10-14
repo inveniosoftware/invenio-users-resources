@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 3.1.1 (2023-10-14)
+
+- model: prevent flush on select queries
+
 Version 3.1.0 (2023-10-06)
 
 - notifications add email and conditional user recipient generators
