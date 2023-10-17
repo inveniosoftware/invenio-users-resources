@@ -10,9 +10,9 @@
 
 """Users resource."""
 
-
 from flask import g, send_file
 from flask_resources import resource_requestctx, response_handler, route
+from flask_security import impersonate_user
 from invenio_records_resources.resources import RecordResource
 from invenio_records_resources.resources.records.resource import (
     request_search_args,
@@ -42,6 +42,7 @@ class UsersResource(RecordResource):
             route("POST", routes["block"], self.block),
             route("POST", routes["restore"], self.restore),
             route("POST", routes["deactivate"], self.deactivate),
+            route("POST", routes["impersonate"], self.impersonate),
             route("GET", routes["moderation_search"], self.search_all),
         ]
 
@@ -98,7 +99,7 @@ class UsersResource(RecordResource):
 
     @request_view_args
     def approve(self):
-        """Read a user."""
+        """Approve user."""
         self.service.approve(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
@@ -107,7 +108,7 @@ class UsersResource(RecordResource):
 
     @request_view_args
     def block(self):
-        """Read a user."""
+        """Block user."""
         self.service.block(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
@@ -116,7 +117,7 @@ class UsersResource(RecordResource):
 
     @request_view_args
     def restore(self):
-        """Read a user."""
+        """Restore user."""
         self.service.restore(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
@@ -125,9 +126,19 @@ class UsersResource(RecordResource):
 
     @request_view_args
     def deactivate(self):
-        """Read a user."""
+        """Deactive user."""
         self.service.deactivate(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
         )
+        return "", 200
+
+    @request_view_args
+    def impersonate(self):
+        """Impersonate the user."""
+        user = self.service.can_impersonate(
+            g.identity, resource_requestctx.view_args["id"]
+        )
+        if user:
+            impersonate_user(user, g.identity)
         return "", 200

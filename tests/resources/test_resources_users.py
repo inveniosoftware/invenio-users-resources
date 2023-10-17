@@ -143,6 +143,32 @@ def test_management_permissions(client, headers, user_pub, db):
     assert res.status_code == 403
 
 
+def test_impersonate_user(client, headers, user_pub, user_moderator, db):
+    """Tests user impersonation endpoint."""
+    client = user_moderator.login(client)
+    res = client.get(f"/users/{user_moderator.id}")
+    assert res.status_code == 200
+    assert res.json["is_current_user"] == True
+    res = client.get(f"/users/{user_pub.id}")
+    assert res.status_code == 200
+    assert res.json["is_current_user"] == False
+
+    res = client.post(f"/users/{user_pub.id}/impersonate", headers=headers)
+    assert res.status_code == 200
+
+    res = client.get(f"/users/{user_pub.id}")
+    assert res.status_code == 200
+    assert res.json["is_current_user"] == True
+
+    res = client.get(f"/users/{user_moderator.id}")
+    assert res.status_code == 403
+
+    res = client.post(f"/users/{user_moderator.id}/impersonate", headers=headers)
+    assert res.status_code == 403
+    res = client.post(f"/users/{user_pub.id}/impersonate", headers=headers)
+    assert res.status_code == 403
+
+
 # TODO: test conditional requests
 # TODO: test caching headers
 # TODO: test invalid identifiers

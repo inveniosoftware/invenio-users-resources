@@ -42,6 +42,7 @@ class UsersResourceConfig(RecordResourceConfig):
         "block": "/<id>/block",
         "restore": "/<id>/restore",
         "deactivate": "/<id>/deactivate",
+        "impersonate": "/<id>/impersonate",
     }
 
     request_view_args = {
