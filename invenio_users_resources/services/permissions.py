@@ -47,6 +47,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_manage = [UserManager, SystemProcess()]
     can_search_all = [UserManager, SystemProcess()]
     can_read_system_details = [UserManager, SystemProcess()]
+    can_impersonate = [UserManager, SystemProcess()]
 
 
 class GroupsPermissionPolicy(BasePermissionPolicy):

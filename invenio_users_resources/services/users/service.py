@@ -241,3 +241,12 @@ class UsersService(RecordService):
 
         uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
         return True
+
+    def can_impersonate(self, identity, id_):
+        """Check permissions if a user can be impersonated."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+        self.require_permission(identity, "impersonate", record=user)
+        return user.model.model_obj
