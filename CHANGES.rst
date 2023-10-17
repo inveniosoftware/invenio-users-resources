@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 3.1.2 (2023-10-17)
+
+- Add support for user impersonation
+
 Version 3.1.1 (2023-10-14)
 
 - model: prevent flush on select queries
