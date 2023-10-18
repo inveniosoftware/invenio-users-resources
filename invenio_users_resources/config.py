@@ -51,6 +51,7 @@ USERS_RESOURCES_SEARCH = {
     "sort": [
         "email",
         "username",
+        "id",
         "email_domain",
     ],
     "facets": ["email_domain", "affiliations"],
@@ -58,6 +59,10 @@ USERS_RESOURCES_SEARCH = {
 """User search configuration (i.e list of banners)."""
 
 USERS_RESOURCES_SORT_OPTIONS = {
+    "id": dict(
+        title=_("ID"),
+        fields=["id"],
+    ),
     "username": dict(
         title=_("Username"),
         fields=["username"],
