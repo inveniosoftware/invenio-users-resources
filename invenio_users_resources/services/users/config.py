@@ -49,7 +49,6 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
         fields=[
             "username^2",
             "email^2",
-            "id^3",
             "profile.full_name^3",
             "profile.affiliations",
         ],
