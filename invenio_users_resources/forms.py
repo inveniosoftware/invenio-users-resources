@@ -22,9 +22,7 @@ class NotificationsForm(FlaskForm):
 
     enabled = BooleanField(
         _("Notify me"),
-        description=_(
-            "Enable or disable notifications for events that are relevant to your user."
-        ),
+        description=_("Turn on to enable notifications for relevant events."),
     )
 
     def process(self, formdata=None, obj=None, data=None, extra_filters=None, **kwargs):
