@@ -38,4 +38,4 @@ class ModerationMutex(CachedMutex):
         If the timeout is not provided, a default is retrieved from the config USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT
         """
         timeout = timeout or timeout_default
-        super().acquire(timeout=timeout_default)
+        return super().acquire(timeout=timeout_default)

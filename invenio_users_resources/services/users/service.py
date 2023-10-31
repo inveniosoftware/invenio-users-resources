@@ -32,10 +32,6 @@ from invenio_users_resources.services.users.tasks import execute_moderation_acti
 from ...records.api import UserAggregate
 from .lock import ModerationMutex
 
-mod_lock_timeout = LocalProxy(
-    lambda: current_app.config.get("USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT")
-)
-
 
 class UsersService(RecordService):
     """Users service."""
