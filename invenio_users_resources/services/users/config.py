@@ -19,6 +19,7 @@ from invenio_records_resources.services.base.config import (
 from invenio_records_resources.services.records.config import SearchOptions
 from invenio_records_resources.services.records.params import (
     FacetsParam,
+    PaginationParam,
     QueryStrParam,
     SortParam,
 )
@@ -73,6 +74,44 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     }
 
 
+class AdminUserSearchOptions(UserSearchOptions):
+    """Admin Search options."""
+
+    pagination_options = {
+        "default_results_per_page": 10,
+        "default_max_results": 100,
+    }
+
+    query_parser_cls = QueryParser.factory(
+        tree_transformer_cls=SearchFieldTransformer,
+        fields=[
+            "id",
+            "username^2",
+            "email^2",
+            "profile.full_name^3",
+            "profile.affiliations",
+        ],
+        allow_list=["id", "username", "email"],
+        mapping={
+            "affiliation": "profile.affiliations",
+            "affiliations": "profile.affiliations",
+            "full_name": "profile.full_name",
+            "fullname": "profile.full_name",
+            "name": "profile.full_name",
+        },
+    )
+
+    params_interpreters_cls = [
+        QueryStrParam,
+        SortParam,
+        PaginationParam,
+        FacetsParam,
+        ModerationFilterParam.factory(param="is_blocked", field="blocked_at"),
+        ModerationFilterParam.factory(param="is_verified", field="verified_at"),
+        ModerationFilterParam.factory(param="is_active", field="active"),
+    ]
+
+
 class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     """Requests service configuration."""
 
@@ -85,6 +124,13 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
         "USERS_RESOURCES_SORT_OPTIONS",
         "USERS_RESOURCES_SEARCH_FACETS",
         search_option_cls=UserSearchOptions,
+    )
+    # For admin user
+    search_all = FromConfigSearchOptions(
+        "USERS_RESOURCES_SEARCH",
+        "USERS_RESOURCES_SORT_OPTIONS",
+        "USERS_RESOURCES_SEARCH_FACETS",
+        search_option_cls=AdminUserSearchOptions,
     )
     # search = UserSearchOptions
     # specific configuration
