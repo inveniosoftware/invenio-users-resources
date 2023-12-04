@@ -97,6 +97,7 @@ class UsersService(RecordService):
             identity,
             params=params,
             search_preference=search_preference,
+            search_opts=self.config.admin_search,
             extra_filter=extra_filters,
             **kwargs,
         )
