@@ -126,7 +126,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
         search_option_cls=UserSearchOptions,
     )
     # For admin user
-    admin_search = FromConfigSearchOptions(
+    search_all = FromConfigSearchOptions(
         "USERS_RESOURCES_SEARCH",
         "USERS_RESOURCES_SORT_OPTIONS",
         "USERS_RESOURCES_SEARCH_FACETS",
