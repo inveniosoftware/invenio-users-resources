@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 3.1.4 (2023-12-07)
+
+- admin: fixed pagination and added id in search
+
 Version 3.1.3 (2023-11-01)
 
 - lock: add missing return statement to lock acquire
