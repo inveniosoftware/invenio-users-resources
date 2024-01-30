@@ -50,3 +50,10 @@ class UsersResourceConfig(RecordResourceConfig):
     }
 
     request_search_args = UsersSearchRequestArgsSchema
+
+    response_handlers = {
+        "application/vnd.inveniordm.v1+json": RecordResourceConfig.response_handlers[
+            "application/json"
+        ],
+        **RecordResourceConfig.response_handlers,
+    }

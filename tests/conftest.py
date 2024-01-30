@@ -51,12 +51,12 @@ class UserPreferencesNotificationsSchema(UserPreferencesSchema):
 @pytest.fixture(scope="module")
 def app_config(app_config):
     """Override pytest-invenio app_config fixture."""
-    app_config[
-        "RECORDS_REFRESOLVER_CLS"
-    ] = "invenio_records.resolver.InvenioRefResolver"
-    app_config[
-        "RECORDS_REFRESOLVER_STORE"
-    ] = "invenio_jsonschemas.proxies.current_refresolver_store"
+    app_config["RECORDS_REFRESOLVER_CLS"] = (
+        "invenio_records.resolver.InvenioRefResolver"
+    )
+    app_config["RECORDS_REFRESOLVER_STORE"] = (
+        "invenio_jsonschemas.proxies.current_refresolver_store"
+    )
     # Variable not used. We set it to silent warnings
     app_config["JSONSCHEMAS_HOST"] = "not-used"
     # setting preferences schema to test notifications
