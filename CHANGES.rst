@@ -1,5 +1,5 @@
 ..
-    Copyright (C) 2023 CERN.
+    Copyright (C) 2023-2024 CERN.
 
     Invenio-Users-Resources is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -7,6 +7,10 @@
 
 Changes
 =======
+
+Version 4.0.0 (released 2024-01-29)
+
+- installation: bump invenio-accounts and invenio-records-resources
 
 Version 3.1.4 (2023-12-07)
 

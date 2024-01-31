@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022-2023 CERN.
+# Copyright (C) 2022-2024 CERN.
 # Copyright (C) 2022-2023 TU Wien.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -9,6 +9,6 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
-__version__ = "3.1.4"
+__version__ = "4.0.0"
 
 __all__ = ("__version__",)
