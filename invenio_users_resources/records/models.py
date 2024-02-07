@@ -10,12 +10,13 @@
 
 from abc import ABC, abstractmethod
 
+from flask import current_app
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 
 
-class MockModel(dict, ABC):
-    """Model class that does not correspondond to a database table.
+class AggregateMetadata(ABC):
+    """Model class that does not corresponds to a database table.
 
     Since we already have all information about the required entities
     stored in the database and just want to provide a central API to
@@ -25,11 +26,25 @@ class MockModel(dict, ABC):
     that's expected by API classes as far as necessary.
     """
 
-    def __init__(self, data=None, model_obj=None, **kwargs):
+    _properties = []
+    """Properties of this object that can be accessed."""
+
+    _set_properties = []
+    """Properties of this object that can be set."""
+
+    _data = None
+
+    def __init__(self, model_obj=None, **kwargs):
         """Constructor."""
-        data.update(kwargs)
-        super().__init__(data)
-        self._model_obj = model_obj
+        super().__setattr__("_data", {})
+        if model_obj is not None:
+            # E.g. when data is loaded from database
+            self.from_model(model_obj)
+            super().__setattr__("_model_obj", model_obj)
+        else:
+            # E.g. when data is loaded from the search index
+            self.from_kwargs(kwargs)
+            super().__setattr__("_model_obj", None)
 
     @property
     @abstractmethod
@@ -37,91 +52,130 @@ class MockModel(dict, ABC):
         """The actual model object behind this mock model."""
         return None
 
-    @property
-    def id(self):
-        """User identifier."""
-        return self.data["id"]
+    def from_kwargs(self, kwargs):
+        """Extract information from kwargs."""
+        for p in self._properties:
+            self._data[p] = kwargs.get(p, None)
 
-    @property
-    def created(self):
-        """When the user was created."""
-        return self.model_obj.created
+    def from_model(self, model_obj):
+        """Extract information from a user/role object."""
+        # Edit self._properties if you need to add more properties
+        for p in self._properties:
+            self._data[p] = getattr(model_obj, p, None)
 
-    @property
-    def updated(self):
-        """When the user was last updated."""
-        return self.model_obj.updated
+    def __getattr__(self, name):
+        """Get an attribute from the model."""
+        if name in self._properties:
+            return self._data[name]
+        else:
+            raise AttributeError(name)
 
-    @property
-    def version_id(self):
-        """Used by SQLAlchemy for optimistic concurrency control."""
-        return self.model_obj.version_id
+    def __setattr__(self, name, value):
+        """Set an attribute from the model."""
+        if name not in self._set_properties:
+            raise AttributeError(name)
+        super().__setattr__(name, value)
+        setattr(self.model_obj, name, value)
 
-    @property
-    def data(self):
-        """Get the user's data by decoding the JSON."""
-        return dict(self)
-
-    @property
-    def json(self):
-        """Provide the user's data as a JSON/dict blob."""
-        return dict(self)
-
+    # Methods required to make it a record.
     @property
     def is_deleted(self):
-        """Boolean flag to determine if a user is soft deleted."""
-        # TODO
+        """Method needed for the record API."""
         return False
 
     @property
-    def blocked_at(self):
-        """Date when the user was blocked, if any."""
-        return self.model_obj.blocked_at
-
-    @blocked_at.setter
-    def blocked_at(self, value):
-        self.model_obj.blocked_at = value
+    def json(self):
+        """Method needed for the record API."""
+        return {p: getattr(self, p, None) for p in self._properties}
 
     @property
-    def verified_at(self):
-        """Date when the user was verified, if any."""
-        return self.model_obj.verified_at
-
-    @verified_at.setter
-    def verified_at(self, value):
-        self.model_obj.verified_at = value
-
-    @property
-    def active(self):
-        """Boolean flag to determine if a user is active."""
-        return self.model_obj.active
-
-    @active.setter
-    def active(self, value):
-        self.model_obj.active = value
+    def data(self):
+        """Method needed for the record API."""
+        return {p: getattr(self, p, None) for p in self._properties}
 
 
-class UserAggregateModel(MockModel):
-    """Mock model for glueing together various parts of user info."""
+class UserAggregateModel(AggregateMetadata):
+    """User aggregate data model."""
+
+    # If you add properties here you likely also want to add a ModelField on
+    # the UserAggregate API class.
+    _properties = [
+        "id",
+        "version_id",
+        "email",
+        "domain",
+        "username",
+        "active",
+        "preferences",
+        "profile",
+        "confirmed_at",
+        "blocked_at",
+        "verified_at",
+        "created",
+        "updated",
+        "current_login_at",
+    ]
+    """Properties of this object that can be accessed."""
+
+    _set_properties = [
+        "active",
+        "blocked_at",
+        "confirmed_at",
+        "verified_at",
+    ]
+    """Properties of this object that can be set."""
+
+    def from_model(self, user):
+        """Extract information from a user object."""
+        super().from_model(user)
+        self._data["profile"] = dict(user.user_profile or {})
+
+        # Set defaults
+        self._data["preferences"] = dict(self._data["preferences"] or {})
+        self._data["preferences"].setdefault("visibility", "restricted")
+        self._data["preferences"].setdefault("email_visibility", "restricted")
+        default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE", "en")
+        self._data["preferences"].setdefault("locale", default_locale)
+        self._data["preferences"].setdefault("timezone", "Europe/Zurich")
+        self._data["preferences"].setdefault(
+            "notifications",
+            {
+                "enabled": True,
+            },
+        )
 
     @property
     def model_obj(self):
-        """The actual model object behind this mock model."""
+        """The actual model object behind this user aggregate."""
         if self._model_obj is None:
-            id_ = self.data.get("id")
-            email = self.data.get("email")
+            id_ = self._data.get("id")
             with db.session.no_autoflush:
-                self._model_obj = current_datastore.get_user(id_ or email)
+                self._model_obj = current_datastore.get_user_by_id(id_)
         return self._model_obj
 
 
-class GroupAggregateModel(MockModel):
+class GroupAggregateModel(AggregateMetadata):
     """Mock model for glueing together various parts of user group info."""
+
+    _properties = [
+        "id",
+        "version_id",
+        "name",
+        "description",
+        "is_managed",
+        "created",
+        "updated",
+    ]
+    """Properties of this object that can be accessed."""
+
+    _set_properties = []
+    """Properties of this object that can be set."""
 
     @property
     def model_obj(self):
         """The actual model object behind this mock model."""
         if self._model_obj is None:
             name = self.data.get("id")
-            self._model_obj = current_datastore.find_role(name)
+            with db.session.no_autoflush:
+                self._model_obj = current_datastore.find_role(name)
         return self._model_obj

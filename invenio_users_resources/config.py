@@ -48,42 +48,72 @@ USERS_RESOURCES_SERVICE_SCHEMA = UserSchema
 """Schema used by the users service."""
 
 USERS_RESOURCES_SEARCH = {
-    "sort": [
-        "email",
-        "username",
-        "email_domain",
-    ],
-    "facets": ["email_domain", "affiliations"],
+    "sort": ["bestmatch", "username", "email", "domain", "newest", "oldest", "updated"],
+    "facets": ["status", "visibility", "domain_status", "domain", "affiliations"],
 }
-"""User search configuration (i.e list of banners)."""
+"""User search configuration."""
 
 USERS_RESOURCES_SORT_OPTIONS = {
+    "bestmatch": dict(
+        title=_("Best match"),
+        fields=["_score"],
+    ),
     "username": dict(
         title=_("Username"),
-        fields=["username"],
+        fields=["username", "-created"],
     ),
     "email": dict(
         title=_("Email"),
-        fields=["email"],
+        fields=["email_hidden", "-created"],
     ),
-    "email_domain": dict(
-        title=_("Email domain"),
-        fields=["email.domain"],
+    "domain": dict(
+        title=_("Domain"),
+        fields=["domain", "-created"],
+    ),
+    "newest": dict(
+        title=_("Newest"),
+        fields=["-created"],
+    ),
+    "oldest": dict(
+        title=_("Oldest"),
+        fields=["created"],
+    ),
+    "updated": dict(
+        title=_("Recently updated"),
+        fields=["-updated"],
     ),
 }
 """Definitions of available Users sort options. """
 
 USERS_RESOURCES_SEARCH_FACETS = {
-    "email_domain": {
-        "facet": facets.email_domain,
+    "domain": {
+        "facet": facets.domain,
         "ui": {
-            "field": "email.domain",
+            "field": "domain",
+        },
+    },
+    "domain_status": {
+        "facet": facets.domain_status,
+        "ui": {
+            "field": "domain_status",
         },
     },
     "affiliations": {
         "facet": facets.affiliations,
         "ui": {
             "field": "profile.affiliations.keyword",
+        },
+    },
+    "status": {
+        "facet": facets.status,
+        "ui": {
+            "field": "status",
+        },
+    },
+    "visibility": {
+        "facet": facets.visibility,
+        "ui": {
+            "field": "visibility",
         },
     },
 }

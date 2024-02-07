@@ -8,62 +8,72 @@
 # details.
 
 """API classes for user and group management in Invenio."""
-import random
+
 import unicodedata
+from datetime import datetime
 
 from flask import current_app
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import SearchDumper
-from invenio_records.systemfields import DictField, ModelField
+from invenio_records.dumpers.indexedat import IndexedAtDumperExt
+from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 
 from .dumpers import EmailFieldDumperExt
 from .models import GroupAggregateModel, UserAggregateModel
+from .systemfields import (
+    AccountStatusField,
+    AccountVisibilityField,
+    DomainField,
+    IsNotNoneField,
+    UserIdentitiesField,
+)
 
 
-def parse_user_data(user):
-    """Parse the user's information into a dictionary."""
-    data = {
-        "id": user.id,
-        "email": user.email,
-        "username": user.username,
-        "active": user.active,
-        "confirmed": user.confirmed_at is not None,
-        "preferences": dict(user.preferences or {}),
-        "profile": dict(user.user_profile or {}),
-        "blocked_at": user.blocked_at,
-        "verified_at": user.verified_at,
-    }
+class BaseAggregate(Record):
+    """An aggregate of information about a user group/role."""
 
-    data["preferences"].setdefault("visibility", "restricted")
-    data["preferences"].setdefault("email_visibility", "restricted")
-    default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE", "en")
-    data["preferences"].setdefault("locale", default_locale)
-    data["preferences"].setdefault("timezone", "Europe/Zurich")
-    data["preferences"].setdefault(
-        "notifications",
-        {
-            "enabled": True,
-        },
-    )
+    metadata = None
+    """Disabled metadata field from the base class."""
 
-    return data
+    def __getitem__(self, name):
+        """Get a dict key item."""
+        try:
+            return getattr(self.model, name)
+        except AttributeError:
+            raise KeyError(name)
+
+    def __repr__(self):
+        """Create string representation."""
+        return f"<{self.__class__.__name__}: {self.model.data}>"
+
+    def __unicode__(self):
+        """Create string representation."""
+        return self.__repr__()
+
+    @classmethod
+    def from_model(cls, sa_model):
+        """Create an aggregate from an SQL Alchemy model."""
+        return cls({}, model=cls.model_cls(model_obj=sa_model))
+
+    def _validate(self, *args, **kwargs):
+        """Skip the validation."""
+        pass
+
+    def commit(self):
+        """Update the aggregate data on commit."""
+        # You can only commit if you have an underlying model object.
+        if self.model._model_obj is None:
+            raise ValueError(f"{self.__class__.__name__} not backed by a model.")
+        # Basically re-parses the model object.
+        model = self.model_cls(model_obj=self.model._model_obj)
+        self.model = model
+        return self
 
 
-def parse_role_data(role):
-    """Parse the role's information into a dictionary."""
-    data = {
-        "id": role.id,
-        "name": role.name,
-        "description": role.description,
-        "is_managed": role.is_managed,
-    }
-    return data
-
-
-class UserAggregate(Record):
+class UserAggregate(BaseAggregate):
     """An aggregate of information about a user."""
 
     model_cls = UserAggregateModel
@@ -72,49 +82,75 @@ class UserAggregate(Record):
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently an integer for User objects!
     dumper = SearchDumper(
-        extensions=[EmailFieldDumperExt("email")],
-        model_fields={"id": ("uuid", int)},
+        extensions=[
+            EmailFieldDumperExt("email"),
+            IndexedAtDumperExt(),
+        ],
+        model_fields={
+            "id": ("uuid", int),
+        },
     )
     """Search dumper with configured extensions."""
 
-    metadata = None
-    """Disabled metadata field from the base class."""
-
-    index = IndexField("users-user-v1.0.0", search_alias="users")
+    index = IndexField("users-user-v2.0.0", search_alias="users")
     """The search engine index to use."""
 
-    # TODO
-    id = ModelField("id")
-    """The data-layer id."""
+    id = ModelField("id", dump_type=int)
+    """The user identifier."""
 
-    email = DictField("email")
+    active = ModelField("active", dump_type=bool)
+    """Determine is user is active and can login."""
+
+    # Profile fields
+    username = ModelField("username", dump_type=str)
     """The user's email address."""
 
-    username = DictField("username")
+    email = ModelField("email", dump_type=str)
     """The user's email address."""
 
-    profile = DictField("profile")
+    domain = ModelField("domain", dump_type=str)
+    """The domain of the users' email address."""
+
+    profile = ModelField("profile", dump_type=dict)
     """The user's profile."""
 
-    active = DictField("active")
+    preferences = ModelField("preferences", dump_type=dict)
+    """User preferences."""
 
-    confirmed = DictField("confirmed")
+    # Timestamps fields
+    confirmed_at = ModelField("confirmed_at", dump_type=datetime)
+    """Timestamp for when account was confirmed."""
 
-    preferences = DictField("preferences")
+    verified_at = ModelField("verified_at", dump_type=datetime)
+    """Timestamp for when account was verified."""
 
-    blocked_at = DictField("blocked_at")
+    blocked_at = ModelField("blocked_at", dump_type=datetime)
+    """Timestamp for when account was blocked."""
 
-    verified_at = DictField("verified_at")
+    current_login_at = ModelField("current_login_at", dump_type=datetime)
+    """Timestamp for when account was blocked."""
 
-    @property
-    def is_verified(self):
-        """Computed property for user verification status."""
-        return self.verified_at is not None
+    confirmed = IsNotNoneField("confirmed_at", index=True)
+    """Boolean to determine if verified."""
 
-    @property
-    def is_blocked(self):
-        """Computed property for blocked status."""
-        return self.blocked_at is not None
+    verified = IsNotNoneField("verified_at", index=True)
+    """Boolean to determine if verified."""
+
+    blocked = IsNotNoneField("blocked_at", index=True)
+    """Boolean to determine if verified."""
+
+    # Status fields
+    status = AccountStatusField(index=True)
+    """Combined account status attribute."""
+
+    visibility = AccountVisibilityField(index=True)
+    """Combined profile visibility attribute."""
+
+    domaininfo = DomainField(use_cache=True, index=True)
+    """Domain information."""
+
+    identities = UserIdentitiesField("identities", use_cache=True, index=True)
+    """User identities."""
 
     @property
     def avatar_chars(self):
@@ -145,71 +181,52 @@ class UserAggregate(Record):
             # create_user() will already take care of creating the profile
             # for us, if it's specified in the data
             user = current_datastore.create_user(**data)
-            user_aggregate = cls.from_user(user)
-            return user_aggregate
+            return cls.from_model(user)
 
-    def _validate(self, *args, **kwargs):
-        """Skip the validation."""
-        pass
-
-    def commit(self):
-        """Update the aggregate data on commit."""
-        # TODO this does not allow us to set properties via the UserAggregate?
-        #      because everything's taken from the User object...
-        data = parse_user_data(self.model.model_obj)
-        self.update(data)
-        self.model.update(data)
-        return self
-
-    @classmethod
-    def activate(cls, id_):
+    def verify(self):
         """Activates the current user.
 
         Activation of the user is proxied through the datastore.
         """
-        with db.session.no_autoflush:
-            user = current_datastore.get_user(id_)
+        user = self.model.model_obj
+        if user is None:
+            return False
+        return current_datastore.verify_user(user)
+
+    def block(self):
+        """Blocks a user."""
+        user = self.model.model_obj
+        if user is None:
+            return False
+        return current_datastore.block_user(user)
+
+    def activate(self):
+        """Activate a previously deactivated user."""
+        user = self.model.model_obj
         if user is None:
             return False
         return current_datastore.activate_user(user)
 
-    @classmethod
-    def deactivate(cls, id_):
-        """Deactivates the current user.
-
-        Deactivation of the user is proxied through the datastore.
-        """
-        with db.session.no_autoflush:
-            user = current_datastore.get_user(id_)
+    def deactivate(self):
+        """Deactivates the current user."""
+        user = self.model.model_obj
         if user is None:
             return False
         return current_datastore.deactivate_user(user)
 
     @classmethod
-    def from_user(cls, user):
-        """Create the user aggregate from the given user."""
-        # TODO
-        data = parse_user_data(user)
-
-        with db.session.no_autoflush:
-            model = cls.model_cls(data, model_obj=user)
-            user_agg = cls(data, model=model)
-            return user_agg
-
-    @classmethod
     def get_record(cls, id_):
         """Get the user via the specified ID."""
-        # TODO the the datastore.get_user() method will resolve both
-        #      ID as well as email, which we do not necessarily want
         with db.session.no_autoflush:
-            user = current_datastore.get_user(id_)
+            user = current_datastore.get_user_by_id(id_)
         if user is None:
             return None
 
-        return cls.from_user(user)
+        with db.session.no_autoflush:
+            return cls.from_model(user)
 
 
-class GroupAggregate(Record):
+class GroupAggregate(BaseAggregate):
     """An aggregate of information about a user group/role."""
 
     model_cls = GroupAggregateModel
@@ -218,28 +235,22 @@ class GroupAggregate(Record):
     # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
     #       field, which is currently a str for Role objects (role.name)!
     dumper = SearchDumper(extensions=[], model_fields={"id": ("uuid", str)})
-
-    metadata = None
-    """Disabled metadata field from the base class."""
+    """Search index dumper."""
 
     index = IndexField("groups-group-v2.0.0", search_alias="groups")
     """The search engine index to use."""
 
-    # TODO
-    id = ModelField("id")
-    """The data-layer id."""
+    id = ModelField("id", dump_type=str)
+    """ID of group."""
 
-    name = DictField("name")
+    name = ModelField("name", dump_type=str)
     """The group's name."""
 
-    description = DictField("description")
+    description = ModelField("description", dump_type=str)
     """The group's description."""
 
-    is_managed = DictField("is_managed")
+    is_managed = ModelField("is_managed", dump_type=bool)
     """If the group is managed manually."""
-
-    _role = None
-    """The cached Role entity."""
 
     @property
     def avatar_chars(self):
@@ -255,55 +266,22 @@ class GroupAggregate(Record):
         )
         return colors[int(normalized_group_initial, base=36) % len(colors)]
 
-    @property
-    def role(self):
-        """Cache for the associated role object."""
-        role = self._role
-        if role is None:
-            if role is None and self.id is not None:
-                role = current_datastore.find_role(self.id)
-
-            self._role = role
-
-        return role
-
-    def commit(self):
-        """Update the aggregate data on commit."""
-        # TODO this does not allow us to set properties via the aggregate?
-        #      because everything's taken from the Role object...
-        data = parse_role_data(self.role)
-        self.update(data)
-        self.model.update(data)
-        return self
-
-    @classmethod
-    def from_role(cls, role):
-        """Create the user group aggregate from the given role."""
-        # TODO
-        data = parse_role_data(role)
-
-        with db.session.no_autoflush:
-            model = cls.model_cls(data, model_obj=role)
-            role_agg = cls(data, model=model)
-            role_agg._role = role
-            return role_agg
-
     @classmethod
     def get_record(cls, id_):
         """Get the user group via the specified ID."""
         # TODO how do we want to resolve the roles? via ID or name?
-        role = current_datastore.role_model.query.get(id_)
-        if role is None:
-            return None
-
-        return cls.from_role(role)
+        with db.session.no_autoflush:
+            role = current_datastore.role_model.query.get(id_)
+            if role is None:
+                return None
+            return cls.from_model(role)
 
     @classmethod
     def get_record_by_name(cls, name):
         """Get the user group via the specified ID."""
         # TODO how do we want to resolve the roles? via ID or name?
-        role = current_datastore.role_model.query.filter_by(name=name).one_or_none()
-        if role is None:
-            return None
-
-        return cls.from_role(role)
+        with db.session.no_autoflush:
+            role = current_datastore.role_model.query.filter_by(name=name).one_or_none()
+            if role is None:
+                return None
+            return cls.from_model(role)

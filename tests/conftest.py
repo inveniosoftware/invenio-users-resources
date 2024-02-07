@@ -257,7 +257,6 @@ def _create_group(id, name, description, is_managed, database):
         id=id, name=name, description=description, is_managed=is_managed
     )
     current_datastore.commit()
-
     return r
 
 

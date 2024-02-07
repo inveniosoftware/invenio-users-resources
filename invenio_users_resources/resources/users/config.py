@@ -10,10 +10,14 @@
 """Users resource config."""
 
 import marshmallow as ma
+from flask_resources import HTTPJSONException, create_error_handler
+from invenio_cache.errors import LockAcquireFailed
+from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.resources import (
     RecordResourceConfig,
     SearchRequestArgsSchema,
 )
+from invenio_records_resources.resources.errors import ErrorHandlersMixin
 from marshmallow import fields
 
 
@@ -35,12 +39,13 @@ class UsersResourceConfig(RecordResourceConfig):
     url_prefix = "/users"
     routes = {
         "list": "",
-        "moderation_search": "/moderation",
+        "search_all": "/all",
         "item": "/<id>",
         "item-avatar": "/<id>/avatar.svg",
         "approve": "/<id>/approve",
         "block": "/<id>/block",
         "restore": "/<id>/restore",
+        "activate": "/<id>/activate",
         "deactivate": "/<id>/deactivate",
         "impersonate": "/<id>/impersonate",
     }
@@ -50,3 +55,12 @@ class UsersResourceConfig(RecordResourceConfig):
     }
 
     request_search_args = UsersSearchRequestArgsSchema
+
+    error_handlers = {
+        **ErrorHandlersMixin.error_handlers,
+        LockAcquireFailed: create_error_handler(
+            lambda e: (
+                HTTPJSONException(code=400, description=_("User is locked due to concurrent running operation."))
+            )
+        ),
+    }

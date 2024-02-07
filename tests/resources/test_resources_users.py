@@ -41,10 +41,22 @@ def test_read_self_serialization(client, headers, users, user_pub):
     }
     assert "created" in data
     assert "updated" in data
+    assert "domain" in data
     assert "revision_id" in data
+
+    assert "blocked_at" not in data
+    assert "confirmed_at" not in data
+    assert "current_login_at" not in data
+    assert "domaininfo" not in data
+    assert "status" not in data
+    assert "verified_at" not in data
+    assert "verified_at" not in data
+    assert "visibility" not in data
+
     assert data["links"] == {
         "self": f"https://127.0.0.1:5000/api/users/{user_pub.id}",
         "avatar": f"https://127.0.0.1:5000/api/users/{user_pub.id}/avatar.svg",
+        "records_html": f"https://127.0.0.1:5000/search/records?q=user:{user_pub.id}",
     }
 
 
@@ -75,6 +87,7 @@ def test_read_anon_serialization(client, headers, users, username, public_email)
     assert data["links"] == {
         "self": f"https://127.0.0.1:5000/api/users/{u.id}",
         "avatar": f"https://127.0.0.1:5000/api/users/{u.id}/avatar.svg",
+        "records_html": f"https://127.0.0.1:5000/search/records?q=user:{u.id}",
     }
 
     for k in [
