@@ -277,7 +277,7 @@ def test_restore(app, db, user_service, user_res, user_moderator, clear_cache):
     ur = user_service.read(user_moderator.identity, user_res.id)
     assert ur.data["active"] == True
     assert ur.data["verified_at"] is not None
-    assert not "blocked_at" in ur.data
+    assert ur.data["blocked_at"] is None
 
 
 # TODO Clear the cache to test actions without locking side-effects

@@ -20,9 +20,24 @@ from invenio_records_resources.services.records.schema import (
     BaseGhostSchema,
     BaseRecordSchema,
 )
-from marshmallow import Schema, ValidationError, fields
-from marshmallow_utils.fields import ISODateString, SanitizedUnicode
+from marshmallow import Schema, fields
+from marshmallow_utils.fields import SanitizedUnicode, TZDateTime
 from marshmallow_utils.permissions import FieldPermissionsMixin
+
+
+class DomainInfoSchema(Schema):
+    """Schema for domain info."""
+
+    status = fields.String()
+    tld = fields.String()
+    flagged = fields.Boolean()
+
+
+class IdentitiesSchema(Schema):
+    """Schema for domain info."""
+
+    github = fields.String()
+    orcid = fields.String()
 
 
 class UserPreferencesSchema(Schema):
@@ -46,30 +61,47 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 
     field_dump_permissions = {
         "email": "read_email",
+        "domain": "read_details",
         "created": "read_details",
         "updated": "read_details",
         "revision_id": "read_details",
         "active": "read_details",
+        "status": "read_system_details",
+        "visibility": "read_system_details",
         "confirmed": "read_details",
+        "verified": "read_details",
+        "blocked": "read_details",
         "preferences": "read_details",
+        "domaininfo": "read_system_details",
         "blocked_at": "read_system_details",
         "verified_at": "read_system_details",
         "confirmed_at": "read_system_details",
+        "current_login_at": "read_system_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
     active = fields.Boolean()
     confirmed = fields.Boolean(dump_only=True)
+    blocked = fields.Boolean(dump_only=True)
+    verified = fields.Boolean(dump_only=True)
+    status = fields.Str(dump_only=True)
+    visibility = fields.Str(dump_only=True)
     is_current_user = fields.Method("is_self", dump_only=True)
 
     email = fields.String()
+    domain = fields.String()
+    domaininfo = fields.Nested(DomainInfoSchema)
+    identities = fields.Nested(IdentitiesSchema, default={})
     username = fields.String()
     profile = fields.Dict()
     preferences = fields.Nested(UserPreferencesSchema)
 
-    blocked_at = ISODateString()
-    verified_at = ISODateString()
-    confirmed_at = ISODateString()
+    blocked_at = TZDateTime(dump_only=True)
+    verified_at = TZDateTime(dump_only=True)
+    confirmed_at = TZDateTime(dump_only=True)
+    current_login_at = TZDateTime(dump_only=True)
+    created = TZDateTime(dump_only=True)
+    updated = TZDateTime(dump_only=True)
 
     def is_self(self, obj):
         """Determine if identity is the current identity."""

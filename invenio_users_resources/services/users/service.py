@@ -10,21 +10,14 @@
 # details.
 
 """Users service."""
-from datetime import datetime
 
-from flask import current_app
 from invenio_accounts.models import User
 from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
-from invenio_records_resources.services.uow import (
-    RecordCommitOp,
-    RecordIndexOp,
-    TaskOp,
-    unit_of_work,
-)
+from invenio_records_resources.services.uow import RecordCommitOp, TaskOp, unit_of_work
 from invenio_search.engine import dsl
-from werkzeug.local import LocalProxy
+from marshmallow import ValidationError
 
 from invenio_users_resources.services.results import AvatarResult
 from invenio_users_resources.services.users.tasks import execute_moderation_actions
@@ -145,16 +138,13 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
+        if user.blocked:
+            raise ValidationError("User is already blocked.")
+
         # Throws if not acquired
         ModerationMutex(id_).acquire()
-
-        UserAggregate.deactivate(id_)
-        user.model.blocked_at = datetime.utcnow()
-        user.model.verified_at = None
-
-        user.commit()
-
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        user.block()
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(
@@ -172,17 +162,14 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
+        if not user.blocked:
+            raise ValidationError("User is not blocked.")
+
         # Throws if not acquired
         ModerationMutex(id_).acquire()
-
-        UserAggregate.activate(id_)
-        user.model.blocked_at = None
-        user.model.verified_at = datetime.utcnow()
-
-        user.commit()
-
+        user.activate()
         # User is blocked from now on, "after" actions are executed separately.
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(
@@ -200,16 +187,13 @@ class UsersService(RecordService):
 
         self.require_permission(identity, "manage", record=user)
 
+        if user.verified:
+            raise ValidationError("User is already verified.")
+
         # Throws if not acquired
         ModerationMutex(id_).acquire()
-
-        UserAggregate.activate(id_)
-        user.model.blocked_at = None
-        user.model.verified_at = datetime.utcnow()
-
-        user.commit()
-
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+        user.verify()
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(
@@ -224,19 +208,27 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-
         self.require_permission(identity, "manage", record=user)
 
-        # Throws if not acquired
-        ModerationMutex(id_).acquire()
+        if not user.active:
+            raise ValidationError("User is already inactive.")
 
-        UserAggregate.deactivate(id_)
-        user.model.blocked_at = None
-        user.model.verified_at = None
+        user.deactivate()
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return True
 
-        user.commit()
-
-        uow.register(RecordIndexOp(user, indexer=self.indexer, index_refresh=True))
+    @unit_of_work()
+    def activate(self, identity, id_, uow=None):
+        """Activate a user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            # return 403 even on empty resource due to security implications
+            raise PermissionDeniedError()
+        self.require_permission(identity, "manage", record=user)
+        if user.active and user.confirmed:
+            raise ValidationError("User is already active.")
+        user.activate()
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
         return True
 
     def can_impersonate(self, identity, id_):

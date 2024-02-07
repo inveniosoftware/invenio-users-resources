@@ -42,8 +42,9 @@ class UsersResource(RecordResource):
             route("POST", routes["block"], self.block),
             route("POST", routes["restore"], self.restore),
             route("POST", routes["deactivate"], self.deactivate),
+            route("POST", routes["activate"], self.activate),
             route("POST", routes["impersonate"], self.impersonate),
-            route("GET", routes["moderation_search"], self.search_all),
+            route("GET", routes["search_all"], self.search_all),
         ]
 
     @request_search_args
@@ -128,6 +129,15 @@ class UsersResource(RecordResource):
     def deactivate(self):
         """Deactive user."""
         self.service.deactivate(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 200
+
+    @request_view_args
+    def activate(self):
+        """Deactive user."""
+        self.service.activate(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
         )

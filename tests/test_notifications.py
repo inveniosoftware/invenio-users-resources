@@ -13,6 +13,7 @@ from invenio_notifications.models import Notification, Recipient
 from invenio_users_resources.notifications.filters import UserPreferencesRecipientFilter
 from invenio_users_resources.notifications.generators import UserRecipient
 from invenio_users_resources.records.api import UserAggregate
+from invenio_users_resources.records.models import UserAggregateModel
 
 
 def test_user_recipient_generator(
@@ -21,10 +22,10 @@ def test_user_recipient_generator(
     generator_disabled = UserRecipient(key="disabled")
     generator_enabled = UserRecipient(key="enabled")
 
-    user_notifications_disabled = UserAggregate.from_user(
+    user_notifications_disabled = UserAggregate.from_model(
         user_notification_disabled.user
     ).dumps()
-    user_notifications_enabled = UserAggregate.from_user(
+    user_notifications_enabled = UserAggregate.from_model(
         user_notification_enabled.user
     ).dumps()
 
@@ -61,10 +62,10 @@ def test_user_recipient_generator(
 def test_user_recipient_filter(user_notification_disabled, user_notification_enabled):
     """Test user recipient filter for notifications."""
 
-    user_notifications_disabled = UserAggregate.from_user(
+    user_notifications_disabled = UserAggregate.from_model(
         user_notification_disabled.user
     ).dumps()
-    user_notifications_enabled = UserAggregate.from_user(
+    user_notifications_enabled = UserAggregate.from_model(
         user_notification_enabled.user
     ).dumps()
 

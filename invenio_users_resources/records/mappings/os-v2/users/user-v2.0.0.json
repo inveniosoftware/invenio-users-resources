@@ -1,0 +1,158 @@
+{
+  "mappings": {
+    "dynamic": "strict",
+    "dynamic_templates": [
+      {
+        "profile": {
+          "path_match": "profile.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      },
+      {
+        "preferences": {
+          "path_match": "preferences.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      },
+      {
+        "identities": {
+          "path_match": "identities.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ],
+    "properties": {
+      "$schema": {
+        "type": "keyword",
+        "index": "false"
+      },
+      "id": {
+        "type": "keyword"
+      },
+      "version_id": {
+        "type": "integer"
+      },
+      "uuid": {
+        "type": "keyword"
+      },
+      "created": {
+        "type": "date"
+      },
+      "updated": {
+        "type": "date"
+      },
+      "current_login_at": {
+        "type": "date"
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "confirmed_at": {
+        "type": "date"
+      },
+      "indexed_at": {
+        "type": "date"
+      },
+      "confirmed": {
+        "type": "boolean"
+      },
+      "blocked_at": {
+        "type": "date"
+      },
+      "blocked": {
+        "type": "boolean"
+      },
+      "verified_at": {
+        "type": "date"
+      },
+      "verified": {
+        "type": "boolean"
+      },
+      "username": {
+        "type": "keyword"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "email_hidden": {
+        "type": "keyword"
+      },
+      "domain": {
+        "type": "keyword"
+      },
+      "domaininfo": {
+        "properties": {
+          "status": {
+            "type": "integer"
+          },
+          "flagged": {
+            "type": "boolean"
+          },
+          "category": {
+            "type": "integer"
+          },
+          "tld": {
+            "type": "keyword"
+          }
+        }
+      },
+      "identities": {
+        "type": "object",
+        "properties": {},
+        "dynamic": true
+      },
+      "profile": {
+        "properties": {
+          "full_name": {
+            "type": "text"
+          },
+          "affiliations": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        },
+        "dynamic": true
+      },
+      "preferences": {
+        "properties": {
+          "visibility": {
+            "type": "keyword"
+          },
+          "email_visibility": {
+            "type": "keyword"
+          },
+          "locale": {
+            "type": "keyword"
+          },
+          "timezone": {
+            "type": "keyword"
+          },
+          "notifications": {
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "dynamic": true
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "visibility": {
+        "type": "keyword"
+      }
+    }
+  }
+}
