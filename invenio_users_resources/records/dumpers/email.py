@@ -28,9 +28,7 @@ class EmailFieldDumperExt(SearchDumperExt):
         email_visible = record.preferences["email_visibility"]
         if email_visible == "public":
             data[self.field] = email
-            data[self.hidden_field] = email
-        else:
-            data[self.hidden_field] = email
+        data[self.hidden_field] = email
 
     def load(self, data, record_cls):
         """Load the data."""

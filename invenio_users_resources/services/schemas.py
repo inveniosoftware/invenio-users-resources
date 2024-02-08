@@ -9,19 +9,31 @@
 
 """User and user group schemas."""
 
+from flask import current_app
 from invenio_access.permissions import system_user_id
+from invenio_accounts.models import DomainCategory
 from invenio_accounts.profiles.schemas import (
     validate_locale,
     validate_timezone,
     validate_visibility,
 )
+from invenio_accounts.utils import DomainStatus
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services.records.schema import (
     BaseGhostSchema,
     BaseRecordSchema,
 )
-from marshmallow import Schema, fields
-from marshmallow_utils.fields import SanitizedUnicode, TZDateTime
+from marshmallow import (
+    EXCLUDE,
+    Schema,
+    ValidationError,
+    fields,
+    post_load,
+    pre_load,
+    validate,
+    validates_schema,
+)
+from marshmallow_utils.fields import Links, SanitizedUnicode, TZDateTime
 from marshmallow_utils.permissions import FieldPermissionsMixin
 
 
@@ -156,3 +168,112 @@ class NotificationPreferences(Schema):
     """Schema for notification preferences."""
 
     enabled = fields.Bool()
+
+
+class DomainOrgSchema(Schema):
+    """Schema for domain orgs."""
+
+    id = fields.Integer(dump_only=True)
+    pid = fields.String(validate=validate.Length(min=1, max=255), required=True)
+    name = fields.String(validate=validate.Length(min=1, max=255), required=True)
+    props = fields.Dict(
+        keys=fields.String(required=True),
+        values=fields.String(validate=validate.Length(max=255)),
+    )
+    is_parent = fields.Boolean(dump_only=True, dump_default=False)
+
+    @validates_schema
+    def validate_props(self, data, **kwargs):
+        """Apply instance specific validation on props."""
+        schema = current_app.config["USERS_RESOURCES_DOMAINS_ORG_SCHEMA"]
+        props = data.get("props", {})
+        if props:
+            schema.load(props)
+
+
+def validate_domain(value):
+    """Domain validation."""
+    # Basic validation - zenodo has some pretty funky domains so we are not too
+    # strict here.
+    if len(value) > 255:
+        raise ValidationError("Length must be less than 255.")
+    value = value.lower().strip()
+    if "." not in value:
+        raise ValidationError("Not a domain name.")
+    prefix, tld = value.rsplit(".", 1)
+    if tld == "":
+        raise ValidationError("Not a domain name.")
+
+
+class DomainSchema(Schema):
+    """Schema for user groups."""
+
+    id = fields.Str(dump_only=True)
+    domain = fields.String(
+        validate=validate_domain, required=True, metadata={"create_only": True}
+    )
+    tld = fields.String(dump_only=True)
+    status = fields.Integer(dump_only=True)
+    status_name = fields.String(
+        validate=validate.OneOf([s.name for s in list(DomainStatus)]),
+        load_default=DomainStatus.new.name,
+    )
+    category = fields.Integer(dump_only=True, metadata={"read_only": True})
+    category_name = fields.String(validate=validate.Length(min=1, max=255))
+    flagged = fields.Boolean(default=False, metadata={"checked": False})
+    flagged_source = fields.Str(validate=validate.Length(max=255), load_default="")
+    org = fields.List(
+        fields.Nested(DomainOrgSchema), dump_default=None, load_default=None
+    )
+    num_users = fields.Integer(dump_only=True)
+    num_active = fields.Integer(dump_only=True)
+    num_inactive = fields.Integer(dump_only=True)
+    num_confirmed = fields.Integer(dump_only=True)
+    num_verified = fields.Integer(dump_only=True)
+    num_blocked = fields.Integer(dump_only=True)
+    created = TZDateTime(dump_only=True)
+    updated = TZDateTime(dump_only=True)
+    links = Links(dump_only=True)
+
+    class Meta:
+        """Schema meta."""
+
+        unknown = EXCLUDE
+
+    @pre_load
+    def preprocess(self, data, **kwargs):
+        """Preprocess form data."""
+        # Handle misbehaving clients.
+        if "org" in data and data["org"] == "":
+            del data["org"]
+        return data
+
+    @post_load
+    def postprocess(self, data, **kwargs):
+        """Process output data."""
+        data["domain"] = data["domain"].lower().strip()
+        data["domain"].strip()
+        data["status_name"] = DomainStatus[data["status_name"]]
+        data["status"] = data["status_name"].value
+        if "category_name" in data:
+            if data["category_name"] is None:
+                data["category"] = None
+            else:
+                category = DomainCategory.get(data["category_name"])
+                data["category"] = category.id
+        if "org" in data:
+            org = data["org"]
+            if org is None or len(org) == 0:
+                data["org"] = None
+            else:
+                # discard parent
+                data["org"] = org[0]
+        return data
+
+    @validates_schema
+    def validate_category(self, data, **kwargs):
+        """Validate category data."""
+        if "category_name" in data and data["category_name"] is not None:
+            category = DomainCategory.get(data["category_name"])
+            if category is None:
+                raise ValidationError("Invalid category_name.")

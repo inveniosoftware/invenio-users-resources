@@ -18,12 +18,16 @@ from sqlalchemy import event
 from . import config
 from .records.hooks import post_commit, pre_commit
 from .resources import (
+    DomainsResource,
+    DomainsResourceConfig,
     GroupsResource,
     GroupsResourceConfig,
     UsersResource,
     UsersResourceConfig,
 )
 from .services import (
+    DomainsService,
+    DomainsServiceConfig,
     GroupsService,
     GroupsServiceConfig,
     UsersService,
@@ -58,6 +62,7 @@ class InvenioUsersResources(object):
         """Initialize the services for users and user groups."""
         self.users_service = UsersService(config=UsersServiceConfig.build(app))
         self.groups_service = GroupsService(config=GroupsServiceConfig)
+        self.domains_service = DomainsService(config=DomainsServiceConfig.build(app))
 
     def init_resources(self, app):
         """Initialize the resources for users and user groups."""
@@ -68,6 +73,11 @@ class InvenioUsersResources(object):
         self.groups_resource = GroupsResource(
             service=self.groups_service,
             config=GroupsResourceConfig,
+        )
+
+        self.domains_resource = DomainsResource(
+            service=self.domains_service,
+            config=DomainsResourceConfig,
         )
 
     def init_db_hooks(self):

@@ -10,26 +10,61 @@
 """API classes for user and group management in Invenio."""
 
 import unicodedata
+from collections import namedtuple
 from datetime import datetime
 
 from flask import current_app
+from invenio_accounts.models import Domain
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
-from invenio_records.dumpers import SearchDumper
+from invenio_records.dumpers import SearchDumper, SearchDumperExt
 from invenio_records.dumpers.indexedat import IndexedAtDumperExt
 from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
+from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
-from .models import GroupAggregateModel, UserAggregateModel
+from .models import DomainAggregateModel, GroupAggregateModel, UserAggregateModel
 from .systemfields import (
     AccountStatusField,
     AccountVisibilityField,
+    DomainCategoryNameField,
     DomainField,
+    DomainOrgField,
+    DomainStatusNameField,
     IsNotNoneField,
     UserIdentitiesField,
 )
+
+EmulatedPID = namedtuple("EmulatedPID", ["pid_value"])
+"""Emulated PID"""
+
+
+class AggregatePID:
+    """Helper emulate a PID field."""
+
+    def __init__(self, pid_field):
+        """Constructor."""
+        self._pid_field = pid_field
+
+    def __get__(self, record, owner=None):
+        """Evaluate the property."""
+        if record is None:
+            return GetRecordResolver(owner)
+        return EmulatedPID(record[self._pid_field])
+
+
+class GetRecordResolver(object):
+    """Resolver that simply uses get record."""
+
+    def __init__(self, record_cls):
+        """Initialize resolver."""
+        self._record_cls = record_cls
+
+    def resolve(self, pid_value):
+        """Simply get the record."""
+        return self._record_cls.get_record(pid_value)
 
 
 class BaseAggregate(Record):
@@ -67,6 +102,10 @@ class BaseAggregate(Record):
         # You can only commit if you have an underlying model object.
         if self.model._model_obj is None:
             raise ValueError(f"{self.__class__.__name__} not backed by a model.")
+        if self.model._model_obj not in db.session:
+            with db.session.begin_nested():
+                # make sure we get an id assigned
+                db.session.add(self.model._model_obj)
         # Basically re-parses the model object.
         model = self.model_cls(model_obj=self.model._model_obj)
         self.model = model
@@ -285,3 +324,112 @@ class GroupAggregate(BaseAggregate):
             if role is None:
                 return None
             return cls.from_model(role)
+
+
+class OrgNameDumperExt(SearchDumperExt):
+    """Custom fields dumper extension."""
+
+    def dump(self, record, data):
+        """Dump for faceting."""
+        org = data.get("org", None)
+        if org and len(org) > 0:
+            data["org_names"] = [o["name"] for o in org]
+
+    def load(self, data, record_cls):
+        """Remove data from object."""
+        data.pop("org_names", None)
+
+
+class DomainAggregate(BaseAggregate):
+    """An aggregate of information about a user."""
+
+    model_cls = DomainAggregateModel
+    """The model class for the request."""
+
+    # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
+    #       field, which is currently an integer for User objects!
+    dumper = SearchDumper(
+        extensions=[
+            IndexedAtDumperExt(),
+            OrgNameDumperExt(),
+        ],
+        model_fields={
+            "id": ("uuid", int),
+        },
+    )
+    """Search dumper with configured extensions."""
+
+    index = IndexField("domains-domain-v1.0.0", search_alias="domains")
+    """The search engine index to use."""
+
+    pid = AggregatePID("domain")
+    """Needed to emulate pid access."""
+
+    id = ModelField("id", dump_type=int)
+    """The user identifier."""
+
+    domain = ModelField("domain", dump_type=str)
+    """The domain of the users' email address."""
+
+    tld = ModelField("tld", dump_type=str)
+    """Top level domain."""
+
+    status = ModelField("status", dump_type=int)
+    """Domain status."""
+
+    status_name = DomainStatusNameField(index=True)
+    """Domain status name."""
+
+    flagged = ModelField("flagged", dump_type=bool)
+    """Flagged."""
+
+    flagged_source = ModelField("flagged_source", dump_type=str)
+    """Source of flagging."""
+
+    category = ModelField("category", dump_type=int)
+    """Domain category."""
+
+    category_name = DomainCategoryNameField(use_cache=True, index=True)
+    """Domain category name."""
+
+    org_id = ModelField("org_id", dump_type=int)
+    """Number of users."""
+
+    org = DomainOrgField("org", use_cache=True, index=True)
+    """Organization behind the domain."""
+
+    num_users = ModelField("num_users", dump_type=int)
+    """Number of users."""
+
+    num_active = ModelField("num_active", dump_type=int)
+    """Number of active users."""
+
+    num_inactive = ModelField("num_inactive", dump_type=int)
+    """Number of inactive users."""
+
+    num_confirmed = ModelField("num_confirmed", dump_type=int)
+    """Number of confirmed users."""
+
+    num_verified = ModelField("num_verified", dump_type=int)
+    """Number of verified users."""
+
+    num_blocked = ModelField("num_blocked", dump_type=int)
+    """Number of blocked users."""
+
+    @classmethod
+    def get_record(cls, id_):
+        """Get the user via the specified ID."""
+        with db.session.no_autoflush:
+            domain = current_datastore.find_domain(id_)
+        if domain is None:
+            raise NoResultFound()
+        return cls.from_model(domain)
+
+    @classmethod
+    def create(cls, data, id_=None, **kwargs):
+        """Create a domain."""
+        return DomainAggregate(data, model=DomainAggregateModel(model_obj=Domain()))
+
+    def delete(self, force=True):
+        """Delete the domain."""
+        db.session.delete(self.model.model_obj)

@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 
 from flask import current_app
 from invenio_accounts.proxies import current_datastore
+from invenio_accounts.utils import DomainStatus
 from invenio_db import db
 
 
@@ -178,4 +179,61 @@ class GroupAggregateModel(AggregateMetadata):
             name = self.data.get("id")
             with db.session.no_autoflush:
                 self._model_obj = current_datastore.find_role(name)
+        return self._model_obj
+
+
+class DomainAggregateModel(AggregateMetadata):
+    """Mock model for glueing together various parts of user group info."""
+
+    _properties = [
+        "category",
+        "created",
+        "domain",
+        "flagged_source",
+        "flagged",
+        "id",
+        "num_active",
+        "num_blocked",
+        "num_confirmed",
+        "num_inactive",
+        "num_users",
+        "num_verified",
+        "org_id",
+        "status",
+        "tld",
+        "updated",
+        "version_id",
+    ]
+    """Properties of this object that can be accessed."""
+
+    _set_properties = [
+        "category",
+        "domain",
+        "flagged_source",
+        "flagged",
+        "org_id",
+        "status",
+        "tld",
+    ]
+    """Properties of this object that can be set."""
+
+    def from_model(self, domain):
+        """Extract information from a user object."""
+        super().from_model(domain)
+        # Hardcoding version id to 1 since domain model doesn't have
+        # a version id because we update the table often outside
+        # of sqlalchemy ORM.
+        self._data["version_id"] = 1
+        # Convert enum
+        status = self._data.get("status", None)
+        if status and isinstance(status, DomainStatus):
+            self._data["status"] = status.value
+
+    @property
+    def model_obj(self):
+        """The actual model object behind this mock model."""
+        if self._model_obj is None:
+            domain = self.data.get("domain")
+            with db.session.no_autoflush:
+                self._model_obj = current_datastore.find_domain(domain)
         return self._model_obj

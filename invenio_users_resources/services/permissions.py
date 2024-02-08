@@ -61,3 +61,13 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
     can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
+
+
+class DomainPermissionPolicy(BasePermissionPolicy):
+    """Permission policy for users and user groups."""
+
+    can_create = [UserManager, SystemProcess()]
+    can_read = [UserManager, SystemProcess()]
+    can_search = [UserManager, SystemProcess()]
+    can_update = [UserManager, SystemProcess()]
+    can_delete = [UserManager, SystemProcess()]

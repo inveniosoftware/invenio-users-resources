@@ -8,8 +8,9 @@
 
 """Data-layer definitions for user and group management in Invenio."""
 
-from invenio_accounts.models import UserIdentity
+from invenio_accounts.models import DomainOrg, UserIdentity
 from invenio_accounts.proxies import current_datastore
+from invenio_accounts.utils import DomainStatus
 from invenio_records_resources.records.systemfields.calculated import CalculatedField
 
 
@@ -107,7 +108,60 @@ class UserIdentitiesField(CalculatedIndexedField):
     def calculate(self, user_record):
         """Checks if a timestamp is not none."""
         identities = UserIdentity.query.filter_by(id_user=user_record.id).all()
-        data = {}
-        for i in identities:
-            data[i.method] = i.id
+        data = {i.method: i.id for i in identities}
         return data
+
+
+class DomainOrgField(CalculatedIndexedField):
+    """Get information about the user's domain."""
+
+    def calculate(self, domain_record):
+        """Checks if a timestamp is not none."""
+        if not domain_record.model.org_id:
+            return None
+
+        org = domain_record.model.model_obj.org
+
+        parent_org = None
+        if org.parent_id is not None:
+            parent_org = org.parent
+
+        data = [
+            {
+                "id": org.id,
+                "pid": org.pid,
+                "name": org.name,
+                "props": org.json or {},
+                "is_parent": False,
+            }
+        ]
+        if parent_org:
+            data.append(
+                {
+                    "id": parent_org.id,
+                    "pid": parent_org.pid,
+                    "name": parent_org.name,
+                    "props": parent_org.json or {},
+                    "is_parent": True,
+                }
+            )
+        return data
+
+
+class DomainCategoryNameField(CalculatedIndexedField):
+    """Dump the name of the category."""
+
+    def calculate(self, domain_record):
+        """Logic for calculating."""
+        if domain_record.model.model_obj.category:
+            return domain_record.model.model_obj.category_name.label
+        else:
+            return None
+
+
+class DomainStatusNameField(CalculatedIndexedField):
+    """Dump the name of the category."""
+
+    def calculate(self, domain_record):
+        """Logic for calculating."""
+        return DomainStatus(domain_record.status).name

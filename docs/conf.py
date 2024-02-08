@@ -333,3 +333,6 @@ intersphinx_mapping = {
 
 # Autodoc configuraton.
 autoclass_content = "both"
+
+
+nitpick_ignore = [("py:class", "types.StrSequenceOrSet")]

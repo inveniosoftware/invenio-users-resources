@@ -276,7 +276,8 @@ def test_restore(app, db, user_service, user_res, user_moderator, clear_cache):
 
     ur = user_service.read(user_moderator.identity, user_res.id)
     assert ur.data["active"] == True
-    assert ur.data["verified_at"] is not None
+    assert ur.data["confirmed_at"] is not None
+    assert ur.data["verified_at"] is None
     assert ur.data["blocked_at"] is None
 
 

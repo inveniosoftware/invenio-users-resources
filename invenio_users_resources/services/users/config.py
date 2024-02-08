@@ -50,14 +50,8 @@ def can_manage(obj, ctx):
 def word_domain_status(node):
     """Quote DOIs."""
     val = node.value
-    if node.value == "verified":
-        val = DomainStatus.verified.value
-    elif node.value == "blocked":
-        val = DomainStatus.blocked.value
-    elif node.value == "moderated":
-        val = DomainStatus.moderated.value
-    elif node.value == "new":
-        val = DomainStatus.new.value
+    if val in ["verified", "blocked", "moderated", "new"]:
+        val = DomainStatus[node.value].value
     return Word(f"{val}")
 
 

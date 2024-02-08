@@ -60,7 +60,12 @@ class UsersResourceConfig(RecordResourceConfig):
         **ErrorHandlersMixin.error_handlers,
         LockAcquireFailed: create_error_handler(
             lambda e: (
-                HTTPJSONException(code=400, description=_("User is locked due to concurrent running operation."))
+                HTTPJSONException(
+                    code=400,
+                    description=_(
+                        "User is locked due to concurrent running operation."
+                    ),
+                )
             )
         ),
     }
