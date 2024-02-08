@@ -16,17 +16,24 @@ from unittest.mock import MagicMock
 
 import pytest
 from invenio_access.permissions import system_identity
-from invenio_cache.lock import CachedMutex
+from marshmallow import ValidationError
 
 from invenio_users_resources.proxies import current_actions_registry
 from invenio_users_resources.services.users.lock import ModerationMutex
 
 
+@pytest.fixture()
+def unblocked(user_service, user_res):
+    try:
+        user_service.activate(system_identity, user_res.id)
+    except ValidationError:
+        pass
+
+
 def test_moderation_callbacks_success(
-    user_service, user_res, user_moderator, monkeypatch, clear_cache
+    user_service, user_res, user_moderator, monkeypatch, unblocked, clear_cache
 ):
     """Test moderation actions (post block / restore)."""
-
     mocked_method = MagicMock(return_value=True)
     monkeypatch.setitem(current_actions_registry, "block", [mocked_method])
     blocked = user_service.block(user_moderator.identity, user_res.id)
@@ -37,7 +44,7 @@ def test_moderation_callbacks_success(
 
 
 def test_moderation_callbacks_failure(
-    user_service, user_res, user_moderator, monkeypatch, clear_cache
+    user_service, user_res, user_moderator, monkeypatch, unblocked, clear_cache
 ):
     """Test moderation actions (post block).
 
@@ -69,7 +76,7 @@ def test_moderation_callbacks_failure(
 
 
 def test_moderation_callbacks_lock(
-    app, user_service, user_res, user_moderator, monkeypatch, clear_cache
+    app, user_service, user_res, user_moderator, monkeypatch, unblocked, clear_cache
 ):
     """Tests the 'simplest' flow for user moderation in terms of locks (e.g. mutex).
 
@@ -113,6 +120,7 @@ def test_moderation_callbacks_lock_renewal(
     renewal_timeout,
     expected_lock_state,
     clear_cache,
+    unblocked,
 ):
     """Tests whether the lock is renewed after moderating a user.
 

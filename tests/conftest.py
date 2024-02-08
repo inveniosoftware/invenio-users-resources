@@ -19,7 +19,8 @@ import pytest
 from flask_principal import AnonymousIdentity
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import any_user as any_user_need
-from invenio_accounts.models import Role
+from invenio_access.permissions import system_identity
+from invenio_accounts.models import Domain, DomainCategory, DomainOrg, Role
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
 from invenio_cache.proxies import current_cache
@@ -27,6 +28,7 @@ from marshmallow import fields
 
 from invenio_users_resources.permissions import user_management_action
 from invenio_users_resources.proxies import (
+    current_domains_service,
     current_groups_service,
     current_users_service,
 )
@@ -364,3 +366,102 @@ def clear_cache():
     Locking is done using cache, therefore the cache must be cleared after each test to make sure that locks from previous tests are cleared.
     """
     current_cache.cache.clear()
+
+
+@pytest.fixture(scope="module")
+def domains_data():
+    """Data for domains."""
+    return [
+        {
+            "domain": "cern.ch",
+            "tld": "ch",
+            "status": 3,
+            "flagged": False,
+            "flagged_source": "",
+            "category": 1,
+            "org_id": 1,
+        },
+        {
+            "domain": "inveniosoftware.org",
+            "tld": "org",
+            "status": 3,
+            "flagged": False,
+            "flagged_source": "",
+            "org_id": 2,
+        },
+        {
+            "domain": "new.org",
+            "tld": "org",
+            "status": 1,
+            "flagged": False,
+            "flagged_source": "",
+        },
+        {
+            "domain": "moderated.org",
+            "tld": "org",
+            "status": 2,
+            "flagged": True,
+            "flagged_source": "disposable",
+            "category": 3,
+        },
+        {
+            "domain": "spammer.com",
+            "tld": "com",
+            "status": 4,
+            "flagged": True,
+            "flagged_source": "",
+            "category": 4,
+        },
+    ]
+
+
+@pytest.fixture(scope="module")
+def domaincategories_data():
+    """Data for domains."""
+    return [
+        {"id": 1, "label": "organization"},
+        {"id": 2, "label": "company"},
+        {"id": 3, "label": "mail-provider"},
+        {"id": 4, "label": "spammer"},
+    ]
+
+
+@pytest.fixture(scope="module")
+def domainorgs_data():
+    """Data for domains."""
+    return [
+        {
+            "id": 1,
+            "pid": "https://ror.org/01ggx4157",
+            "name": "CERN",
+            "json": {"country": "ch"},
+        },
+        {
+            "id": 2,
+            "pid": "https://ror.org/01ggx4157::it",
+            "name": "IT department",
+            "json": {"country": "ch"},
+            "parent_id": 1,
+        },
+    ]
+
+
+@pytest.fixture(scope="module")
+def domains(app, database, domainorgs_data, domaincategories_data, domains_data):
+    """Test domains."""
+    for d in domaincategories_data:
+        database.session.add(DomainCategory(**d))
+    for d in domainorgs_data:
+        database.session.add(DomainOrg(**d))
+    database.session.commit()
+
+    domains = {}
+    for d in domains_data:
+        database.session.add(Domain(**d))
+        domains[d["domain"]] = d
+    database.session.commit()
+
+    current_domains_service.rebuild_index(system_identity)
+    current_domains_service.indexer.process_bulk_queue()
+    current_domains_service.record_cls.index.refresh()
+    return domains

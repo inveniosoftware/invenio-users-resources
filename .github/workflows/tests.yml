@@ -38,7 +38,7 @@ jobs:
         cache-service: [redis]
         db-service: [postgresql14]
         mq-service: [rabbitmq]
-        search-service: [opensearch2, elasticsearch7]
+        search-service: [opensearch2]
 
     env:
       CACHE: ${{ matrix.cache-service }}

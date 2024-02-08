@@ -9,9 +9,10 @@
 
 """Invenio users DB hooks."""
 
-from invenio_accounts.models import Role, User
+from invenio_accounts.models import Domain, Role, User
 from invenio_accounts.proxies import current_db_change_history
 
+from ..services.domains.tasks import delete_domains, reindex_domains
 from ..services.groups.tasks import reindex_groups, unindex_groups
 from ..services.users.tasks import reindex_users, unindex_users
 
@@ -36,12 +37,16 @@ def pre_commit(sender, session):
             current_db_change_history.add_updated_user(sid, item.id)
         if isinstance(item, Role):
             current_db_change_history.add_updated_role(sid, item.id)
+        if isinstance(item, Domain):
+            current_db_change_history.add_updated_domain(sid, item.id)
 
     for item in deleted:
         if isinstance(item, User):
             current_db_change_history.add_deleted_user(sid, item.id)
         if isinstance(item, Role):
             current_db_change_history.add_deleted_role(sid, item.id)
+        if isinstance(item, Domain):
+            current_db_change_history.add_deleted_domain(sid, item.id)
 
 
 def post_commit(sender, session):
@@ -54,14 +59,30 @@ def post_commit(sender, session):
     if current_db_change_history.sessions.get(sid):
         # Handle updates
         user_ids_updated = list(current_db_change_history.sessions[sid].updated_users)
-        reindex_users.delay(user_ids_updated)
+        if user_ids_updated:
+            reindex_users.delay(user_ids_updated)
 
         group_ids_updated = list(current_db_change_history.sessions[sid].updated_roles)
-        reindex_groups.delay(group_ids_updated)
+        if group_ids_updated:
+            reindex_groups.delay(group_ids_updated)
+
+        domain_ids_updated = list(
+            current_db_change_history.sessions[sid].updated_domains
+        )
+        if domain_ids_updated:
+            reindex_domains.delay(domain_ids_updated)
 
         # Handle deletes
         user_ids_deleted = list(current_db_change_history.sessions[sid].deleted_users)
-        unindex_users.delay(user_ids_deleted)
+        if user_ids_deleted:
+            unindex_users.delay(user_ids_deleted)
 
         group_ids_deleted = list(current_db_change_history.sessions[sid].deleted_roles)
-        unindex_groups.delay(group_ids_deleted)
+        if group_ids_deleted:
+            unindex_groups.delay(group_ids_deleted)
+
+        domain_ids_deleted = list(
+            current_db_change_history.sessions[sid].deleted_domains
+        )
+        if domain_ids_deleted:
+            delete_domains.delay(domain_ids_deleted)

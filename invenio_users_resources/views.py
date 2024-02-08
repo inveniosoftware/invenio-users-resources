@@ -32,9 +32,11 @@ def init(state):
     # services
     rr_ext.registry.register(ext.users_service)
     rr_ext.registry.register(ext.groups_service)
+    rr_ext.registry.register(ext.domains_service)
 
     idx_ext.registry.register(ext.users_service.indexer, indexer_id="users")
     idx_ext.registry.register(ext.groups_service.indexer, indexer_id="groups")
+    idx_ext.registry.register(ext.domains_service.indexer, indexer_id="domains")
 
 
 def create_users_resources_bp(app):
@@ -47,3 +49,9 @@ def create_groups_resources_bp(app):
     """Create the user groups resource blueprint."""
     ext = app.extensions["invenio-users-resources"]
     return ext.groups_resource.as_blueprint()
+
+
+def create_domains_resources_bp(app):
+    """Create the domains resource blueprint."""
+    ext = app.extensions["invenio-users-resources"]
+    return ext.domains_resource.as_blueprint()
