@@ -8,6 +8,27 @@
 Changes
 =======
 
+Version 5.0.0 (released 2024-01-29)
+
+- add domains REST api and underlying service
+
+- improved indexing, data flow and search
+
+    * Refactors data flow and indexing so that the aggregate data model is
+      in charge of all data parsing of the user and role model as well as
+      indexing
+
+    * Adds domain data and user identities and further attributes to the
+      users index and makes them searchable for admins.
+
+    * Fixes indexing/facets of email domain values.
+
+    * Allows admins to search for restricted email addresses.
+
+    * Add admin facets for domain, account status, domain status.
+
+    * Add sort options to admin user search.
+
 Version 4.0.0 (released 2024-01-29)
 
 - installation: bump invenio-accounts and invenio-records-resources
