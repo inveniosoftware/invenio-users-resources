@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 5.0.1 (released 2024-01-29)
+
+- Added Elasticsearch 7 mappings (not tested) to make deprecation of ES7
+  easier.
+
 Version 5.0.0 (released 2024-01-29)
 
 - add domains REST api and underlying service
