@@ -128,7 +128,10 @@ class GroupProxy(EntityProxy):
 
     def pick_resolved_fields(self, identity, resolved_dict):
         """Select which fields to return when resolving the reference."""
-        serialized_role = {}
+        serialized_role = {
+            "id": resolved_dict.get("id", ""),
+            "name": resolved_dict.get("name", ""),
+        }
 
         return serialized_role
 
