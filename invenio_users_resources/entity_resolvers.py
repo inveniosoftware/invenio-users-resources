@@ -93,6 +93,9 @@ class UserResolver(EntityResolver):
 
     def __init__(self):
         """Constructor."""
+        # There's a bit of a mixup of type_key and type_id. Base resolver has no
+        # type_key, but RecordResolvers have.
+        self.type_key = self.type_id
         super().__init__(UsersServiceConfig.service_id)
 
     def matches_reference_dict(self, ref_dict):
@@ -156,6 +159,9 @@ class GroupResolver(EntityResolver):
 
     def __init__(self):
         """Constructor."""
+        # There's a bit of a mixup of type_key and type_id. Base resolver has no
+        # type_key, but RecordResolvers have.
+        self.type_key = self.type_id
         super().__init__(GroupsServiceConfig.service_id)
 
     def matches_reference_dict(self, ref_dict):
