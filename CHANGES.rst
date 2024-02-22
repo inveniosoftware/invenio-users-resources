@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 5.0.3 (released 2024-02-23)
+
+- Fixed issue with notifications sending bad data to the service.
+
 Version 5.0.2 (released 2024-02-19)
 
 - Added Elasticsearch 7 mappings (not tested) to make deprecation of ES7
