@@ -257,7 +257,12 @@ class UserAggregate(BaseAggregate):
     def get_record(cls, id_):
         """Get the user via the specified ID."""
         with db.session.no_autoflush:
-            user = current_datastore.get_user_by_id(id_)
+            # TODO: replace this by get_user_by_id()
+            # Notifications builders right now manage to pass "system" as an
+            # id when they try use the ServiceResultResolvers on
+            # {'user': 'system'} which results in a database transaction being
+            # rolled back when quering on an integer id column with a string.
+            user = current_datastore.get_user(id_)
         if user is None:
             return None
 
