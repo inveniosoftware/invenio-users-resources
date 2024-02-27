@@ -115,7 +115,7 @@
             }
           }
         },
-        "dynamic": true
+        "dynamic": "true"
       },
       "preferences": {
         "properties": {
@@ -141,7 +141,7 @@
             }
           }
         },
-        "dynamic": true
+        "dynamic": "true"
       }
     }
   }
