@@ -60,7 +60,7 @@
           "props" : {
             "type": "object",
             "properties": {},
-            "dynamic": true
+            "dynamic": "true"
           },
           "is_parent" : {
             "type": "boolean"

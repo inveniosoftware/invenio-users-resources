@@ -105,7 +105,7 @@
       "identities": {
         "type": "object",
         "properties": {},
-        "dynamic": true
+        "dynamic": "true"
       },
       "profile": {
         "properties": {
@@ -121,7 +121,7 @@
             }
           }
         },
-        "dynamic": true
+        "dynamic": "true"
       },
       "preferences": {
         "properties": {
@@ -145,7 +145,7 @@
             }
           }
         },
-        "dynamic": true
+        "dynamic": "true"
       },
       "status": {
         "type": "keyword"
