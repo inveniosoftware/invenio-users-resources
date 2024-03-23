@@ -8,6 +8,12 @@
 Changes
 =======
 
+Version 5.1.0 (released 2024-03-23)
+
+- mappings: change "dynamic" values to string
+- resolvers: pick resolved fields for group
+- init: move record_once to finalize_app
+
 Version 5.0.3 (released 2024-02-23)
 
 - Fixed issue with notifications sending bad data to the service.
