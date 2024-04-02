@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 5.2.0 (released 2024-04-02)
+
+- config: enable user administration panel by default
+
 Version 5.1.0 (released 2024-03-23)
 
 - mappings: change "dynamic" values to string
