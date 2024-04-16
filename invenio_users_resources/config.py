@@ -240,3 +240,6 @@ class OrgPropsSchema(Schema):
 
 USERS_RESOURCES_DOMAINS_ORG_SCHEMA = OrgPropsSchema
 """Domains organisation schema config."""
+
+USERS_RESOURCES_GROUPS_ENABLED = True
+"""Config to enable features related to existence of groups."""

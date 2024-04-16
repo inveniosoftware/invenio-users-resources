@@ -64,6 +64,8 @@ def app_config(app_config):
     # setting preferences schema to test notifications
     app_config["ACCOUNTS_USER_PREFERENCES_SCHEMA"] = UserPreferencesNotificationsSchema
 
+    app_config["USERS_RESOURCES_GROUPS_ENABLED"] = True
+
     return app_config
 
 

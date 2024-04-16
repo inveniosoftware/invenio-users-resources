@@ -11,6 +11,8 @@
 """Permission generators for users and groups."""
 
 
+from flask import current_app
+from invenio_access.permissions import any_user
 from invenio_records.dictutils import dict_lookup
 from invenio_records_permissions.generators import (
     ConditionalGenerator,
@@ -123,3 +125,28 @@ class IfGroupNotManaged(ConditionalGenerator):
                     return q_all & else_query
 
         return q_not_managed & then_query
+
+
+class GroupsEnabled(Generator):
+    """Generator to restrict if the groups are not enabled.
+
+    If the groups are not enabled, exclude any user for adding members of the
+    param member type.
+
+    A system process is allowed to do anything.
+    """
+
+    def __init__(self, *need_groups_enabled_types):
+        """Types that need the groups enabled."""
+        self.need_groups_enabled_types = need_groups_enabled_types
+
+    def excludes(self, member_types=None, **kwargs):
+        """Preventing needs."""
+        member_types = member_types or {"group"}
+        for m in member_types:
+            if (
+                m in self.need_groups_enabled_types
+                and not current_app.config["USERS_RESOURCES_GROUPS_ENABLED"]
+            ):
+                return [any_user]
+        return []
