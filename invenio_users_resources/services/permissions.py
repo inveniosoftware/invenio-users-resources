@@ -18,7 +18,13 @@ from invenio_records_permissions.generators import (
 
 from invenio_users_resources.permissions import user_management_action
 
-from .generators import IfGroupNotManaged, IfPublicEmail, IfPublicUser, Self
+from .generators import (
+    GroupsEnabled,
+    IfGroupNotManaged,
+    IfPublicEmail,
+    IfPublicUser,
+    Self,
+)
 
 UserManager = AdminAction(user_management_action)
 
@@ -53,14 +59,17 @@ class UsersPermissionPolicy(BasePermissionPolicy):
 class GroupsPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
-    can_create = [SystemProcess()]
-    can_read = [
-        IfGroupNotManaged([AuthenticatedUser()], [UserManager]),
+    _can_any = [
+        GroupsEnabled("group"),
         SystemProcess(),
     ]
-    can_search = [AuthenticatedUser(), SystemProcess()]
-    can_update = [SystemProcess()]
-    can_delete = [SystemProcess()]
+    can_create = _can_any
+    can_read = _can_any + [
+        IfGroupNotManaged([AuthenticatedUser()], [UserManager]),
+    ]
+    can_search = _can_any + [AuthenticatedUser()]
+    can_update = _can_any
+    can_delete = _can_any
 
 
 class DomainPermissionPolicy(BasePermissionPolicy):
