@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 5.2.0 (released 2024-05-07)
+
+- groups: add permissions and config to control groups feature flag
+
 Version 5.1.1 (released 2024-04-02)
 
 - config: enable user administration panel by default
