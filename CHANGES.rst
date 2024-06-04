@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 5.3.0 (released 2024-06-04)
+
+- installation: bump invenio-records-resources
+
 Version 5.2.0 (released 2024-05-07)
 
 - groups: add permissions and config to control groups feature flag
