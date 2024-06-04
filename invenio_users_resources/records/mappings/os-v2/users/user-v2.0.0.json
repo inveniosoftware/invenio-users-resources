@@ -1,4 +1,25 @@
 {
+  "settings": {
+    "index": {
+      "max_ngram_diff": 2
+    },
+    "analysis": {
+      "analyzer": {
+        "ngram_3_to_5_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram_tokenizer_3_to_5",
+          "filter": ["lowercase"]
+        }
+      },
+      "tokenizer": {
+        "ngram_tokenizer_3_to_5": {
+          "type": "ngram",
+          "min_gram": 3,
+          "max_gram": 5
+        }
+      }
+    }
+  },
   "mappings": {
     "dynamic": "strict",
     "dynamic_templates": [
@@ -75,10 +96,22 @@
         "type": "boolean"
       },
       "username": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "ngram_3_to_5_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "email": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "ngram_3_to_5_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "email_hidden": {
         "type": "keyword"
@@ -110,7 +143,8 @@
       "profile": {
         "properties": {
           "full_name": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "ngram_3_to_5_analyzer"
           },
           "affiliations": {
             "type": "text",
