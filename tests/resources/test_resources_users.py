@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 KTH Royal Institute of Technology
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -126,6 +127,10 @@ def test_approve_user(client, headers, user_pub, user_moderator, db):
     assert res.status_code == 200
     assert res.json["verified_at"] is not None
 
+    # Test user tries to approve themselves
+    res = client.post(f"/users/{user_moderator.id}/approve", headers=headers)
+    assert res.status_code == 403
+
 
 def test_block_user(client, headers, user_pub, user_moderator, db):
     """Tests block user endpoint."""
@@ -137,6 +142,13 @@ def test_block_user(client, headers, user_pub, user_moderator, db):
     assert res.status_code == 200
     assert res.json["blocked_at"] is not None
 
+    # Test user tries to block themselves
+    res = client.post(f"/users/{user_moderator.id}/block", headers=headers)
+    assert res.status_code == 403
+
+    res = client.get(f"/users/{user_moderator.id}")
+    assert res.status_code == 200
+
 
 def test_deactivate_user(client, headers, user_pub, user_moderator, db):
     """Tests deactivate user endpoint."""
@@ -147,6 +159,13 @@ def test_deactivate_user(client, headers, user_pub, user_moderator, db):
     res = client.get(f"/users/{user_pub.id}")
     assert res.status_code == 200
     assert res.json["active"] == False
+
+    # Test user tries to deactivate themselves
+    res = client.post(f"/users/{user_moderator.id}/deactivate", headers=headers)
+    assert res.status_code == 403
+
+    res = client.get(f"/users/{user_moderator.id}")
+    assert res.status_code == 200
 
 
 def test_management_permissions(client, headers, user_pub, db):

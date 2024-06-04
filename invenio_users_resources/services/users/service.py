@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 KTH Royal Institute of Technology
+# Copyright (C) 2022-2024 KTH Royal Institute of Technology.
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
@@ -128,6 +128,13 @@ class UsersService(RecordService):
         self.indexer.bulk_index([u.id for u in users])
         return True
 
+    def _check_permission(self, identity, permission_type, user):
+        """Checks if given identity has the specified permission type on the user."""
+        identity_id = str(identity.id)
+        self.require_permission(
+            identity, permission_type, record=user, identity_id=identity_id
+        )
+
     @unit_of_work()
     def block(self, identity, id_, uow=None):
         """Blocks a user."""
@@ -135,8 +142,7 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-
-        self.require_permission(identity, "manage", record=user)
+        self._check_permission(identity, "manage", user)
 
         if user.blocked:
             raise ValidationError("User is already blocked.")
@@ -159,8 +165,7 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-
-        self.require_permission(identity, "manage", record=user)
+        self._check_permission(identity, "manage", user)
 
         if not user.blocked:
             raise ValidationError("User is not blocked.")
@@ -184,8 +189,7 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-
-        self.require_permission(identity, "manage", record=user)
+        self._check_permission(identity, "manage", user)
 
         if user.verified:
             raise ValidationError("User is already verified.")
@@ -208,7 +212,7 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-        self.require_permission(identity, "manage", record=user)
+        self._check_permission(identity, "manage", user)
 
         if not user.active:
             raise ValidationError("User is already inactive.")
@@ -224,7 +228,8 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-        self.require_permission(identity, "manage", record=user)
+        self._check_permission(identity, "manage", user)
+
         if user.active and user.confirmed:
             raise ValidationError("User is already active.")
         user.activate()
@@ -237,5 +242,6 @@ class UsersService(RecordService):
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
-        self.require_permission(identity, "impersonate", record=user)
+        self._check_permission(identity, "impersonate", user)
+
         return user.model.model_obj
