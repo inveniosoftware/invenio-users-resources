@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -194,10 +195,12 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
         "avatar": Link("{+api}/users/{id}/avatar.svg"),
         "records_html": Link("{+ui}/search/records?q=user:{id}"),
         "admin_records_html": Link(
-            "{+ui}/administration/records?q=user:{id}&f=allversions", when=can_manage
+            "{+ui}/administration/records?q=parent.access.owned_by.user:{id}&f=allversions",
+            when=can_manage,
         ),
         "admin_drafts_html": Link(
-            "{+ui}/administration/drafts?q=user:{id}&f=allversions", when=can_manage
+            "{+ui}/administration/drafts?q=parent.access.owned_by.user:{id}&f=allversions",
+            when=can_manage,
         ),
         "admin_moderation_html": Link(
             "{+ui}/administration/moderation?q=topic.user:{id}", when=can_manage
