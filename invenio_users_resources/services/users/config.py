@@ -193,7 +193,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     links_item = {
         "self": Link("{+api}/users/{id}"),
         "avatar": Link("{+api}/users/{id}/avatar.svg"),
-        "records_html": Link("{+ui}/search/records?q=user:{id}"),
+        "records_html": Link("{+ui}/search/records?q=parent.access.owned_by.user:{id}"),
         "admin_records_html": Link(
             "{+ui}/administration/records?q=parent.access.owned_by.user:{id}&f=allversions",
             when=can_manage,
