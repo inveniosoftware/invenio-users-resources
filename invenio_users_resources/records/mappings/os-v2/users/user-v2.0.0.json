@@ -1,32 +1,4 @@
 {
-  "settings": {
-    "index": {
-      "max_ngram_diff": 2
-    },
-    "analysis": {
-      "analyzer": {
-        "edge_analyzer": {
-          "type": "custom",
-          "tokenizer": "edge_ngram_tokenizer",
-          "filter": [
-            "lowercase"
-          ]
-        }
-      },
-      "tokenizer": {
-        "ngram_tokenizer_3_to_5": {
-          "type": "ngram",
-          "min_gram": 3,
-          "max_gram": 5
-        },
-        "edge_ngram_tokenizer": {
-          "type": "edge_ngram",
-          "min_gram": 2,
-          "max_gram": 20
-        }
-      }
-    }
-  },
   "mappings": {
     "dynamic": "strict",
     "dynamic_templates": [
@@ -103,22 +75,10 @@
         "type": "boolean"
       },
       "username": {
-        "type": "text",
-        "analyzer": "edge_analyzer",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "type": "keyword"
       },
       "email": {
-        "type": "text",
-        "analyzer": "edge_analyzer",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "type": "keyword"
       },
       "email_hidden": {
         "type": "keyword"
@@ -150,8 +110,7 @@
       "profile": {
         "properties": {
           "full_name": {
-            "type": "text",
-            "analyzer": "edge_analyzer"
+            "type": "text"
           },
           "affiliations": {
             "type": "text",
