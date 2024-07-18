@@ -5,10 +5,12 @@
     },
     "analysis": {
       "analyzer": {
-        "ngram_3_to_5_analyzer": {
+        "edge_analyzer": {
           "type": "custom",
-          "tokenizer": "ngram_tokenizer_3_to_5",
-          "filter": ["lowercase"]
+          "tokenizer": "edge_ngram_tokenizer",
+          "filter": [
+            "lowercase"
+          ]
         }
       },
       "tokenizer": {
@@ -16,6 +18,11 @@
           "type": "ngram",
           "min_gram": 3,
           "max_gram": 5
+        },
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
         }
       }
     }
@@ -97,7 +104,7 @@
       },
       "username": {
         "type": "text",
-        "analyzer": "ngram_3_to_5_analyzer",
+        "analyzer": "edge_analyzer",
         "fields": {
           "keyword": {
             "type": "keyword"
@@ -106,7 +113,7 @@
       },
       "email": {
         "type": "text",
-        "analyzer": "ngram_3_to_5_analyzer",
+        "analyzer": "edge_analyzer",
         "fields": {
           "keyword": {
             "type": "keyword"
@@ -144,7 +151,7 @@
         "properties": {
           "full_name": {
             "type": "text",
-            "analyzer": "ngram_3_to_5_analyzer"
+            "analyzer": "edge_analyzer"
           },
           "affiliations": {
             "type": "text",
