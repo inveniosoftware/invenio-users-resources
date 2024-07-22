@@ -59,8 +59,8 @@ def test_search_public_users(user_service, user_pub):
     [
         "email:res@inveniosoftware.org",
         "res@inveniosoftware.org",
-        'email:"pubres@inveniosoftware.org"',
-        '"pubres@inveniosoftware.org"',
+        "email:pubres@inveniosoftware.org",
+        "pubres@inveniosoftware.org",
         "Plazi",
         "+name:Jose -affiliation:CERN",
         "name:Jose AND NOT affiliation:CERN",

@@ -2,19 +2,34 @@
   "settings": {
     "analysis": {
       "analyzer": {
-        "edge_analyzer": {
+        "default": {
           "type": "custom",
-          "tokenizer": "edge_ngram_tokenizer",
+          "tokenizer": "uax_url_email",
           "filter": [
             "lowercase"
           ]
+        },
+        "default_search": {
+          "type": "custom",
+          "tokenizer": "uax_url_email",
+          "filter": [
+            "lowercase"
+          ]
+        },
+        "edge_analyzer": {
+          "tokenizer": "uax_url_email",
+          "filter": [
+            "lowercase",
+            "edgegrams"
+          ]
         }
       },
-      "tokenizer": {
-        "edge_ngram_tokenizer": {
+      "filter": {
+        "edgegrams": {
           "type": "edge_ngram",
           "min_gram": 2,
-          "max_gram": 20
+          "max_gram": 20,
+          "preserve_original": true
         }
       }
     }

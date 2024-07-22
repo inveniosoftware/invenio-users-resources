@@ -131,7 +131,7 @@ class UserAggregate(BaseAggregate):
     )
     """Search dumper with configured extensions."""
 
-    index = IndexField("users-user-v2.0.0", search_alias="users")
+    index = IndexField("users-user-v3.0.0", search_alias="users")
     """The search engine index to use."""
 
     id = ModelField("id", dump_type=int)
