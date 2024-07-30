@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 5.3.1 (released 2024-07-30)
+
+- config: Update records_html link
+- moderation: fix admin record / draft links
+
 Version 5.3.0 (released 2024-06-04)
 
 - installation: bump invenio-records-resources
