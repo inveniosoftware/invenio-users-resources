@@ -123,9 +123,7 @@ class GroupProxy(EntityProxy):
         # Resolves to role name, not id
         role_id = self._parse_ref_dict_id()
         try:
-            return Role.query.filter(
-                Role.name == role_id  # TODO to be changed to role id
-            ).one()
+            return Role.query.filter(Role.id == role_id).one()
         except NoResultFound:
             return {}
 
