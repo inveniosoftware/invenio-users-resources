@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version 5.2.1 (released 2024-08-07)
+
+- config: Update records_html link
+- moderation: fix admin record / draft links
+
 Version 5.2.0 (released 2024-05-07)
 
 - groups: add permissions and config to control groups feature flag
