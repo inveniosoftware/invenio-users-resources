@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 5.4.0 (released 2024-08-09)
+
+- resources: use and adjust vnd.inveniordm.v1+json http accept header
+
 Version 5.3.1 (released 2024-07-30)
 
 - config: Update records_html link
