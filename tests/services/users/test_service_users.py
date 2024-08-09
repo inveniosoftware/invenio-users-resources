@@ -89,6 +89,7 @@ def test_search_field_not_searchable(user_service, user_pub, query):
         "Tim",
         "Tim CERN",
         "Jose",
+        "Jos",
         "Jose CERN",
         "email:pub@inveniosoftware.org",
         "username:pub",
