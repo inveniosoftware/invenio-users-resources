@@ -178,6 +178,9 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     # leaking account information.
     search = UserSearchOptions
 
+    # Moderation lock
+    use_moderation_lock = FromConfig("USERS_RESOURCES_USE_MODERATION_LOCK", True)
+
     # For admin user
     search_all = FromConfigSearchOptions(
         "USERS_RESOURCES_SEARCH",

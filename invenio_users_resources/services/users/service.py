@@ -148,7 +148,8 @@ class UsersService(RecordService):
             raise ValidationError("User is already blocked.")
 
         # Throws if not acquired
-        ModerationMutex(id_).acquire()
+        self._acquire_moderation_lock(id_)
+
         user.block()
         uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
 
@@ -171,7 +172,8 @@ class UsersService(RecordService):
             raise ValidationError("User is not blocked.")
 
         # Throws if not acquired
-        ModerationMutex(id_).acquire()
+        self._acquire_moderation_lock(id_)
+
         user.activate()
         # User is blocked from now on, "after" actions are executed separately.
         uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
@@ -181,6 +183,11 @@ class UsersService(RecordService):
             TaskOp(execute_moderation_actions, user_id=user.id, action="restore")
         )
         return True
+
+    def _acquire_moderation_lock(self, user_id):
+        """Acquire the moderation lock for a specific user."""
+        if self.config.use_moderation_lock:
+            ModerationMutex(user_id).acquire()
 
     @unit_of_work()
     def approve(self, identity, id_, uow=None):
@@ -195,7 +202,8 @@ class UsersService(RecordService):
             raise ValidationError("User is already verified.")
 
         # Throws if not acquired
-        ModerationMutex(id_).acquire()
+        self._acquire_moderation_lock(id_)
+
         user.verify()
         uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
 
