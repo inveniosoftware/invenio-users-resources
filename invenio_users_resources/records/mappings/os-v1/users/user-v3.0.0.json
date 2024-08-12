@@ -1,35 +1,54 @@
 {
   "settings": {
     "analysis": {
+      "char_filter": {
+        "strip_special_chars": {
+          "type": "pattern_replace",
+          "pattern": "[\\p{Punct}\\p{S}]",
+          "replacement": ""
+        }
+      },
       "analyzer": {
-        "default": {
-          "type": "custom",
-          "tokenizer": "uax_url_email",
-          "filter": [
-            "lowercase"
-          ]
-        },
-        "default_search": {
-          "type": "custom",
-          "tokenizer": "uax_url_email",
-          "filter": [
-            "lowercase"
-          ]
-        },
         "edge_analyzer": {
           "tokenizer": "uax_url_email",
+          "type": "custom",
           "filter": [
             "lowercase",
             "edgegrams"
           ]
+        },
+        "accent_edge_analyzer": {
+          "tokenizer": "uax_url_email",
+          "type": "custom",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "edgegrams"
+          ]
+        },
+        "accent_analyzer": {
+          "tokenizer": "standard",
+          "type": "custom",
+          "char_filter": ["strip_special_chars"],
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
         }
       },
       "filter": {
+        "lowercase": {
+          "type": "lowercase",
+          "preserve_original": true
+        },
+        "asciifolding": {
+          "type": "asciifolding",
+          "preserve_original": true
+        },
         "edgegrams": {
           "type": "edge_ngram",
           "min_gram": 2,
-          "max_gram": 20,
-          "preserve_original": true
+          "max_gram": 20
         }
       }
     }
@@ -111,7 +130,8 @@
       },
       "username": {
         "type": "text",
-        "analyzer": "edge_analyzer",
+        "analyzer": "accent_edge_analyzer",
+        "search_analyzer": "accent_analyzer",
         "fields": {
           "keyword": {
             "type": "keyword"
@@ -121,6 +141,7 @@
       "email": {
         "type": "text",
         "analyzer": "edge_analyzer",
+        "search_analyzer": "standard",
         "fields": {
           "keyword": {
             "type": "keyword"
@@ -158,15 +179,13 @@
         "properties": {
           "full_name": {
             "type": "text",
-            "analyzer": "edge_analyzer"
+            "analyzer": "accent_edge_analyzer",
+            "search_analyzer": "accent_analyzer"
           },
           "affiliations": {
             "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
+            "analyzer": "accent_edge_analyzer",
+            "search_analyzer": "accent_analyzer"
           }
         },
         "dynamic": "true"
