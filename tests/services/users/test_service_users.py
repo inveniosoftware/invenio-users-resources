@@ -54,30 +54,7 @@ def test_search_public_users(user_service, user_pub):
     assert res["hits"]["total"] == 2  # 2 public users in conftest
 
 
-@pytest.mark.parametrize(
-    "query",
-    [
-        "email:res@inveniosoftware.org",
-        "res@inveniosoftware.org",
-        "email:pubres@inveniosoftware.org",
-        "pubres@inveniosoftware.org",
-        "Plazi",
-        "+name:Jose -affiliation:CERN",
-        "name:Jose AND NOT affiliation:CERN",
-        "username:inactive",
-        "username:unconfirmed",
-        "preferences.visibility:public",
-        "preferences.email_visibility:restricted",
-        "profile.affiliations:Plazi",
-        "invalid:test",
-    ],
-)
-def test_search_field_not_searchable(user_service, user_pub, query):
-    """Make sure certain fields are NOT searchable."""
-    res = user_service.search(user_pub.identity, q=query).to_dict()
-    assert res["hits"]["total"] == 0
-
-
+# Admin search
 @pytest.mark.parametrize(
     "query",
     [
@@ -95,9 +72,49 @@ def test_search_field_not_searchable(user_service, user_pub, query):
         "username:pub",
     ],
 )
-def test_search_field(user_service, user_pub, query):
+def test_admin_search_field(user_service, user_moderator, query):
     """Make sure certain fields ARE searchable."""
-    res = user_service.search(user_pub.identity, q=query).to_dict()
+    res = user_service.search_all(user_moderator.identity, q=query).to_dict()
+    assert res["hits"]["total"] > 0
+
+
+# User search
+@pytest.mark.parametrize(
+    "query",
+    [
+        "res@inveniosoftware.org",
+        "pubres@inveniosoftware.org",
+        "Plazi",
+        "inactive",
+        "unconfirmed",
+        "restricted",
+        "Plazi",
+        "test",
+    ],
+)
+def test_user_search_field_not_searchable(user_service, user_pub, query):
+    """Make sure certain fields are NOT searchable."""
+    res = user_service.search(user_pub.identity, suggest=query).to_dict()
+    assert res["hits"]["total"] == 0
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "CERN",
+        "Jose CERN",
+        "Jose AND CERN",
+        "Tim",
+        "Tim CERN",
+        "Jose",
+        "Jos",
+        "pub@inveniosoftware.org",
+        "pub",
+    ],
+)
+def test_user_search_field(user_service, user_pub, query):
+    """Make sure certain fields ARE searchable."""
+    res = user_service.search(user_pub.identity, suggest=query).to_dict()
     assert res["hits"]["total"] > 0
 
 
@@ -162,7 +179,9 @@ def test_search_permissions(app, db, user_service, user_moderator, user_res):
     """Test service search for permissions."""
     # User can search for himself
     search = user_service.search(
-        user_res.identity, q=f"username:{user_res._user.username}"
+        user_res.identity,
+        q=user_res._user.username,
+        fields=["username"],
     )
     assert search.total > 0
 
