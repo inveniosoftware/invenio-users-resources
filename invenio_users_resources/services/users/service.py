@@ -66,7 +66,7 @@ class UsersService(RecordService):
         )
 
     def search(self, identity, params=None, search_preference=None, **kwargs):
-        """Search for active and confirmed users, matching the querystring."""
+        """Search for active and confirmed users, matching the query."""
         return super().search(
             identity,
             params=params,
@@ -91,6 +91,7 @@ class UsersService(RecordService):
             params=params,
             search_preference=search_preference,
             search_opts=self.config.search_all,
+            permission_action="search_all",
             extra_filter=extra_filters,
             **kwargs,
         )
