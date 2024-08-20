@@ -38,7 +38,11 @@ class UsersPermissionPolicy(BasePermissionPolicy):
         IfPublicUser(then_=[AnyUser()], else_=[Self()]),
         SystemProcess(),
     ]
-    can_search = [AuthenticatedUser(), SystemProcess()]
+    can_search = [
+        AuthenticatedUser(),
+        IfPublicUser(then_=[AuthenticatedUser()], else_=[Self()]),
+        SystemProcess(),
+    ]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
