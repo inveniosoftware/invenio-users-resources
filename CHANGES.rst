@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 6.0.0 (released 2024-08-22)
+
+- mappings: add analyzers and filters to improve results when searching users
+
 Version 5.4.0 (released 2024-08-09)
 
 - resources: use and adjust vnd.inveniordm.v1+json http accept header
