@@ -91,7 +91,7 @@ class UsersService(RecordService):
             params=params,
             search_preference=search_preference,
             search_opts=self.config.search_all,
-            permission_action="search_all",
+            permission_action="read_all",
             extra_filter=extra_filters,
             **kwargs,
         )
