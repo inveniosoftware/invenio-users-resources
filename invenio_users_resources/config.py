@@ -62,7 +62,7 @@ USERS_RESOURCES_SORT_OPTIONS = {
     ),
     "username": dict(
         title=_("Username"),
-        fields=["username", "-created"],
+        fields=["username.keyword", "-created"],
     ),
     "email": dict(
         title=_("Email"),

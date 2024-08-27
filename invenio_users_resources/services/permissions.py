@@ -38,11 +38,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
         IfPublicUser(then_=[AnyUser()], else_=[Self()]),
         SystemProcess(),
     ]
-    can_search = [
-        AuthenticatedUser(),
-        IfPublicUser(then_=[AuthenticatedUser()], else_=[Self()]),
-        SystemProcess(),
-    ]
+    can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
     can_delete = [SystemProcess()]
 
@@ -52,6 +48,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
         SystemProcess(),
     ]
     can_read_details = [UserManager, Self(), SystemProcess()]
+    can_read_all = [UserManager, SystemProcess()]
 
     # Moderation permissions
     can_manage = [UserManager, SystemProcess()]
