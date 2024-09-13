@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2024 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -23,6 +24,7 @@ from .generators import (
     IfGroupNotManaged,
     IfPublicEmail,
     IfPublicUser,
+    PreventSelf,
     Self,
 )
 
@@ -51,10 +53,10 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_read_all = [UserManager, SystemProcess()]
 
     # Moderation permissions
-    can_manage = [UserManager, SystemProcess()]
+    can_manage = [UserManager, PreventSelf(), SystemProcess()]
     can_search_all = [UserManager, SystemProcess()]
     can_read_system_details = [UserManager, SystemProcess()]
-    can_impersonate = [UserManager, SystemProcess()]
+    can_impersonate = [UserManager, PreventSelf(), SystemProcess()]
 
 
 class GroupsPermissionPolicy(BasePermissionPolicy):
