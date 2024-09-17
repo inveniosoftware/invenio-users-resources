@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 6.1.0 (released 2024-09-17)
+
+- services: add can search all permission for admin searches
+
 Version 6.0.0 (released 2024-08-22)
 
 - mappings: add analyzers and filters to improve results when searching users
