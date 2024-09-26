@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -315,7 +316,7 @@ class GroupAggregate(BaseAggregate):
         """Get the user group via the specified ID."""
         # TODO how do we want to resolve the roles? via ID or name?
         with db.session.no_autoflush:
-            role = current_datastore.role_model.query.get(id_)
+            role = db.session.get(current_datastore.role_model, id_)
             if role is None:
                 return None
             return cls.from_model(role)
