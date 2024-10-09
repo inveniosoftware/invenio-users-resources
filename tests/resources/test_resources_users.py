@@ -3,6 +3,7 @@
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -115,6 +116,23 @@ def test_user_avatar(client, user_pub):
 #
 # Management / moderation
 #
+def test_create_user(client, headers, user_moderator, db):
+    """Tests approve user endpoint."""
+    client = user_moderator.login(client)
+    res = client.post(
+        "/users",
+        json={
+            "username": "newuser",
+            "email": "newuser@inveniosoftware.org",
+        },
+        headers=headers,
+    )
+    assert res.status_code == 201
+
+    res = client.get(f"/users/{res.json['id']}")
+    assert res.status_code == 200
+    assert res.json["active"] == True
+    assert res.json["email"] == "newuser@inveniosoftware.org"
 
 
 def test_approve_user(client, headers, user_pub, user_moderator, db):

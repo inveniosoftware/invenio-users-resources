@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -8,13 +9,9 @@
 
 """User service tests."""
 
-import time
-
 import pytest
-from invenio_access.permissions import system_identity
-from invenio_cache.lock import CachedMutex
-from invenio_cache.proxies import current_cache
 from invenio_records_resources.services.errors import PermissionDeniedError
+from marshmallow import ValidationError
 
 from invenio_users_resources.proxies import current_actions_registry
 
@@ -194,6 +191,106 @@ def test_search_permissions(app, db, user_service, user_moderator, user_res):
         user_moderator.identity, q=f"username:{user_res._user.username}"
     )
     assert search.total > 0
+
+
+def test_create_permission_denied(
+    app, db, user_service, user_moderator, user_res, clear_cache, search_clear
+):
+    """Test user create permission denied."""
+    data = {
+        "username": "newuser",
+        "email": "newuser@inveniosoftware.org",
+    }
+
+    with pytest.raises(PermissionDeniedError):
+        user_service.create(user_res.identity, data)
+
+
+def test_create_user(
+    app, db, user_service, user_moderator, user_res, clear_cache, search_clear
+):
+    """Test user create."""
+    data = {
+        "username": "newuser",
+        "email": "newuser@inveniosoftware.org",
+    }
+    res = user_service.create(user_moderator.identity, data).to_dict()
+
+    ur = user_service.read(user_moderator.identity, res["id"])
+    # Make sure new user is active and verified
+    assert ur.data["username"] == "newuser"
+    assert ur.data["active"]
+    assert ur.data["verified"]
+
+    # Invalid as no email
+    with pytest.raises(ValidationError) as exc_info:
+        user_service.create(
+            user_moderator.identity,
+            {"email": None},
+        )
+    assert exc_info.value.messages == {"email": ["Missing data for required field."]}
+
+
+def test_create_user_errors(
+    app, db, user_service, user_moderator, user_res, clear_cache, search_clear
+):
+    """Test user create errors."""
+    # Invalid values
+    with pytest.raises(ValidationError) as exc_info:
+        user_service.create(
+            user_moderator.identity,
+            {
+                "username": "a",
+                "email": "invalid",
+            },
+        )
+    assert exc_info.value.messages == {
+        "email": ["Not a valid email address."],
+    }
+
+    # Invalid values for username not starting with alpha
+    with pytest.raises(ValidationError) as exc_info:
+        user_service.create(
+            user_moderator.identity,
+            {
+                "username": "_aaa",
+                "email": "valid@up.com",
+            },
+        )
+    assert exc_info.value.messages == [
+        "Unexpected Issue: Username must start with a letter, be at least three "
+        "characters long and only contain alphanumeric characters, dashes and "
+        "underscores.",
+    ]
+
+    # Invalid values for username with non alpha, dash or underscore
+    with pytest.raises(ValidationError) as exc_info:
+        user_service.create(
+            user_moderator.identity,
+            {
+                "username": "aaaa_1-:",
+                "email": "valid@up.com",
+            },
+        )
+    assert exc_info.value.messages == [
+        "Unexpected Issue: Username must start with a letter, be at least three "
+        "characters long and only contain alphanumeric characters, dashes and "
+        "underscores.",
+    ]
+
+    data = {
+        "username": "newuser",
+        "email": "newuser@inveniosoftware.org",
+    }
+    user_service.create(user_moderator.identity, data).to_dict()
+    # Cannot re-add same details for new user
+    with pytest.raises(ValidationError) as exc_info:
+        user_service.create(user_moderator.identity, data)
+
+    assert exc_info.value.messages == {
+        "username": ["Username already used by another account."],
+        "email": ["Email already used by another account."],
+    }
 
 
 def test_block(

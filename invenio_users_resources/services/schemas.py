@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -100,7 +101,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     visibility = fields.Str(dump_only=True)
     is_current_user = fields.Method("is_self", dump_only=True)
 
-    email = fields.String()
+    email = fields.Email(required=True)
     domain = fields.String()
     domaininfo = fields.Nested(DomainInfoSchema)
     identities = fields.Nested(IdentitiesSchema, default={})

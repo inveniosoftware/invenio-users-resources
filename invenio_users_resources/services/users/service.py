@@ -4,14 +4,20 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
 """Users service."""
+import secrets
+import string
 
+from flask_security.utils import hash_password
 from invenio_accounts.models import User
+from invenio_accounts.proxies import current_datastore
+from invenio_accounts.utils import default_reset_password_link_func
 from invenio_db import db
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
@@ -20,7 +26,10 @@ from invenio_search.engine import dsl
 from marshmallow import ValidationError
 
 from invenio_users_resources.services.results import AvatarResult
-from invenio_users_resources.services.users.tasks import execute_moderation_actions
+from invenio_users_resources.services.users.tasks import (
+    execute_moderation_actions,
+    execute_reset_password_email,
+)
 
 from ...records.api import UserAggregate
 from .lock import ModerationMutex
@@ -36,18 +45,18 @@ class UsersService(RecordService):
 
     @unit_of_work()
     def create(self, identity, data, raise_errors=True, uow=None):
-        """Create a user."""
+        """Create a user from users admin."""
         self.require_permission(identity, "create")
-
-        # validate data
+        # Remove None values to avoid validation issues
+        data = {k: v for k, v in data.items() if v}
+        # validate new user data
         data, errors = self.schema.load(
             data,
             context={"identity": identity},
+            raise_errors=raise_errors,
         )
-
-        # create the user with the specified data
-        user = self.user_cls.create(data)
-
+        # create user
+        user = self._create(data)
         # run components
         self.run_components(
             "create",
@@ -57,13 +66,40 @@ class UsersService(RecordService):
             errors=errors,
             uow=uow,
         )
-
-        # persist user to DB (indexing is done in the session hooks, see ext)
-        uow.register(RecordCommitOp(user))
-
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        # get email token and reset info
+        account_user = current_datastore.get_user(user.id)
+        token, reset_link = default_reset_password_link_func(account_user)
+        # trigger celery task to send email.
+        uow.register(
+            TaskOp(
+                execute_reset_password_email,
+                user_id=user.id,
+                token=token,
+                reset_link=reset_link,
+            )
+        )
         return self.result_item(
             self, identity, user, links_tpl=self.links_item_tpl, errors=errors
         )
+
+    def _generate_password(self, length=12):
+        """Generate password of a specific length."""
+        alphabet = string.ascii_letters + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(length))
+
+    def _create(self, user_info: dict):
+        """Create a new active and verified user with auto-generated password."""
+        # Generate password and add to user_info dict
+        user_info["password"] = hash_password(self._generate_password())
+
+        # Create the user with the specified data
+        user = self.user_cls.create(user_info)
+        # Activate and verify user
+        # FIXME: maybe we want to allow for selection, email sent will be different!
+        user.activate()
+        user.verify()
+        return user
 
     def search(self, identity, params=None, search_preference=None, **kwargs):
         """Search for active and confirmed users, matching the query."""

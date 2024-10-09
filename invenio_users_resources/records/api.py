@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -14,7 +15,7 @@ from collections import namedtuple
 from datetime import datetime
 
 from flask import current_app
-from invenio_accounts.models import Domain
+from invenio_accounts.models import Domain, User
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import SearchDumper, SearchDumperExt
@@ -22,6 +23,7 @@ from invenio_records.dumpers.indexedat import IndexedAtDumperExt
 from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
+from marshmallow import ValidationError
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -214,13 +216,28 @@ class UserAggregate(BaseAggregate):
     @classmethod
     def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
-        # NOTE: we don't use an actual database table, and as such can't
-        #       use db.session.add(record.model)
-        with db.session.begin_nested():
-            # create_user() will already take care of creating the profile
-            # for us, if it's specified in the data
-            user = current_datastore.create_user(**data)
-            return cls.from_model(user)
+        try:
+            # Check if email and  username already exists by another account.
+            errors = {}
+            existing_email = (
+                db.session.query(User).filter_by(email=data["email"]).first()
+            )
+            if existing_email:
+                errors["email"] = ["Email already used by another account."]
+            existing_username = (
+                db.session.query(User).filter_by(username=data.get("username")).first()
+            )
+            if existing_username:
+                errors["username"] = ["Username already used by another account."]
+            if errors:
+                raise ValidationError(errors)
+            # Create User
+            account_user = current_datastore.create_user(**data)
+            return cls.from_model(account_user)
+        except ValidationError:
+            raise
+        except Exception as e:
+            raise ValidationError(message=f"Unexpected Issue: {str(e)}", data=data)
 
     def verify(self):
         """Activates the current user.

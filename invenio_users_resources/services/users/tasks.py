@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -11,6 +12,9 @@
 
 from celery import shared_task
 from flask import current_app
+from flask_security.signals import reset_password_instructions_sent
+from flask_security.utils import config_value, send_mail
+from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services.uow import UnitOfWork
 from invenio_records_resources.tasks import send_change_notifications
 from invenio_search.engine import search
@@ -94,3 +98,19 @@ def execute_moderation_actions(user_id=None, action=None):
             )
             # If a callback fails, rollback the operation and stop processing callbacks
             uow.rollback()
+
+
+@shared_task(ignore_result=True, acks_late=True, retry=True)
+def execute_reset_password_email(user_id=None, token=None, reset_link=None):
+    """Send email to email address of new user to reset password."""
+    account_user = current_datastore.get_user(user_id)
+    send_mail(
+        config_value("EMAIL_SUBJECT_PASSWORD_RESET"),
+        account_user.email,
+        "reset_instructions",
+        user=account_user,
+        reset_link=reset_link,
+    )
+    reset_password_instructions_sent.send(
+        current_app._get_current_object(), user=account_user, token=token
+    )
