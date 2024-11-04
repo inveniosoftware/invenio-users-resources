@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 CERN
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2024 Graz University of Technology.
 #
 # Invenio-Records-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -14,6 +15,7 @@ from types import SimpleNamespace
 from flask_principal import RoleNeed, UserNeed
 from invenio_access.permissions import system_process, system_user_id
 from invenio_accounts.models import Role, User
+from invenio_db import db
 from invenio_records_resources.references.entity_resolvers import (
     EntityProxy,
     EntityResolver,
@@ -36,7 +38,7 @@ class UserProxy(EntityProxy):
             return self.system_record()
         else:
             try:
-                return User.query.get(int(user_id))
+                return db.session.get(User, int(user_id))
             except NoResultFound:
                 return self.ghost_record({"id": user_id})
 
@@ -123,9 +125,11 @@ class GroupProxy(EntityProxy):
         # Resolves to role name, not id
         role_id = self._parse_ref_dict_id()
         try:
-            return Role.query.filter(
-                Role.name == role_id  # TODO to be changed to role id
-            ).one()
+            return (
+                db.session.query(Role)
+                .filter(Role.name == role_id)  # TODO to be changed to role id
+                .one()
+            )
         except NoResultFound:
             return {}
 

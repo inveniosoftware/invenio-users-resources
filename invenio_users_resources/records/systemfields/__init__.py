@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2024 CERN
+# Copyright (C) 2024 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -11,6 +12,7 @@
 from invenio_accounts.models import DomainOrg, UserIdentity
 from invenio_accounts.proxies import current_datastore
 from invenio_accounts.utils import DomainStatus
+from invenio_db import db
 from invenio_records_resources.records.systemfields.calculated import CalculatedField
 
 
@@ -107,7 +109,9 @@ class UserIdentitiesField(CalculatedIndexedField):
 
     def calculate(self, user_record):
         """Checks if a timestamp is not none."""
-        identities = UserIdentity.query.filter_by(id_user=user_record.id).all()
+        identities = (
+            db.session.query(UserIdentity).filter_by(id_user=user_record.id).all()
+        )
         data = {i.method: i.id for i in identities}
         return data
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2024 CERN.
+# Copyright (C) 2024 Graz University of Technology.
 #
 # Invenio-Records-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -47,7 +48,9 @@ class DomainComponent(ServiceComponent):
                 record.org_id = None
             else:
                 org = data["org"]
-                obj = DomainOrg.query.filter_by(pid=org["pid"]).one_or_none()
+                obj = (
+                    db.session.query(DomainOrg).filter_by(pid=org["pid"]).one_or_none()
+                )
                 if obj is None:
                     with db.session.begin_nested():
                         obj = DomainOrg.create(
