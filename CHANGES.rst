@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version 6.1.1 (released 2024-11-05)
+
+- global: make forward compatible to sqlalchemy >= 2
+
 Version 6.1.0 (released 2024-09-17)
 
 - services: add can search all permission for admin searches
