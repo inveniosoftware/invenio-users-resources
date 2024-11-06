@@ -428,9 +428,9 @@ class DomainAggregate(BaseAggregate):
 
     @classmethod
     def get_record(cls, id_):
-        """Get the user via the specified ID."""
+        """Get the domain via the specified ID."""
         with db.session.no_autoflush:
-            domain = current_datastore.find_domain(id_)
+            domain = current_datastore.find_domain_by_id(id_)
         if domain is None:
             raise NoResultFound()
         return cls.from_model(domain)
