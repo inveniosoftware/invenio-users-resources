@@ -124,12 +124,14 @@ USERS_RESOURCES_SEARCH_FACETS = {
 USERS_RESOURCES_ADMINISTRATION_ENABLED = True
 """Enable the user administration"""
 
+USERS_RESOURCES_USE_MODERATION_LOCK = True
+"""Enable or disable using a per-user lock for moderation actions."""
+
 USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT = 30
 """Default timeout, in seconds, to lock a user when moderating."""
 
 USERS_RESOURCES_MODERATION_LOCK_RENEWAL_TIMEOUT = 120
 """Renewal timeout, in seconds, to increase the lock time for a user when moderating."""
-
 
 USERS_RESOURCES_DOMAINS_SEARCH = {
     "sort": [

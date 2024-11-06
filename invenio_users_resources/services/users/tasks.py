@@ -9,6 +9,8 @@
 
 """Users service tasks."""
 
+from contextlib import ExitStack
+
 from celery import shared_task
 from flask import current_app
 from invenio_records_resources.services.uow import UnitOfWork
@@ -78,8 +80,10 @@ def execute_moderation_actions(user_id=None, action=None):
     """
     actions = current_actions_registry.get(action, [])
 
-    with ModerationMutex(user_id) as lock:
-        lock.acquire_or_renew(renewal_timeout)
+    with ExitStack() as stack:
+        if current_users_service.config.use_moderation_lock:
+            lock = stack.enter_context(ModerationMutex(user_id))
+            lock.acquire_or_renew(renewal_timeout)
 
         # Create a uow that is shared by all the callables
         uow = UnitOfWork()
