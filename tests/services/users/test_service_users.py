@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2024 CERN.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -98,24 +98,34 @@ def test_user_search_field_not_searchable(user_service, user_pub, query):
     assert res["hits"]["total"] == 0
 
 
+USERNAME_BOTH = ["pub", "pubres"]
+USERNAME_JOSE = ["pub"]
+USERNAME_TIM = ["pubres"]
+
+
+#
+# Read
 @pytest.mark.parametrize(
-    "query",
+    "query,expected_usernames",
     [
-        "CERN",
-        "Jose CERN",
-        "Jose AND CERN",
-        "Tim",
-        "Tim CERN",
-        "Jose",
-        "Jos",
-        "pub@inveniosoftware.org",
-        "pub",
+        ("CERN", USERNAME_BOTH),
+        ("Jose", USERNAME_JOSE),
+        ("Jos", USERNAME_JOSE),
+        ("Jose CERN", USERNAME_BOTH),
+        ("Jose AND CERN", USERNAME_BOTH),
+        ("Tim", USERNAME_TIM),
+        ("Tim CERN", USERNAME_BOTH),
+        ("pub@inveniosoftware.org", USERNAME_JOSE),
+        ("pub@inveniosoftware.or", USERNAME_JOSE),
+        ("pub@inveniosoft", USERNAME_JOSE),
+        ("pub", USERNAME_BOTH),
     ],
 )
-def test_user_search_field(user_service, user_pub, query):
+def test_user_search_field(user_service, user_pub, query, expected_usernames):
     """Make sure certain fields ARE searchable."""
     res = user_service.search(user_pub.identity, suggest=query).to_dict()
-    assert res["hits"]["total"] > 0
+    usernames = [entry["username"] for entry in res["hits"]["hits"]]
+    assert sorted(usernames) == expected_usernames
 
 
 #
