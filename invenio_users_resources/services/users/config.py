@@ -97,7 +97,6 @@ class AdminUserSearchOptions(UserSearchOptions):
 
     pagination_options = {
         "default_results_per_page": 20,
-        "default_max_results": 100,
     }
 
     query_parser_cls = QueryParser.factory(
