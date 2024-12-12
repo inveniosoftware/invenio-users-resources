@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v6.1.2 (released 2024-12-12)
+
+- service: remove max 100 results limit from admin user search
+
 Version 6.1.1 (released 2024-11-05)
 
 - global: make forward compatible to sqlalchemy >= 2
