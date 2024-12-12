@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2022-2024 CERN.
+# Copyright (C) 2022 CERN.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -97,6 +97,7 @@ class AdminUserSearchOptions(UserSearchOptions):
 
     pagination_options = {
         "default_results_per_page": 20,
+        "default_max_results": 10_000,
     }
 
     query_parser_cls = QueryParser.factory(
