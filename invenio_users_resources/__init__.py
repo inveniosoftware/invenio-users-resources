@@ -10,6 +10,6 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
-__version__ = "6.1.2"
+__version__ = "6.1.3"
 
 __all__ = ("__version__",)
