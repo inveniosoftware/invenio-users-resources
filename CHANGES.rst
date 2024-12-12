@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v6.1.3 (released 2024-12-12)
+
+- services: explicitly set max results to 10,000 for admin user search
+
 Version v6.1.2 (released 2024-12-12)
 
 - service: remove max 100 results limit from admin user search
