@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2023-2025 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -103,7 +103,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     email = fields.String()
     domain = fields.String()
     domaininfo = fields.Nested(DomainInfoSchema)
-    identities = fields.Nested(IdentitiesSchema, default={})
+    identities = fields.Nested(IdentitiesSchema, dump_default={})
     username = fields.String()
     profile = fields.Dict()
     preferences = fields.Nested(UserPreferencesSchema)
@@ -221,7 +221,7 @@ class DomainSchema(Schema):
     )
     category = fields.Integer(dump_only=True, metadata={"read_only": True})
     category_name = fields.String(validate=validate.Length(min=1, max=255))
-    flagged = fields.Boolean(default=False, metadata={"checked": False})
+    flagged = fields.Boolean(dump_default=False, metadata={"checked": False})
     flagged_source = fields.Str(validate=validate.Length(max=255), load_default="")
     org = fields.List(
         fields.Nested(DomainOrgSchema), dump_default=None, load_default=None
