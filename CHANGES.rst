@@ -9,6 +9,8 @@
 Changes
 =======
 
+Version v7.0.0.dev2 (released 2025-01-23)
+
 Version 7.0.0.dev1 (released 2024-12-12)
 
 - setup: change to reusable workflows
