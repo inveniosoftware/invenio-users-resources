@@ -1,5 +1,5 @@
 ..
-    Copyright (C) 2023-2024 CERN.
+    Copyright (C) 2023-2025 CERN.
     Copyright (C) 2024 Graz University of Technology.
 
     Invenio-Users-Resources is free software; you can redistribute it
@@ -8,6 +8,10 @@
 
 Changes
 =======
+
+Version v7.0.0 (released 2025-02-13)
+
+- Remove pre-release status.
 
 Version v7.0.0.dev2 (released 2025-01-23)
 
