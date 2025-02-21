@@ -178,7 +178,7 @@ def users_data():
     """Data for users."""
     return [
         {
-            "username": "pubres",
+            "username": "pub-res",
             "email": "pubres@inveniosoftware.org",
             "profile": {
                 "full_name": "Tim Smith",
@@ -437,7 +437,7 @@ def user_accented(users):
 @pytest.fixture(scope="module")
 def user_pubres(users):
     """User tjs (public/restricted)."""
-    return users["pubres"]
+    return users["pub-res"]
 
 
 @pytest.fixture(scope="module")
