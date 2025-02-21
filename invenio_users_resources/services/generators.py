@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2025 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,9 +11,8 @@
 
 """Permission generators for users and groups."""
 
-
 from flask import current_app
-from invenio_access.permissions import any_user
+from invenio_access import Permission, any_user
 from invenio_records.dictutils import dict_lookup
 from invenio_records_permissions.generators import (
     ConditionalGenerator,
@@ -112,17 +112,14 @@ class IfGroupNotManaged(ConditionalGenerator):
 
     def query_filter(self, **kwargs):
         """Filters for queries."""
-        q_all = dsl.Q("match_all")
         q_not_managed = dsl.Q("match", **{self._field_name: False})
         then_query = self._make_query(self.then_, **kwargs)
         else_query = self._make_query(self.else_, **kwargs)
-
         identity = kwargs.get("identity", None)
-
         if identity:
-            for need in self.needs(**kwargs):
-                if need in identity.provides:
-                    return q_all & else_query
+            permission = Permission(*self.needs(**kwargs))
+            if permission.allows(identity):
+                return else_query
 
         return q_not_managed & then_query
 
