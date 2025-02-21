@@ -116,8 +116,13 @@ def user_moderator(UserFixture, app, database, users):
     action_name = user_management_action.value
     moderator = users["user_moderator"]
 
-    role = Role(name=action_name)
-    database.session.add(role)
+    role = current_datastore.create_role(
+        id=action_name,
+        name=action_name,
+        description="user_management_action group",
+        is_managed=True,
+    )
+    moderator.roles = [role]
 
     action_role = ActionRoles.create(action=user_management_action, role=role)
     database.session.add(action_role)
