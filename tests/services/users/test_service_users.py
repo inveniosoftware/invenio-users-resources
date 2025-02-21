@@ -95,9 +95,9 @@ def test_user_search_field_not_searchable(user_service, user_pub, query):
     assert res["hits"]["total"] == 0
 
 
-USERNAME_BOTH = ["pub", "pubres"]
 USERNAME_JOSE = ["pub"]
-USERNAME_TIM = ["pubres"]
+USERNAME_TIM = ["pub-res"]
+USERNAME_BOTH = USERNAME_JOSE + USERNAME_TIM
 
 
 #
@@ -114,6 +114,8 @@ USERNAME_TIM = ["pubres"]
         ("pub@inveniosoftware.org", USERNAME_JOSE),
         ("pub@inveniosoftware.or", USERNAME_JOSE),
         ("pub", USERNAME_BOTH),
+        ("re", USERNAME_TIM),
+        ("res", USERNAME_TIM),
     ],
 )
 def test_user_search_field(user_service, user_pub, query, expected_usernames):
@@ -155,7 +157,7 @@ def test_read_with_logged_in(
     user_service.read_avatar(random_identity, user_pub.id)
 
     res = user_service.read(random_identity, user_pubres.id).to_dict()
-    assert res["username"] == "pubres"
+    assert res["username"] == "pub-res"
     assert "email" not in res
     user_service.read_avatar(random_identity, user_pubres.id)
 
@@ -177,7 +179,7 @@ def test_read_with_logged_in(
     "username",
     [
         "pub",
-        "pubres",
+        "pub-res",
         "res",
     ],
 )

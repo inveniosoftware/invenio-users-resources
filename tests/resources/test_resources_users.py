@@ -78,7 +78,7 @@ def test_read_anon_serialization(client, headers, users):
 
 @pytest.mark.parametrize(
     "username",
-    ["pub", "pubres", "res"],
+    ["pub", "pub-res", "res"],
 )
 def test_read_logged_in_serialization(client, headers, users, user_accented, username):
     """Read user profile/email as logged in."""
