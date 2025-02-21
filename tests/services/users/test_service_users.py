@@ -98,9 +98,9 @@ def test_user_search_field_not_searchable(user_service, user_pub, query):
     assert res["hits"]["total"] == 0
 
 
-USERNAME_BOTH = ["pub", "pubres"]
 USERNAME_JOSE = ["pub"]
-USERNAME_TIM = ["pubres"]
+USERNAME_TIM = ["pub-res"]
+USERNAME_BOTH = USERNAME_JOSE + USERNAME_TIM
 
 
 #
@@ -118,6 +118,8 @@ USERNAME_TIM = ["pubres"]
         ("pub@inveniosoftware.or", USERNAME_JOSE),
         ("pub@inveniosoft", USERNAME_JOSE),
         ("pub", USERNAME_BOTH),
+        ("re", USERNAME_TIM),
+        ("res", USERNAME_TIM),
     ],
 )
 def test_user_search_field(user_service, user_pub, query, expected_usernames):
@@ -136,7 +138,7 @@ def test_read_with_anon(user_service, anon_identity, user_pub, user_pubres, user
     assert res["username"] == "pub"
     assert res["email"] == user_pub.email
     res = user_service.read(anon_identity, user_pubres.id).to_dict()
-    assert res["username"] == "pubres"
+    assert res["username"] == "pub-res"
     assert "email" not in res
     pytest.raises(
         # TODO: Should be mapped to a 404
@@ -148,7 +150,7 @@ def test_read_with_anon(user_service, anon_identity, user_pub, user_pubres, user
 
 
 @pytest.mark.parametrize(
-    "username,can_read", [("pub", True), ("pubres", True), ("res", False)]
+    "username,can_read", [("pub", True), ("pub-res", True), ("res", False)]
 )
 def test_read_avatar_with_anon(user_service, anon_identity, users, username, can_read):
     """Anonymous users can read avatar single *public* user."""
@@ -169,7 +171,7 @@ def test_read_avatar_with_anon(user_service, anon_identity, users, username, can
     "username",
     [
         "pub",
-        "pubres",
+        "pub-res",
         "res",
     ],
 )
