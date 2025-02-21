@@ -26,10 +26,10 @@ from invenio_records_resources.services.records.params import (
     SortParam,
 )
 from invenio_records_resources.services.records.queryparser import (
+    CompositeSuggestQueryParser,
     FieldValueMapper,
     QueryParser,
     SearchFieldTransformer,
-    SuggestQueryParser,
 )
 from luqum.tree import Word
 
@@ -68,9 +68,15 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     # The user search needs to be highly restricted to avoid leaking
     # account information, hence do not edit here unless you are
     # absolutely sure what you're doing.
-    suggest_parser_cls = SuggestQueryParser.factory(
+    suggest_parser_cls = CompositeSuggestQueryParser.factory(
         tree_transformer_cls=SearchFieldTransformer,
-        fields=["username^2", "email^2", "profile.full_name^3", "profile.affiliations"],
+        fields=[
+            "username^2",
+            "email.keyword^2",
+            "email^2",
+            "profile.full_name^3",
+            "profile.affiliations",
+        ],
         # Only public emails because hidden emails are stored in email_hidden field.
         allow_list=["username", "email"],
         mapping={
@@ -81,7 +87,6 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
             "name": "profile.full_name",
         },
         type="most_fields",  # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types
-        fuzziness="AUTO",  # https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#fuzziness
     )
 
     params_interpreters_cls = [
