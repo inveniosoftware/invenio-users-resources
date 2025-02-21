@@ -118,6 +118,7 @@ USERNAME_BOTH = USERNAME_JOSE + USERNAME_TIM
         ("pub@inveniosoftware.or", USERNAME_JOSE),
         ("pub@inveniosoft", USERNAME_JOSE),
         ("pub", USERNAME_BOTH),
+        ("pub-res", USERNAME_TIM),
         ("re", USERNAME_TIM),
         ("res", USERNAME_TIM),
     ],

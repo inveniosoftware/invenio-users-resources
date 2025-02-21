@@ -71,6 +71,7 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     suggest_parser_cls = CompositeSuggestQueryParser.factory(
         tree_transformer_cls=SearchFieldTransformer,
         fields=[
+            "username.keyword^2",
             "username^2",
             "email.keyword^2",
             "email^2",
