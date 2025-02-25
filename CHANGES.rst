@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v5.4.2 (released 2025-02-25)
+
+- ci: switch to reusable GH actions
+
 Version v5.4.1 (released 2025-02-25)
 
 - services: explicitly set max results to 10,000 for admin user search
