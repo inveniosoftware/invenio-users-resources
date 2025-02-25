@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v5.4.1 (released 2025-02-25)
+
+- services: explicitly set max results to 10,000 for admin user search
+
 Version 5.4.0 (released 2024-08-09)
 
 - resources: use and adjust vnd.inveniordm.v1+json http accept header
