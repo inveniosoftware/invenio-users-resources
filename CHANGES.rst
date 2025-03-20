@@ -1,12 +1,16 @@
 ..
     Copyright (C) 2023-2024 CERN.
-
+    Copyright (C) 2025 KTH Royal Institute of Technology.
     Invenio-Users-Resources is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
     more details.
 
 Changes
 =======
+
+Version 6.1.4 (released 2025-03-20)
+
+- i18n: mark missing strings for translations
 
 Version v6.1.3 (released 2024-12-12)
 
