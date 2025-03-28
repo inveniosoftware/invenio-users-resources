@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2024 CERN.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -98,24 +98,36 @@ def test_user_search_field_not_searchable(user_service, user_pub, query):
     assert res["hits"]["total"] == 0
 
 
+USERNAME_JOSE = ["pub"]
+USERNAME_TIM = ["pub-res"]
+USERNAME_BOTH = USERNAME_JOSE + USERNAME_TIM
+
+
+#
+# Read
 @pytest.mark.parametrize(
-    "query",
+    "query,expected_usernames",
     [
-        "CERN",
-        "Jose CERN",
-        "Jose AND CERN",
-        "Tim",
-        "Tim CERN",
-        "Jose",
-        "Jos",
-        "pub@inveniosoftware.org",
-        "pub",
+        ("CERN", USERNAME_BOTH),
+        ("Jose", USERNAME_JOSE),
+        ("Jos", USERNAME_JOSE),
+        ("Jose CERN", USERNAME_JOSE),
+        ("Tim", USERNAME_TIM),
+        ("Tim CERN", USERNAME_TIM),
+        ("pub@inveniosoftware.org", USERNAME_JOSE),
+        ("pub@inveniosoftware.or", USERNAME_JOSE),
+        ("pub@inveniosoft", USERNAME_JOSE),
+        ("pub", USERNAME_BOTH),
+        ("pub-res", USERNAME_TIM),
+        ("re", USERNAME_TIM),
+        ("res", USERNAME_TIM),
     ],
 )
-def test_user_search_field(user_service, user_pub, query):
+def test_user_search_field(user_service, user_pub, query, expected_usernames):
     """Make sure certain fields ARE searchable."""
     res = user_service.search(user_pub.identity, suggest=query).to_dict()
-    assert res["hits"]["total"] > 0
+    usernames = [entry["username"] for entry in res["hits"]["hits"]]
+    assert sorted(usernames) == expected_usernames
 
 
 #
@@ -127,7 +139,7 @@ def test_read_with_anon(user_service, anon_identity, user_pub, user_pubres, user
     assert res["username"] == "pub"
     assert res["email"] == user_pub.email
     res = user_service.read(anon_identity, user_pubres.id).to_dict()
-    assert res["username"] == "pubres"
+    assert res["username"] == "pub-res"
     assert "email" not in res
     pytest.raises(
         # TODO: Should be mapped to a 404
@@ -139,7 +151,7 @@ def test_read_with_anon(user_service, anon_identity, user_pub, user_pubres, user
 
 
 @pytest.mark.parametrize(
-    "username,can_read", [("pub", True), ("pubres", True), ("res", False)]
+    "username,can_read", [("pub", True), ("pub-res", True), ("res", False)]
 )
 def test_read_avatar_with_anon(user_service, anon_identity, users, username, can_read):
     """Anonymous users can read avatar single *public* user."""
@@ -160,7 +172,7 @@ def test_read_avatar_with_anon(user_service, anon_identity, users, username, can
     "username",
     [
         "pub",
-        "pubres",
+        "pub-res",
         "res",
     ],
 )
