@@ -32,7 +32,6 @@ from invenio_users_resources.proxies import (
     current_groups_service,
     current_users_service,
 )
-from invenio_users_resources.records import GroupAggregate
 from invenio_users_resources.services.schemas import (
     NotificationPreferences,
     UserPreferencesSchema,
@@ -237,6 +236,21 @@ def users_data():
                 },
             },
         },
+        {
+            "username": "accented",
+            "email": "accented@inveniosoftware.org",
+            "profile": {
+                "full_name": "Čestmír Kopecký",
+                "affiliations": "CERN",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "restricted",
+                "notifications": {
+                    "enabled": False,
+                },
+            },
+        },
     ]
 
 
@@ -324,6 +338,12 @@ def groups(database, group, group2, not_managed_group):
 def user_pub(users):
     """User jbenito (restricted/restricted)."""
     return users["pub"]
+
+
+@pytest.fixture(scope="module")
+def user_accented(users):
+    """User accented (Čestmír Kopecký)."""
+    return users["accented"]
 
 
 @pytest.fixture(scope="module")
