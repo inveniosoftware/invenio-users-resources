@@ -8,6 +8,7 @@
 
 """Avatar results for users and groups."""
 
+import unicodedata
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -48,7 +49,17 @@ class AvatarResult:
     @property
     def etag(self):
         """Get an ETag for the avatar."""
-        return f"{self._obj.avatar_chars}{self._obj.avatar_color}"
+        # etags must be ascii. If the avatar_chars are not ascii, we need to
+        # normalize them to ascii. This is done by removing accents and
+        # diacritics from the characters.
+        etag_start = self._obj.avatar_chars
+        if not all(ord(c) < 128 for c in etag_start):
+            etag_start = "".join(
+                c
+                for c in unicodedata.normalize("NFD", etag_start)
+                if unicodedata.category(c) != "Mn"
+            )
+        return f"{etag_start}{self._obj.avatar_color}"
 
     @property
     def last_modified(self):

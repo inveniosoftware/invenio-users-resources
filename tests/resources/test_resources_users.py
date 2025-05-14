@@ -109,6 +109,16 @@ def test_user_avatar(client, user_pub):
     res = client.get(f"/users/{user_pub.id}/avatar.svg")
     assert res.status_code == 200
     assert res.mimetype == "image/svg+xml"
+    assert res.headers["Etag"].startswith('"J')  # (J)ose Benito Gonzalez Lopez
+    data = res.get_data()
+
+
+def test_user_avatar_non_ascii(client, user_accented):
+    client = user_accented.login(client)
+    res = client.get(f"/users/{user_accented.id}/avatar.svg")
+    assert res.status_code == 200
+    assert res.mimetype == "image/svg+xml"
+    assert res.headers["Etag"].startswith('"C')  # (Č)estmír Kopecký
     data = res.get_data()
 
 
