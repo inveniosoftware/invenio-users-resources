@@ -162,6 +162,7 @@ class SystemUserSchema(BaseGhostSchema):
         dump_only=True,
     )
     username = fields.Constant(_("System"), dump_only=True)
+    email = fields.Constant("noreply@inveniosoftware.org", dump_only=True)
 
 
 class NotificationPreferences(Schema):
