@@ -66,6 +66,8 @@ def app_config(app_config):
 
     app_config["USERS_RESOURCES_GROUPS_ENABLED"] = True
 
+    app_config["THEME_FRONTPAGE"] = False
+
     return app_config
 
 
