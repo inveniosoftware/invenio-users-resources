@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version v7.1.0 (released 2025-05-23)
+
+- schemas: add email to system user schema
+
 Version v7.0.0 (released 2025-02-13)
 
 - Remove pre-release status.
