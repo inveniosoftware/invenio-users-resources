@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2024 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -91,6 +92,18 @@ class Self(Generator):
                 if need.method == "id":
                     return dsl.Q("term", id=need.value)
 
+        return []
+
+
+class PreventSelf(Generator):
+    """Prevents users from performing actions on themselves."""
+
+    def excludes(self, record=None, actor_id=None, **kwargs):
+        """Exclude needs to prevent self-actions."""
+        if record is None or actor_id is None:
+            return []
+        if actor_id == record.id:
+            return [UserNeed(record.id)]
         return []
 
 
