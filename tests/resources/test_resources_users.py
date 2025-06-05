@@ -63,7 +63,7 @@ def test_read_self_serialization(client, headers, users, user_pub):
 
 @pytest.mark.parametrize(
     "username,public_email",
-    [("pub", True), ("pubres", False)],
+    [("pub", True), ("pub-res", False)],
 )
 def test_read_anon_serialization(client, headers, users, username, public_email):
     """Read public user as anon."""
