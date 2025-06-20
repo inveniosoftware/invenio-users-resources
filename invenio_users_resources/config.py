@@ -121,9 +121,6 @@ USERS_RESOURCES_SEARCH_FACETS = {
 }
 """Invenio requests facets."""
 
-USERS_RESOURCES_ADMINISTRATION_ENABLED = True
-"""Enable the user administration"""
-
 USERS_RESOURCES_MODERATION_LOCK_DEFAULT_TIMEOUT = 30
 """Default timeout, in seconds, to lock a user when moderating."""
 
