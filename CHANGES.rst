@@ -9,6 +9,13 @@
 Changes
 =======
 
+Version v8.1.0 (released 2025-07-02)
+
+- admin: remove flag to always show the admin panel
+- moderation: add self-action prevention
+- fix: avatar etags failing for accented people names
+- generators: fix permission check using Permission
+
 Version v8.0.0 (released 2025-06-03)
 
 - setup: bump major dependencies
