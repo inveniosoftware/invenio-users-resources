@@ -10,9 +10,9 @@
 
 """Invenio module providing management APIs for users and roles/groups."""
 
-from importlib_metadata import entry_points
 from invenio_accounts.proxies import current_db_change_history
 from invenio_accounts.signals import datastore_post_commit, datastore_pre_commit
+from invenio_base.utils import entry_points
 from invenio_db import db
 from sqlalchemy import event
 
@@ -110,7 +110,7 @@ class InvenioUsersResources(object):
 
     def _register_entry_point(self, registry, ep_name):
         """Load entry points into the given registry."""
-        for ep in set(entry_points(group=ep_name)):
+        for ep in entry_points(group=ep_name):
             # Entry point has the action as the name (e.g. invenio_users_resources.moderation.actions.block = ... , 'block' is the name)
             action_name = ep.name
             action = ep.load()
