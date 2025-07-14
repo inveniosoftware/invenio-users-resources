@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version v8.2.0 (released 2025-07-14)
+
+- chores: replaced importlib_xyz with importlib
+
 Version v8.1.0 (released 2025-07-02)
 
 - admin: remove flag to always show the admin panel
