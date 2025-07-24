@@ -11,7 +11,13 @@
 """Users resource."""
 
 from flask import g, send_file
-from flask_resources import resource_requestctx, response_handler, route
+from flask_resources import (
+    HTTPJSONException,
+    create_error_handler,
+    resource_requestctx,
+    response_handler,
+    route,
+)
 from flask_security import impersonate_user
 from invenio_records_resources.resources import RecordResource
 from invenio_records_resources.resources.records.resource import (
@@ -19,6 +25,9 @@ from invenio_records_resources.resources.records.resource import (
     request_view_args,
 )
 from invenio_records_resources.resources.records.utils import search_preference
+from invenio_records_resources.services.errors import PermissionDeniedError
+
+from .errors import UserNotFoundError
 
 
 #
@@ -26,6 +35,12 @@ from invenio_records_resources.resources.records.utils import search_preference
 #
 class UsersResource(RecordResource):
     """Resource for users."""
+
+    error_handlers = {
+        UserNotFoundError: create_error_handler(
+            HTTPJSONException(code=404),
+        )
+    }
 
     def p(self, prefix, route):
         """Prefix a route with the URL prefix."""
@@ -75,19 +90,27 @@ class UsersResource(RecordResource):
     @response_handler()
     def read(self):
         """Read a user."""
-        item = self.service.read(
-            id_=resource_requestctx.view_args["id"],
-            identity=g.identity,
-        )
+        try:
+            item = self.service.read(
+                id_=resource_requestctx.view_args["id"],
+                identity=g.identity,
+            )
+        except PermissionDeniedError:
+            # when no permission, we hide the existence of the user by returning a 404
+            raise UserNotFoundError()
         return item.to_dict(), 200
 
     @request_view_args
     def avatar(self):
         """Get a user's avatar."""
-        avatar = self.service.read_avatar(
-            id_=resource_requestctx.view_args["id"],
-            identity=g.identity,
-        )
+        try:
+            avatar = self.service.read_avatar(
+                id_=resource_requestctx.view_args["id"],
+                identity=g.identity,
+            )
+        except PermissionDeniedError:
+            # when no permission, we hide the existence of the user by returning a 404
+            raise UserNotFoundError()
         return send_file(
             avatar.bytes_io,
             mimetype=avatar.mimetype,

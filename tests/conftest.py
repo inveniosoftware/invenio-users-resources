@@ -16,10 +16,10 @@ fixtures are available.
 """
 
 import pytest
-from flask_principal import AnonymousIdentity
+from flask_principal import AnonymousIdentity, Identity
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import any_user as any_user_need
-from invenio_access.permissions import system_identity
+from invenio_access.permissions import authenticated_user, system_identity
 from invenio_accounts.models import Domain, DomainCategory, DomainOrg, Role
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
@@ -105,10 +105,22 @@ def group_service(app):
 #
 @pytest.fixture(scope="module")
 def anon_identity():
-    """A new user."""
+    """Anonymous identity."""
     identity = AnonymousIdentity()
     identity.provides.add(any_user_need)
     return identity
+
+
+@pytest.fixture(scope="module")
+def auth_identity():
+    """Returns a function to create an authenticated identity with a given user id."""
+
+    def make_identity(user_id):
+        identity = Identity(user_id)
+        identity.provides.add(authenticated_user)
+        return identity
+
+    return make_identity
 
 
 @pytest.fixture(scope="module")
@@ -336,7 +348,7 @@ def groups(database, group, group2, not_managed_group):
 
 @pytest.fixture(scope="module")
 def user_pub(users):
-    """User jbenito (restricted/restricted)."""
+    """User jbenito (public/public)."""
     return users["pub"]
 
 

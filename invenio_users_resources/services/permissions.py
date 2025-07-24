@@ -12,7 +12,6 @@
 from invenio_records_permissions import BasePermissionPolicy
 from invenio_records_permissions.generators import (
     AdminAction,
-    AnyUser,
     AuthenticatedUser,
     SystemProcess,
 )
@@ -37,7 +36,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_create = [SystemProcess()]
     can_read = [
         UserManager,
-        IfPublicUser(then_=[AnyUser()], else_=[Self()]),
+        IfPublicUser(then_=[AuthenticatedUser()], else_=[Self()]),
         SystemProcess(),
     ]
     can_search = [AuthenticatedUser(), SystemProcess()]
@@ -46,7 +45,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
 
     can_read_email = [
         UserManager,
-        IfPublicEmail([AnyUser()], [Self()]),
+        IfPublicEmail([AuthenticatedUser()], [Self()]),
         SystemProcess(),
     ]
     can_read_details = [UserManager, Self(), SystemProcess()]

@@ -8,12 +8,7 @@
 
 """User service tests."""
 
-import time
-
 import pytest
-from invenio_access.permissions import system_identity
-from invenio_cache.lock import CachedMutex
-from invenio_cache.proxies import current_cache
 from invenio_records_resources.services.errors import PermissionDeniedError
 
 from invenio_users_resources.proxies import current_actions_registry
@@ -122,38 +117,50 @@ def test_user_search_field(user_service, user_pub, query):
 # Read
 #
 def test_read_with_anon(user_service, anon_identity, user_pub, user_pubres, user_res):
-    """Anonymous users can read a single *public* user."""
-    res = user_service.read(anon_identity, user_pub.id).to_dict()
-    assert res["username"] == "pub"
-    assert res["email"] == user_pub.email
-    res = user_service.read(anon_identity, user_pubres.id).to_dict()
-    assert res["username"] == "pubres"
-    assert "email" not in res
+    """Anonymous users cannot read/read_avatar a single user."""
+    pytest.raises(PermissionDeniedError, user_service.read, anon_identity, user_pub.id)
     pytest.raises(
-        # TODO: Should be mapped to a 404
-        PermissionDeniedError,
-        user_service.read,
-        anon_identity,
-        user_res.id,
+        PermissionDeniedError, user_service.read_avatar, anon_identity, user_pub.id
+    )
+    pytest.raises(
+        PermissionDeniedError, user_service.read, anon_identity, user_pubres.id
+    )
+    pytest.raises(
+        PermissionDeniedError, user_service.read_avatar, anon_identity, user_pubres.id
+    )
+    pytest.raises(PermissionDeniedError, user_service.read, anon_identity, user_res.id)
+    pytest.raises(
+        PermissionDeniedError, user_service.read_avatar, anon_identity, user_res.id
     )
 
 
-@pytest.mark.parametrize(
-    "username,can_read", [("pub", True), ("pubres", True), ("res", False)]
-)
-def test_read_avatar_with_anon(user_service, anon_identity, users, username, can_read):
-    """Anonymous users can read avatar single *public* user."""
-    user = users[username]
-    if can_read:
-        user_service.read_avatar(anon_identity, user.id)
-    else:
-        pytest.raises(
-            # TODO: Should be mapped to a 404
-            PermissionDeniedError,
-            user_service.read_avatar,
-            anon_identity,
-            user.id,
-        )
+def test_read_with_logged_in(
+    user_service, auth_identity, user_accented, user_pub, user_pubres, user_res
+):
+    """Logged in users can read public users only."""
+    random_identity = auth_identity(user_accented.id)
+    res = user_service.read(random_identity, user_pub.id).to_dict()
+    assert res["username"] == "pub"
+    assert res["email"] == user_pub.email
+    user_service.read_avatar(random_identity, user_pub.id)
+
+    res = user_service.read(random_identity, user_pubres.id).to_dict()
+    assert res["username"] == "pubres"
+    assert "email" not in res
+    user_service.read_avatar(random_identity, user_pubres.id)
+
+    pytest.raises(
+        PermissionDeniedError,
+        user_service.read,
+        random_identity,
+        user_res.id,
+    )
+    pytest.raises(
+        PermissionDeniedError,
+        user_service.read_avatar,
+        random_identity,
+        user_res.id,
+    )
 
 
 @pytest.mark.parametrize(

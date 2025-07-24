@@ -61,51 +61,80 @@ def test_read_self_serialization(client, headers, users, user_pub):
     }
 
 
-@pytest.mark.parametrize(
-    "username,public_email",
-    [("pub", True), ("pubres", False)],
-)
-def test_read_anon_serialization(client, headers, users, username, public_email):
-    """Read public user as anon."""
-    u = users[username]
-    # No login
+def test_read_anon_serialization(client, headers, users):
+    """Read user list and details as anonymous."""
+    r = client.get(f"/users", headers=headers)
+    assert r.status_code == 403
+    # get the first user to test
+    u = next(iter(users.values()))
     r = client.get(f"/users/{u.id}", headers=headers)
-    assert r.status_code == 200
+    # it should return 404 to hide the existence/non-existence of the user
+    assert r.status_code == 404
 
-    data = r.json
-    assert data["id"] == u.id
-    assert isinstance(data["id"], str)  # must be a string and not an integer
-    if public_email:
-        assert data["email"] == u.email
-    else:
-        assert "email" not in data
-    assert data["username"] == u.username
-    assert data["is_current_user"] is False
-    assert data["profile"] == {
-        "full_name": u.user.user_profile["full_name"],
-        "affiliations": u.user.user_profile["affiliations"],
-    }
-    assert data["links"] == {
-        "self": f"https://127.0.0.1:5000/api/users/{u.id}",
-        "avatar": f"https://127.0.0.1:5000/api/users/{u.id}/avatar.svg",
-        "records_html": f"https://127.0.0.1:5000/search/records?q=parent.access.owned_by.user:{u.id}",
-    }
 
-    for k in [
-        "active",
-        "confirmed",
-        "preferences",
-        "created",
-        "updated",
-        "revision_id",
-    ]:
-        assert k not in data
+@pytest.mark.parametrize(
+    "username",
+    ["pub", "pubres", "res"],
+)
+def test_read_logged_in_serialization(client, headers, users, user_accented, username):
+    """Read user profile/email as logged in."""
+    # login as random non-admin user
+    client = user_accented.login(client)
+
+    u = users[username]
+    is_visibility_public = u.user.preferences["visibility"] != "restricted"
+    is_email_public = u.user.preferences["email_visibility"] != "restricted"
+    # when profile is restricted, it should return 404 to hide the existence/non-existence of the user
+    expected_status_code = 200 if is_visibility_public or is_email_public else 404
+
+    r = client.get(f"/users/{u.id}", headers=headers)
+    assert r.status_code == expected_status_code
+
+    if is_visibility_public or is_email_public:
+        data = r.json
+        assert data["id"] == u.id
+        assert isinstance(data["id"], str)  # must be a string and not an integer
+        if is_visibility_public:
+            assert data["profile"] == {
+                "full_name": u.user.user_profile["full_name"],
+                "affiliations": u.user.user_profile["affiliations"],
+            }
+        else:
+            assert "profile" not in data
+        if is_email_public:
+            assert data["email"] == u.email
+        else:
+            assert "email" not in data
+        assert data["username"] == u.username
+        assert data["is_current_user"] is False
+        assert data["links"] == {
+            "self": f"https://127.0.0.1:5000/api/users/{u.id}",
+            "avatar": f"https://127.0.0.1:5000/api/users/{u.id}/avatar.svg",
+            "records_html": f"https://127.0.0.1:5000/search/records?q=parent.access.owned_by.user:{u.id}",
+        }
+
+        for k in [
+            "active",
+            "confirmed",
+            "preferences",
+            "created",
+            "updated",
+            "revision_id",
+        ]:
+            assert k not in data
 
 
 #
 # Avatar
 #
-def test_user_avatar(client, user_pub):
+def test_user_avatar(client, user_accented, user_pub, user_res):
+    res = client.get(f"/users/{user_pub.id}/avatar.svg")
+    assert res.status_code == 404
+
+    client = user_accented.login(client)
+    res = client.get(f"/users/{user_res.id}/avatar.svg")
+    assert res.status_code == 404
+
     res = client.get(f"/users/{user_pub.id}/avatar.svg")
     assert res.status_code == 200
     assert res.mimetype == "image/svg+xml"
@@ -202,11 +231,13 @@ def test_impersonate_user(client, headers, user_pub, user_moderator, db):
     assert res.status_code == 200
     assert res.json["is_current_user"] == True
 
+    # user_pub (impersonated) cannot read user_moderator
     res = client.get(f"/users/{user_moderator.id}")
-    assert res.status_code == 403
-
+    assert res.status_code == 404
+    # user_pub (impersonated) cannot impersonate user_moderator
     res = client.post(f"/users/{user_moderator.id}/impersonate", headers=headers)
     assert res.status_code == 403
+    # user_pub (impersonated) cannot impersonate themselves
     res = client.post(f"/users/{user_pub.id}/impersonate", headers=headers)
     assert res.status_code == 403
 
