@@ -36,6 +36,7 @@ from marshmallow import (
     validate,
     validates_schema,
 )
+from marshmallow_utils.context import context_schema
 from marshmallow_utils.fields import Links, SanitizedUnicode, TZDateTime
 from marshmallow_utils.permissions import FieldPermissionsMixin
 
@@ -127,7 +128,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 
     def is_self(self, obj):
         """Determine if identity is the current identity."""
-        current_identity = self.context["identity"]
+        current_identity = context_schema.get()["identity"]
 
         _id = obj.get("id") or obj.id
 
