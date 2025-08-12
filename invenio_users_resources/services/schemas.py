@@ -9,7 +9,7 @@
 
 """User and user group schemas."""
 
-from flask import current_app
+from flask import current_app, g
 from invenio_access.permissions import system_user_id
 from invenio_accounts.models import DomainCategory
 from invenio_accounts.profiles.schemas import (
@@ -117,7 +117,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 
     def is_self(self, obj):
         """Determine if identity is the current identity."""
-        current_identity = self.context["identity"]
+        current_identity = g.identity
 
         _id = obj.get("id") or obj.id
 
