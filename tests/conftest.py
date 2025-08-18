@@ -100,6 +100,12 @@ def group_service(app):
     return current_groups_service
 
 
+@pytest.fixture(scope="module")
+def domains_service(app):
+    """Domains service."""
+    return current_domains_service
+
+
 #
 # Users
 #
