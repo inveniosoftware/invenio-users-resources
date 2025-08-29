@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Graz University of Technology.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,12 +11,13 @@
 
 """API classes for user and group management in Invenio."""
 
+import re
 import unicodedata
 from collections import namedtuple
 from datetime import datetime
 
 from flask import current_app
-from invenio_accounts.models import Domain
+from invenio_accounts.models import Domain, User
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
 from invenio_records.dumpers import SearchDumper, SearchDumperExt
@@ -23,6 +25,7 @@ from invenio_records.dumpers.indexedat import IndexedAtDumperExt
 from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
+from marshmallow import ValidationError
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -111,6 +114,26 @@ class BaseAggregate(Record):
         model = self.model_cls(model_obj=self.model._model_obj)
         self.model = model
         return self
+
+
+def _validate_user_data(user_data):
+    """Validate the entered data for the user creation."""
+    errors = {}
+    username_regex = current_app.config["ACCOUNTS_USERNAME_REGEX"]
+    username = user_data["username"]
+    email = user_data["email"]
+    if not re.fullmatch(username_regex, username):
+        errors["username"] = [str(current_app.config["ACCOUNTS_USERNAME_RULES_TEXT"])]
+    # Check if Email exists already
+    existing_email = db.session.query(User).filter_by(email=email).first()
+    if existing_email:
+        errors["email"] = ["Email already used by another account."]
+    # Check if Username exists already
+    existing_username = db.session.query(User).filter_by(username=username).first()
+    if existing_username:
+        errors["username"] = ["Username already used by another account."]
+    if errors:
+        raise ValidationError(errors)
 
 
 class UserAggregate(BaseAggregate):
@@ -215,13 +238,16 @@ class UserAggregate(BaseAggregate):
     @classmethod
     def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
-        # NOTE: we don't use an actual database table, and as such can't
-        #       use db.session.add(record.model)
-        with db.session.begin_nested():
-            # create_user() will already take care of creating the profile
-            # for us, if it's specified in the data
-            user = current_datastore.create_user(**data)
-            return cls.from_model(user)
+        try:
+            # Check if email and  username already exists by another account.
+            _validate_user_data(data)
+            # Create User
+            account_user = current_datastore.create_user(**data)
+            return cls.from_model(account_user)
+        except ValidationError:
+            raise
+        except Exception as e:
+            raise ValidationError(message=f"Unexpected Issue: {str(e)}", data=data)
 
     def verify(self):
         """Activates the current user.

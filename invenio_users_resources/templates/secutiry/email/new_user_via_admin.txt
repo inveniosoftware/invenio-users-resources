@@ -1,0 +1,5 @@
+{{ _('Your new account has been created') }}
+
+{{ _('Click the link below to create a new password:') }}
+
+{{ reset_link }}
