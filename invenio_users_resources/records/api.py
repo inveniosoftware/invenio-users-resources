@@ -11,7 +11,6 @@
 
 """API classes for user and group management in Invenio."""
 
-import re
 import unicodedata
 from collections import namedtuple
 from datetime import datetime
@@ -117,13 +116,17 @@ class BaseAggregate(Record):
 
 
 def _validate_user_data(user_data):
-    """Validate the entered data for the user creation."""
+    """Validate the entered data for the user creation.
+
+    This is a special case for validation done outside of the schema because it requires
+    database queries that can significantly slow down serialization. We want to perform
+    this validation upon account creation.
+    Also, we can't let this fail naturaly at the DB level because it will happen during the
+    `commit` state of the UOW and the feedback to the form can't be sent.
+    """
     errors = {}
-    username_regex = current_app.config["ACCOUNTS_USERNAME_REGEX"]
     username = user_data["username"]
     email = user_data["email"]
-    if not re.fullmatch(username_regex, username):
-        errors["username"] = [str(current_app.config["ACCOUNTS_USERNAME_RULES_TEXT"])]
     # Check if Email exists already
     existing_email = db.session.query(User).filter_by(email=email).first()
     if existing_email:

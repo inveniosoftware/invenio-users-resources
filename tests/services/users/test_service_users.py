@@ -258,6 +258,10 @@ def test_create_user_errors(
         )
     assert exc_info.value.messages == {
         "email": ["Not a valid email address."],
+        "username": [
+            "Username must start with a letter, be at least three characters long "
+            "and only contain alphanumeric characters, dashes and underscores.",
+        ],
     }
 
     # Invalid values for username not starting with alpha

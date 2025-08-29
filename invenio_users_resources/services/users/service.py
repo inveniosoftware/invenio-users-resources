@@ -49,7 +49,7 @@ class UsersService(RecordService):
         """Create a user from users admin."""
         self.require_permission(identity, "create")
         # Remove None values to avoid validation issues
-        data = {k: v for k, v in data.items() if v}
+        data = {k: v for k, v in data.items() if v is not None}
         # validate new user data
         data, errors = self.schema.load(
             data,
@@ -57,7 +57,7 @@ class UsersService(RecordService):
             raise_errors=raise_errors,
         )
         # create user
-        user = self._create_user_as_admin(data)
+        user = self._create_user(data)
         # run components
         self.run_components(
             "create",
@@ -89,7 +89,7 @@ class UsersService(RecordService):
         alphabet = string.ascii_letters + string.digits
         return "".join(secrets.choice(alphabet) for _ in range(length))
 
-    def _create_user_as_admin(self, user_info: dict):
+    def _create_user(self, user_info: dict):
         """Create a new active and verified user with auto-generated password."""
         # Generate password and add to user_info dict
         user_info["password"] = hash_password(self._generate_password())

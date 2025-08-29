@@ -10,6 +10,8 @@
 
 """User and user group schemas."""
 
+import re
+
 from flask import current_app
 from invenio_access.permissions import system_user_id
 from invenio_accounts.models import DomainCategory
@@ -69,6 +71,13 @@ class UserProfileSchema(Schema):
     affiliations = fields.String()
 
 
+def validate_username(value):
+    """Validate username against accounts username regular expresion."""
+    username_regex = current_app.config["ACCOUNTS_USERNAME_REGEX"]
+    if not re.fullmatch(username_regex, value):
+        raise ValidationError(str(current_app.config["ACCOUNTS_USERNAME_RULES_TEXT"]))
+
+
 class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     """Schema for users."""
 
@@ -105,7 +114,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     domain = fields.String()
     domaininfo = fields.Nested(DomainInfoSchema)
     identities = fields.Nested(IdentitiesSchema, dump_default={})
-    username = fields.String()
+    username = fields.String(validate=validate_username)
     profile = fields.Dict()
     preferences = fields.Nested(UserPreferencesSchema)
 

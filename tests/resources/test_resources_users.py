@@ -156,7 +156,7 @@ def test_user_avatar_non_ascii(client, user_accented):
 # Management / moderation
 #
 def test_create_user(client, headers, user_moderator, db):
-    """Tests approve user endpoint."""
+    """Tests create user."""
     client = user_moderator.login(client)
     res = client.post(
         "/users",
