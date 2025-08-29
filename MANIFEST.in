@@ -24,9 +24,10 @@ recursive-include docs *.py
 recursive-include docs *.rst
 recursive-include docs *.txt
 recursive-include docs Makefile
+recursive-include invenio_users_resources *.html
 recursive-include invenio_users_resources *.json
 recursive-include invenio_users_resources *.svg
-recursive-include invenio_users_resources *.html
+recursive-include invenio_users_resources *.txt
 recursive-include invenio_users_resources/translations *.po *.pot *.mo
 recursive-include tests *.py
 recursive-include tests *.svg
