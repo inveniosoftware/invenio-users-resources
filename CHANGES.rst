@@ -9,6 +9,12 @@
 Changes
 =======
 
+Version v9.0.0 (released 2025-09-05)
+
+- BREAKING CHANGE: restrict access to users item endpoint. Return 404 instead of 403
+    to avoid users enumeration.
+- Add Celery task to import domains blocklist.
+
 Version v8.3.0 (released 2025-07-17)
 
 - i18n: pulled translations
