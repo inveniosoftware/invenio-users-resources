@@ -2,12 +2,15 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2023-2025 Graz University of Technology.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
 """User and user group schemas."""
+
+import re
 
 from flask import current_app
 from invenio_access.permissions import system_user_id
@@ -68,6 +71,13 @@ class UserProfileSchema(Schema):
     affiliations = fields.String()
 
 
+def validate_username(value):
+    """Validate username against accounts username regular expresion."""
+    username_regex = current_app.config["ACCOUNTS_USERNAME_REGEX"]
+    if not re.fullmatch(username_regex, value):
+        raise ValidationError(str(current_app.config["ACCOUNTS_USERNAME_RULES_TEXT"]))
+
+
 class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     """Schema for users."""
 
@@ -100,11 +110,11 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     visibility = fields.Str(dump_only=True)
     is_current_user = fields.Method("is_self", dump_only=True)
 
-    email = fields.String()
+    email = fields.Email(required=True)
     domain = fields.String()
     domaininfo = fields.Nested(DomainInfoSchema)
     identities = fields.Nested(IdentitiesSchema, dump_default={})
-    username = fields.String()
+    username = fields.String(validate=validate_username)
     profile = fields.Dict()
     preferences = fields.Nested(UserPreferencesSchema)
 

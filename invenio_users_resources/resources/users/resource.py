@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 European Union.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -21,6 +22,8 @@ from flask_resources import (
 from flask_security import impersonate_user
 from invenio_records_resources.resources import RecordResource
 from invenio_records_resources.resources.records.resource import (
+    request_data,
+    request_extra_args,
     request_search_args,
     request_view_args,
 )
@@ -51,6 +54,7 @@ class UsersResource(RecordResource):
         routes = self.config.routes
         return [
             route("GET", routes["list"], self.search),
+            route("POST", routes["list"], self.create),
             route("GET", routes["item"], self.read),
             route("GET", routes["item-avatar"], self.avatar),
             route("POST", routes["approve"], self.approve),
@@ -175,3 +179,14 @@ class UsersResource(RecordResource):
         if user:
             impersonate_user(user, g.identity)
         return "", 200
+
+    @request_extra_args
+    @request_data
+    @response_handler()
+    def create(self):
+        """Create a user."""
+        item = self.service.create(
+            g.identity,
+            resource_requestctx.data or {},
+        )
+        return item.to_dict(), 201
