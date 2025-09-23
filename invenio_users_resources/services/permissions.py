@@ -26,6 +26,7 @@ from .generators import (
     IfPublicUser,
     PreventSelf,
     Self,
+    UserGrant,
 )
 
 UserManager = AdminAction(user_management_action)
@@ -39,6 +40,9 @@ class UsersPermissionPolicy(BasePermissionPolicy):
         UserManager,
         IfPublicUser(then_=[AuthenticatedUser()], else_=[Self()]),
         SystemProcess(),
+        # NOTE: Take into account read permissions required in cases where the user has
+        # implicitly granted access to their profile
+        UserGrant("read"),
     ]
     can_search = [AuthenticatedUser(), SystemProcess()]
     can_update = [SystemProcess()]
