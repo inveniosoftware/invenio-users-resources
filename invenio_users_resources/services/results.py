@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2025 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,7 +10,7 @@
 """Avatar results for users and groups."""
 
 import unicodedata
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 from flask import render_template
@@ -64,7 +65,7 @@ class AvatarResult:
     @property
     def last_modified(self):
         """Get last modified date for the response."""
-        max_age = datetime.utcnow() - timedelta(days=7)
+        max_age = datetime.now(timezone.utc) - timedelta(days=7)
         return self._obj.updated if self._obj.updated > max_age else max_age
 
     @property
