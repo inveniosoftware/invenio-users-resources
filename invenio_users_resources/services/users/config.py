@@ -70,7 +70,12 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     # absolutely sure what you're doing.
     suggest_parser_cls = SuggestQueryParser.factory(
         tree_transformer_cls=SearchFieldTransformer,
-        fields=["username^2", "email^2", "profile.full_name^3", "profile.affiliations"],
+        fields=[
+            "username^2",
+            "email^2",
+            "profile.full_name^10",
+            "profile.affiliations",
+        ],
         # Only public emails because hidden emails are stored in email_hidden field.
         allow_list=["username", "email"],
         mapping={
