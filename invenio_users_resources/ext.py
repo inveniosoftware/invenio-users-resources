@@ -62,7 +62,7 @@ class InvenioUsersResources(object):
     def init_services(self, app):
         """Initialize the services for users and user groups."""
         self.users_service = UsersService(config=UsersServiceConfig.build(app))
-        self.groups_service = GroupsService(config=GroupsServiceConfig)
+        self.groups_service = GroupsService(config=GroupsServiceConfig.build(app))
         self.domains_service = DomainsService(config=DomainsServiceConfig.build(app))
 
     def init_resources(self, app):

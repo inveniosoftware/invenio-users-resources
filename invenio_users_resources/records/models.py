@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -172,13 +173,31 @@ class GroupAggregateModel(AggregateMetadata):
     _set_properties = []
     """Properties of this object that can be set."""
 
+    def from_model(self, role):
+        """Extract information from a role object."""
+        super().from_model(role)
+        # Explicitly Use the role name as the public identifier
+        self._data["id"] = getattr(role, "name", None)
+
+    def from_kwargs(self, kwargs):
+        """Extract information from kwargs."""
+        super().from_kwargs(kwargs)
+        name = kwargs.get("name")
+        if name:
+            self._data["id"] = name
+
     @property
     def model_obj(self):
         """The actual model object behind this mock model."""
-        if self._model_obj is None:
-            name = self.data.get("id")
-            with db.session.no_autoflush:
-                self._model_obj = current_datastore.find_role(name)
+        if self._model_obj is not None:
+            return self._model_obj
+
+        name = self.data.get("id")
+        if name is None:
+            return None
+
+        with db.session.no_autoflush:
+            self._model_obj = current_datastore.find_role(name)
         return self._model_obj
 
 

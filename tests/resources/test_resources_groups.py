@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -8,6 +9,26 @@
 # details.
 
 """Groups resource tests."""
+
+
+def test_group_create_api(app, client, user_moderator):
+    user_moderator.login(client)
+
+    payload = {
+        "name": "api-role",
+        "description": "Created via API",
+        "is_managed": False,
+    }
+
+    res = client.post("/groups", json=payload)
+    assert res.status_code == 201
+    data = res.get_json()
+    assert data["id"] == payload["name"]
+    assert data["name"] == payload["name"]
+    assert data["description"] == payload["description"]
+
+    res = client.delete(f"/groups/{payload['name']}")
+    assert res.status_code == 204
 
 
 def test_groups_search(app, client, group, user_moderator):
@@ -23,7 +44,7 @@ def test_groups_search(app, client, group, user_moderator):
 
 
 def test_groups_read(app, client, group, user_moderator):
-    # Anonymous user forbiden
+    # Anonymous user forbidden
     res = client.get(f"/groups/{group.name}")
     assert res.status_code == 403
 

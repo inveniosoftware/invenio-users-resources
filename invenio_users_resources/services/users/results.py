@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -8,7 +9,49 @@
 
 """Results for the users service."""
 
+from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services.records.results import RecordItem, RecordList
+
+
+def _role_names(user):
+    """Return comma-separated role names."""
+    model = getattr(user, "model", user)
+    model_obj = getattr(model, "_model_obj", model)
+
+    if model_obj is None:
+        user_id = getattr(user, "id", None)
+        if user_id is not None:
+            model_obj = current_datastore.get_user_by_id(user_id)
+
+    roles = getattr(model_obj, "roles", None)
+    if not roles:
+        roles = getattr(user, "roles", None)
+    if not roles and isinstance(user, dict):
+        roles = user.get("roles")
+
+    if not roles:
+        return ""
+
+    if isinstance(roles, str):
+        return roles
+
+    return ", ".join(role.name for role in roles if getattr(role, "name", None))
+
+
+def _apply_roles(payload, roles, identity, service):
+    """Populate flat/profile role projections."""
+    policy = service.config.permission_policy_cls
+    permission = policy(action="manage_groups", identity=identity)
+    has_permission = permission.allows(identity)
+
+    if has_permission:
+        payload["roles"] = roles
+        payload["roles_label"] = roles
+        profile = dict(payload.get("profile") or {})
+        profile["roles"] = roles
+        payload["profile"] = profile
+
+    return payload
 
 
 class UserItem(RecordItem):
@@ -65,6 +108,8 @@ class UserItem(RecordItem):
                 "record": self._user,
             },
         )
+        roles = _role_names(self._user)
+        _apply_roles(self._data, roles, self._identity, self._service)
 
         if self._links_tpl:
             self._data["links"] = self.links
@@ -105,6 +150,9 @@ class UserList(RecordList):
                     "record": user,
                 },
             )
+
+            roles = _role_names(user)
+            _apply_roles(projection, roles, self._identity, self._service)
 
             # inject the links
             if self._links_item_tpl:

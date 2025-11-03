@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -57,6 +58,7 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_search_all = [UserManager, SystemProcess()]
     can_read_system_details = [UserManager, SystemProcess()]
     can_impersonate = [UserManager, PreventSelf(), SystemProcess()]
+    can_manage_groups = [UserManager, SystemProcess()]
 
 
 class GroupsPermissionPolicy(BasePermissionPolicy):
@@ -65,6 +67,7 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
     _can_any = [
         GroupsEnabled("group"),
         SystemProcess(),
+        UserManager,
     ]
     can_create = _can_any
     can_read = _can_any + [

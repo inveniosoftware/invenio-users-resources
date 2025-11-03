@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -11,6 +12,7 @@
 import pytest
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
+from marshmallow import ValidationError
 
 
 def test_groups_sort(app, groups, group_service):
@@ -21,6 +23,8 @@ def test_groups_sort(app, groups, group_service):
     hits = res["hits"]["hits"]
     assert hits[0]["id"] == "hr-dep"
     assert hits[1]["id"] == "it-dep"
+    for hit in hits:
+        assert hit["id"] == hit["name"]
 
 
 def test_groups_no_facets(app, group, group_service):
@@ -71,9 +75,6 @@ def test_groups_search(app, groups, group_service, user_pub, anon_identity):
 
 def test_groups_read(app, groups, group_service, user_pub, anon_identity):
     """Test group read."""
-
-    from invenio_accounts.models import Role
-
     for g in groups:
         # System can retrieve all groups.
         group_service.read(system_identity, g.name).to_dict()
@@ -88,3 +89,100 @@ def test_groups_read(app, groups, group_service, user_pub, anon_identity):
         # Anon does not have permission to search
         with pytest.raises(PermissionDeniedError):
             group_service.read(anon_identity, g.name).to_dict()
+
+
+def test_groups_crud(app, group_service, user_pub):
+    """Test creating, updating and deleting a group by name."""
+
+    payload = {
+        "name": "test-role",
+        "description": "Initial description",
+    }
+
+    item = group_service.create(system_identity, payload).to_dict()
+    assert item["id"] == payload["name"]
+    assert item["name"] == payload["name"]
+    assert item["description"] == payload["description"]
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pub.identity, {"name": "another-role"})
+
+    updated = group_service.update(
+        system_identity,
+        payload["name"],
+        {"description": "Updated"},
+    ).to_dict()
+    assert updated["description"] == "Updated"
+
+    with pytest.raises(ValidationError):
+        group_service.update(
+            system_identity,
+            payload["name"],
+            {"name": "another"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_pub.identity,
+            payload["name"],
+            {"description": "Nope"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_pub.identity, payload["name"])
+
+    assert group_service.delete(system_identity, payload["name"])
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(system_identity, payload["name"])
+
+
+def test_groups_manage_permission_required(
+    app, group_service, user_pub, user_pubres, user_moderator, groups
+):
+    """Ensure non managers cannot mutate groups."""
+
+    payload = {"name": "perm-check-role"}
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pub.identity, payload)
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pubres.identity, {"name": "perm-check-role-2"})
+
+    target = groups[0]
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_pub.identity,
+            target.name,
+            {"description": "attempted change"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_pub.identity, target.name)
+
+    created = group_service.create(
+        user_moderator.identity,
+        {"name": "perm-check-role-admin", "description": "managed"},
+    ).to_dict()
+    assert created["id"] == "perm-check-role-admin"
+
+    updated = group_service.update(
+        user_moderator.identity,
+        "perm-check-role-admin",
+        {"description": "updated by admin"},
+    ).to_dict()
+    assert updated["description"] == "updated by admin"
+
+    assert group_service.delete(user_moderator.identity, "perm-check-role-admin")
+
+
+def test_groups_recreate_same_name(app, group_service):
+    """Recreating a role with the same name should succeed."""
+
+    payload = {"name": "recreate-role", "description": "first"}
+    group_service.create(system_identity, payload)
+    assert group_service.delete(system_identity, payload["name"])
+
+    recreated = group_service.create(system_identity, payload).to_dict()
+    assert recreated["id"] == payload["name"]
+
+    assert group_service.delete(system_identity, payload["name"])

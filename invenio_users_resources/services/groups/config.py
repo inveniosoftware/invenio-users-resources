@@ -17,6 +17,7 @@ from invenio_records_resources.services import (
     SearchOptions,
     pagination_endpoint_links,
 )
+from invenio_records_resources.services.base.config import ConfiguratorMixin
 from invenio_records_resources.services.records.params import QueryStrParam, SortParam
 from invenio_records_resources.services.records.queryparser import QueryParser
 
@@ -58,7 +59,7 @@ class GroupSearchOptions(SearchOptions):
     ]
 
 
-class GroupsServiceConfig(RecordServiceConfig):
+class GroupsServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     """Requests service configuration."""
 
     # common configuration

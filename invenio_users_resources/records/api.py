@@ -4,6 +4,7 @@
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Graz University of Technology.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -19,14 +20,14 @@ from flask import current_app
 from invenio_accounts.models import Domain, User
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
-from invenio_i18n import lazy_gettext as _
+from invenio_i18n import gettext as _
 from invenio_records.dumpers import SearchDumper, SearchDumperExt
 from invenio_records.dumpers.indexedat import IndexedAtDumperExt
 from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 from marshmallow import ValidationError
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from .dumpers import EmailFieldDumperExt
 from .models import DomainAggregateModel, GroupAggregateModel, UserAggregateModel
@@ -136,6 +137,46 @@ def _validate_user_data(user_data):
     existing_username = db.session.query(User).filter_by(username=username).first()
     if existing_username:
         errors["username"] = [_("Username already used by another account.")]
+    if errors:
+        raise ValidationError(errors)
+
+
+def _validate_group_data(group_data, update_group=False):
+    """Validate data for group creation.
+
+    Similar to user validation, this pre-check avoids failing during the
+    unit-of-work commit phase where the context would be lost. We check
+    for an existing role with the same name and raise a validation error
+    early so the service can surface a proper response.
+    """
+    errors = {}
+    group_id = group_data.get("id")
+    name = group_data.get("name")
+    description = group_data.get("description")
+
+    def _exists(column, value):
+        stmt = db.select(db.exists().where(column == value))
+        return db.session.scalar(stmt)
+
+    if not update_group:
+        checks = [
+            ("id", group_id, current_datastore.role_model.id),
+            ("name", name, current_datastore.role_model.name),
+        ]
+        for field, value, column in checks:
+            if value and str(value).strip() and _exists(column, value):
+                errors[field] = [
+                    _("Role {field} already used by another group.").format(field=field)
+                ]
+
+    if "description" in group_data:
+        description = description.strip()
+        group_data["description"] = description
+        if not isinstance(description, str) or len(description) > 255:
+            errors.setdefault("description", []).append(
+                _("Role description must be a string up to 255 characters.")
+            )
+
     if errors:
         raise ValidationError(errors)
 
@@ -343,6 +384,15 @@ class GroupAggregate(BaseAggregate):
         )
         return colors[int(normalized_group_initial, base=36) % len(colors)]
 
+    @property
+    def revision_id(self):
+        """Return the raw SQLAlchemy version_id without offset.
+
+        Prevents version conflicts when a role is deleted and recreated with the same name.
+        """
+        version = getattr(self.model, "version_id", None)
+        return version
+
     @classmethod
     def get_record(cls, id_):
         """Get the user group via the specified ID."""
@@ -366,6 +416,38 @@ class GroupAggregate(BaseAggregate):
             if role is None:
                 return None
             return cls.from_model(role)
+
+    @classmethod
+    def create(cls, data):
+        """Create a new group/role and store it in the database."""
+        _validate_group_data(data)
+        role = current_datastore.create_role(**data)
+        return cls.from_model(role)
+
+    def update(self, data):
+        """Update the group/role attributes.
+
+        Update is proxied through direct attribute modification.
+        """
+        role = self.model.model_obj
+        if role is None:
+            raise ValueError("Cannot update group without an underlying model.")
+
+        _validate_group_data(data, update_group=True)
+        if "description" in data:
+            role.description = data["description"]
+        role = current_datastore.update_role(role)
+        return self.from_model(role)
+
+    def delete(self):
+        """Delete the group/role.
+
+        Deletion is proxied through the datastore.
+        """
+        role = self.model.model_obj
+        if role is None:
+            raise ValueError("Cannot delete group without an underlying model.")
+        current_datastore.delete(role)
 
 
 class OrgNameDumperExt(SearchDumperExt):
