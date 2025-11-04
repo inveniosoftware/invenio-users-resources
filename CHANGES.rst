@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version v9.0.3 (released 2025-XX-XX)
+
+- setup: bump major version of `invenio-oauthclient`
+
 Version v9.0.2 (released 2025-10-02)
 
 - fix(services.config): boost full_name for better results
