@@ -9,6 +9,7 @@
 
 """User service tests."""
 
+from operator import attrgetter
 import pytest
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
@@ -16,14 +17,16 @@ from marshmallow import ValidationError
 
 
 def test_groups_sort(app, groups, group_service):
-    # default sort by name
+    """Test default sort."""
+    sorted_groups = sorted(groups, key=attrgetter("name"))
     res = group_service.search(system_identity).to_dict()
     assert res["sortBy"] == "name"
     assert res["hits"]["total"] > 0
     hits = res["hits"]["hits"]
-    assert hits[0]["id"] == "hr-dep"
-    assert hits[1]["id"] == "it-dep"
+    assert hits[0]["id"] == sorted_groups[0].id
+    assert hits[1]["id"] == sorted_groups[1].id
     for hit in hits:
+        # FIXME: this probably doesn't make sense anymore
         assert hit["id"] == hit["name"]
 
 
@@ -57,7 +60,9 @@ def test_groups_search_field(app, group, group_service, query):
     assert res.total > 0
 
 
-def test_groups_search(app, groups, group_service, user_pub, anon_identity):
+def test_groups_search(
+    app, groups, group_service, user_pub, user_admin, user_moderator, anon_identity
+):
     """Test group search."""
 
     # System can retrieve all groups.
@@ -68,27 +73,54 @@ def test_groups_search(app, groups, group_service, user_pub, anon_identity):
     res = group_service.search(user_pub.identity).to_dict()
     assert res["hits"]["total"] == len([g for g in groups if not g.is_managed])
 
+    # Super Admin can see everything
+    res = group_service.search(user_admin.identity).to_dict()
+    assert res["hits"]["total"] == len(groups)
+
+    # User Admin can see everything but admin groups
+    res = group_service.search(user_moderator.identity).to_dict()
+    assert res["hits"]["total"] == len(groups) - 1  # There is one superadmin group
+
     # Anon does not have permission to search
     with pytest.raises(PermissionDeniedError):
         group_service.search(anon_identity).to_dict()
 
 
-def test_groups_read(app, groups, group_service, user_pub, anon_identity):
+def test_groups_read(
+    app, groups, group_service, user_admin, user_moderator, user_pub, anon_identity
+):
     """Test group read."""
-    for g in groups:
+    *regular_groups, superadmin_group = groups
+    for g in regular_groups:
         # System can retrieve all groups.
-        group_service.read(system_identity, g.name).to_dict()
-
+        group_service.read(system_identity, g.id).to_dict()
+        # Super admin can retrieve all groups
+        group_service.read(user_admin.identity, g.id).to_dict()
+        # User moderator can retrieve all groups
+        group_service.read(user_moderator.identity, g.id).to_dict()
         # Authenticated user can retrieve unmanaged groups
         if g.is_managed:
             with pytest.raises(PermissionDeniedError):
-                group_service.read(user_pub.identity, g.name).to_dict()
+                group_service.read(user_pub.identity, g.id).to_dict()
         else:
-            group_service.read(user_pub.identity, g.name).to_dict()
+            group_service.read(user_pub.identity, g.id).to_dict()
 
         # Anon does not have permission to search
         with pytest.raises(PermissionDeniedError):
-            group_service.read(anon_identity, g.name).to_dict()
+            group_service.read(anon_identity, g.id).to_dict()
+
+    # System user
+    group_service.read(system_identity, superadmin_group.id).to_dict()
+    # Super user
+    group_service.read(user_admin.identity, superadmin_group.id)
+    # User moderator
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_pub.identity, superadmin_group.id)
+    # Authenicated user
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_moderator.identity, superadmin_group.id)
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(anon_identity, superadmin_group.id)
 
 
 def test_groups_crud(app, group_service, user_pub):

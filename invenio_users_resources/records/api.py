@@ -141,44 +141,31 @@ def _validate_user_data(user_data):
         raise ValidationError(errors)
 
 
-def _validate_group_data(group_data, update_group=False):
+def _validate_group_data(group_data, id_=None):
     """Validate data for group creation.
 
-    Similar to user validation, this pre-check avoids failing during the
-    unit-of-work commit phase where the context would be lost. We check
-    for an existing role with the same name and raise a validation error
-    early so the service can surface a proper response.
+    Similar to user validation. We check for an existing role with the same name and raise
+    a validation error early so the service can surface a proper response.
     """
     errors = {}
-    group_id = group_data.get("id")
-    name = group_data.get("name")
-    description = group_data.get("description")
-
-    def _exists(column, value):
-        stmt = db.select(db.exists().where(column == value))
-        return db.session.scalar(stmt)
-
-    if not update_group:
-        checks = [
-            ("id", group_id, current_datastore.role_model.id),
-            ("name", name, current_datastore.role_model.name),
-        ]
-        for field, value, column in checks:
-            if value and str(value).strip() and _exists(column, value):
-                errors[field] = [
-                    _("Role {field} already used by another group.").format(field=field)
-                ]
-
-    if "description" in group_data:
-        description = description.strip()
-        group_data["description"] = description
-        if not isinstance(description, str) or len(description) > 255:
-            errors.setdefault("description", []).append(
-                _("Role description must be a string up to 255 characters.")
-            )
-
+    if id_:
+        existing_name = (
+            db.session.query(current_datastore.role_model)
+            .filter(current_datastore.role_model.id != id_)
+            .filter_by(name=group_data["name"])
+            .first()
+        )
+    else:
+        existing_name = (
+            db.session.query(current_datastore.role_model)
+            .filter_by(name=group_data["name"])
+            .first()
+        )
+    if existing_name:
+        errors["name"] = [_("Role name already used by another group.")]
     if errors:
         raise ValidationError(errors)
+    errors = {}
 
 
 class UserAggregate(BaseAggregate):
@@ -284,6 +271,9 @@ class UserAggregate(BaseAggregate):
     def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
         try:
+            #  Admin group view passes in an empty string as id, which will be a valid Role id.
+            if "id" in data and data["id"] == "":
+                data.pop("id")
             # Check if email and  username already exists by another account.
             _validate_user_data(data)
             # Create User
@@ -424,18 +414,18 @@ class GroupAggregate(BaseAggregate):
         role = current_datastore.create_role(**data)
         return cls.from_model(role)
 
-    def update(self, data):
+    def update(self, data, id_):
         """Update the group/role attributes.
 
         Update is proxied through direct attribute modification.
         """
+        _validate_group_data(data, id_)
         role = self.model.model_obj
         if role is None:
-            raise ValueError("Cannot update group without an underlying model.")
+            role = db.session.get(current_datastore.role_model, id_)
 
-        _validate_group_data(data, update_group=True)
-        if "description" in data:
-            role.description = data["description"]
+        role.name = data.get("name", role.name)
+        role.description = data.get("description", role.description)
         role = current_datastore.update_role(role)
         return self.from_model(role)
 

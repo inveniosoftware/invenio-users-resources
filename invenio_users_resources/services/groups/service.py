@@ -42,17 +42,8 @@ class GroupsService(RecordService):
             raise_errors=raise_errors,
         )
 
-        # Prepare role data for creation
-        name = data.get("name")
-        role_kwargs = {
-            "id": name,
-            "name": name,
-        }
-        if "description" in data:
-            role_kwargs["description"] = data["description"]
-
         # Create group using API
-        group = GroupAggregate.create(role_kwargs)
+        group = self.record_cls.create(data)
 
         current_app.logger.debug(f"Group created: '{group.name}' by user {identity.id}")
 
@@ -96,34 +87,25 @@ class GroupsService(RecordService):
             raise_errors=raise_errors,
         )
 
-        # Business logic: validate name change
-        if "name" in data and data["name"] != group.name:
-            raise ValidationError({"name": [_("Renaming roles is not supported.")]})
-
         # Update group using API
-        group.update(data)
+        group = group.update(data, id_)
 
         current_app.logger.debug(f"Group updated: '{group.name}' by user {identity.id}")
-
-        # Create updated group aggregate from the modified role
-        updated_group = GroupAggregate.from_model(group.model.model_obj)
 
         self.run_components(
             "update",
             identity,
             data=data,
-            group=updated_group,
+            group=group,
             errors=errors,
             uow=uow,
         )
 
-        uow.register(
-            RecordCommitOp(updated_group, indexer=self.indexer, index_refresh=True)
-        )
+        uow.register(RecordCommitOp(group, indexer=self.indexer, index_refresh=True))
         return self.result_item(
             self,
             identity,
-            updated_group,
+            group,
             errors=errors,
             links_tpl=self.links_item_tpl,
         )

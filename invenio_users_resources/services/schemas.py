@@ -158,7 +158,7 @@ class GroupSchema(BaseRecordSchema):
         metadata={"create_only": True},
     )
     title = fields.String()
-    description = fields.String()
+    description = fields.String(validate=[validate.Length(max=255)])
     provider = fields.String(dump_only=True)
     is_managed = fields.Boolean(dump_only=True)
 
