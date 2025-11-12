@@ -9,7 +9,7 @@
 Changes
 =======
 
-Version v9.0.3 (released 2025-XX-XX)
+Version v9.0.3 (released 2025-11-12)
 
 - setup: bump major version of `invenio-oauthclient`
 
