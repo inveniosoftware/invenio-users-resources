@@ -27,7 +27,8 @@ from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy import or_
+from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
 from .models import DomainAggregateModel, GroupAggregateModel, UserAggregateModel
@@ -141,31 +142,30 @@ def _validate_user_data(user_data):
         raise ValidationError(errors)
 
 
-def _validate_group_data(group_data, id_=None):
-    """Validate data for group creation.
+def _validate_group_data(group_data):
+    """Validate data for group creation."""
+    group_id = group_data.get("id")
+    name = group_data.get("name")
 
-    Similar to user validation. We check for an existing role with the same name and raise
-    a validation error early so the service can surface a proper response.
-    """
+    if not (group_id or name):
+        return
+
+    Role = current_datastore.role_model
+
+    stmt = db.select(Role).where(or_(Role.id == group_id, Role.name == name)).limit(1)
+
+    row = db.session.execute(stmt).scalars().first()
+    if not row:
+        return
+
     errors = {}
-    if id_:
-        existing_name = (
-            db.session.query(current_datastore.role_model)
-            .filter(current_datastore.role_model.id != id_)
-            .filter_by(name=group_data["name"])
-            .first()
-        )
-    else:
-        existing_name = (
-            db.session.query(current_datastore.role_model)
-            .filter_by(name=group_data["name"])
-            .first()
-        )
-    if existing_name:
+    if group_id and row.id == group_id:
+        errors["id"] = [_("Role id already used by another group.")]
+    if name and row.name == name:
         errors["name"] = [_("Role name already used by another group.")]
+
     if errors:
         raise ValidationError(errors)
-    errors = {}
 
 
 class UserAggregate(BaseAggregate):
@@ -410,8 +410,15 @@ class GroupAggregate(BaseAggregate):
     @classmethod
     def create(cls, data):
         """Create a new group/role and store it in the database."""
-        _validate_group_data(data)
-        role = current_datastore.create_role(**data)
+        # Filter out fields sqlalchemy model rejects
+        accepted_fields = [
+            "name",
+            "description",
+        ]
+        role_data = {k: v for k, v in data.items() if k in accepted_fields}
+
+        _validate_group_data(role_data)
+        role = current_datastore.create_role(**role_data)
         return cls.from_model(role)
 
     def update(self, data, id_):
@@ -419,7 +426,6 @@ class GroupAggregate(BaseAggregate):
 
         Update is proxied through direct attribute modification.
         """
-        _validate_group_data(data, id_)
         role = self.model.model_obj
         if role is None:
             role = db.session.get(current_datastore.role_model, id_)

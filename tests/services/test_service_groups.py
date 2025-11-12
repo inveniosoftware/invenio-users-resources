@@ -10,6 +10,7 @@
 """User service tests."""
 
 from operator import attrgetter
+
 import pytest
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
@@ -132,9 +133,9 @@ def test_groups_crud(app, group_service, user_pub):
     }
 
     item = group_service.create(system_identity, payload).to_dict()
-    assert item["id"] == payload["name"]
-    assert item["name"] == payload["name"]
-    assert item["description"] == payload["description"]
+    assert payload["name"] == item["id"]
+    assert payload["name"] == item["name"]
+    assert payload["description"] == item["description"]
 
     with pytest.raises(PermissionDeniedError):
         group_service.create(user_pub.identity, {"name": "another-role"})
@@ -144,7 +145,7 @@ def test_groups_crud(app, group_service, user_pub):
         payload["name"],
         {"description": "Updated"},
     ).to_dict()
-    assert updated["description"] == "Updated"
+    assert "Updated" == updated["description"]
 
     with pytest.raises(ValidationError):
         group_service.update(
@@ -195,14 +196,14 @@ def test_groups_manage_permission_required(
         user_moderator.identity,
         {"name": "perm-check-role-admin", "description": "managed"},
     ).to_dict()
-    assert created["id"] == "perm-check-role-admin"
+    assert "perm-check-role-admin" == created["id"]
 
     updated = group_service.update(
         user_moderator.identity,
         "perm-check-role-admin",
         {"description": "updated by admin"},
     ).to_dict()
-    assert updated["description"] == "updated by admin"
+    assert "updated by admin" == updated["description"]
 
     assert group_service.delete(user_moderator.identity, "perm-check-role-admin")
 
@@ -215,6 +216,6 @@ def test_groups_recreate_same_name(app, group_service):
     assert group_service.delete(system_identity, payload["name"])
 
     recreated = group_service.create(system_identity, payload).to_dict()
-    assert recreated["id"] == payload["name"]
+    assert payload["name"] == recreated["id"]
 
     assert group_service.delete(system_identity, payload["name"])

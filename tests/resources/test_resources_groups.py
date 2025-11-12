@@ -21,14 +21,14 @@ def test_group_create_api(app, client, user_moderator):
     }
 
     res = client.post("/groups", json=payload)
-    assert res.status_code == 201
+    assert 201 == res.status_code
     data = res.get_json()
-    assert data["id"] == payload["name"]
-    assert data["name"] == payload["name"]
-    assert data["description"] == payload["description"]
+    assert payload["name"] == data["id"]
+    assert payload["name"] == data["name"]
+    assert payload["description"] == data["description"]
 
     res = client.delete(f"/groups/{payload['name']}")
-    assert res.status_code == 204
+    assert 204 == res.status_code
 
 
 def test_groups_search(app, client, group, user_moderator):

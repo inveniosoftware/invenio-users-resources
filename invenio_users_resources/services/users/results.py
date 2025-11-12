@@ -9,33 +9,22 @@
 
 """Results for the users service."""
 
-from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services.records.results import RecordItem, RecordList
 
 
 def _role_names(user):
-    """Return comma-separated role names."""
+    """Return list of role names."""
     model = getattr(user, "model", user)
     model_obj = getattr(model, "_model_obj", model)
 
-    if model_obj is None:
-        user_id = getattr(user, "id", None)
-        if user_id is not None:
-            model_obj = current_datastore.get_user_by_id(user_id)
+    if not hasattr(model_obj, "roles"):
+        model_obj = user
 
     roles = getattr(model_obj, "roles", None)
     if not roles:
-        roles = getattr(user, "roles", None)
-    if not roles and isinstance(user, dict):
-        roles = user.get("roles")
+        return []
 
-    if not roles:
-        return ""
-
-    if isinstance(roles, str):
-        return roles
-
-    return ", ".join(role.name for role in roles if getattr(role, "name", None))
+    return [role.name for role in roles]
 
 
 def _apply_roles(payload, roles, identity, service):
@@ -45,10 +34,9 @@ def _apply_roles(payload, roles, identity, service):
     has_permission = permission.allows(identity)
 
     if has_permission:
-        payload["roles"] = roles
-        payload["roles_label"] = roles
+        payload["roles"] = ", ".join(roles) if roles else ""
         profile = dict(payload.get("profile") or {})
-        profile["roles"] = roles
+        profile["roles"] = ", ".join(roles) if roles else ""
         payload["profile"] = profile
 
     return payload

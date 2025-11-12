@@ -53,7 +53,7 @@ def test_group_schema_errors():
     with pytest.raises(ValidationError) as exc_info:
         schema.load(
             {
-                "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "name": "a" * 81,  # 81 characters, exceeds max of 80
             }
         )
     assert exc_info.value.args[0] == {
@@ -61,5 +61,18 @@ def test_group_schema_errors():
             "Length must be between 1 and 80.",
             "Role name must start with a letter and contain only letters, numbers, "
             "hyphens or underscores (max 80 chars).",
+        ]
+    }
+    # Description too long
+    with pytest.raises(ValidationError) as exc_info:
+        schema.load(
+            {
+                "name": "test-group",
+                "description": "a" * 256,  # 256 characters, exceeds max of 255
+            }
+        )
+    assert exc_info.value.args[0] == {
+        "description": [
+            "Longer than maximum length 255.",
         ]
     }
