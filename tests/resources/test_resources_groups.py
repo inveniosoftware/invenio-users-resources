@@ -23,11 +23,10 @@ def test_group_create_api(app, client, user_moderator):
     res = client.post("/groups", json=payload)
     assert 201 == res.status_code
     data = res.get_json()
-    assert payload["name"] == data["id"]
     assert payload["name"] == data["name"]
     assert payload["description"] == data["description"]
 
-    res = client.delete(f"/groups/{payload['name']}")
+    res = client.delete(f"/groups/{data['id']}")
     assert 204 == res.status_code
 
 
@@ -60,7 +59,7 @@ def test_groups_read(app, client, group, user_moderator):
 
 
 def test_group_avatar(app, client, group, not_managed_group, user_pub):
-    # Anonymous user forbiden
+    # Anonymous user forbidden
     res = client.get(f"/groups/{not_managed_group.name}/avatar.svg")
     assert res.status_code == 403
 
@@ -71,7 +70,7 @@ def test_group_avatar(app, client, group, not_managed_group, user_pub):
     assert res.mimetype == "image/svg+xml"
 
     # managed group can *not* be retrieved
-    res = client.get(f"/groups/{group.name}/avatar.svg")
+    res = client.get(f"/groups/{group.id}/avatar.svg")
     assert res.status_code == 403
 
 

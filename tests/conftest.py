@@ -151,8 +151,9 @@ def auth_identity():
 def user_moderator(UserFixture, app, database, users, administration_group):
     """Admin user for requests."""
     moderator = users["user_moderator"]
-
+    moderator.roles = [administration_group]
     moderator.user.roles.append(administration_group)
+
     database.session.commit()
     current_groups_service.indexer.process_bulk_queue()
     current_groups_service.record_cls.index.refresh()
@@ -163,9 +164,9 @@ def user_moderator(UserFixture, app, database, users, administration_group):
 def user_admin(users, database, superadmin_group):
     """User with notfications disabled."""
     super_admin = users["admin_user"]
-
-    # super_admin.user.roles.append(admin_group)
+    super_admin.roles = [superadmin_group]
     super_admin.user.roles.append(superadmin_group)
+
     database.session.commit()
     current_groups_service.indexer.process_bulk_queue()
     current_groups_service.record_cls.index.refresh()

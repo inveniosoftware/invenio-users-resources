@@ -97,7 +97,7 @@ class GroupsResource(RecordResource):
     def avatar(self):
         """Get a groups's avatar."""
         avatar = self.service.read_avatar(
-            name_=resource_requestctx.view_args["id"],
+            id_=resource_requestctx.view_args["id"],
             identity=g.identity,
         )
         return send_file(

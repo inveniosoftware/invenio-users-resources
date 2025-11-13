@@ -63,7 +63,7 @@ class GroupsService(RecordService):
 
     def read(self, identity, id_):
         """Retrieve a user group."""
-        group = GroupAggregate.get_record_by_name(id_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             raise PermissionDeniedError()
         self.require_permission(identity, "read", record=group)
@@ -75,7 +75,7 @@ class GroupsService(RecordService):
     @unit_of_work()
     def update(self, identity, id_, data, raise_errors=True, uow=None):
         """Update an existing group."""
-        group = GroupAggregate.get_record_by_name(id_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             raise PermissionDeniedError()
         self.require_permission(identity, "update", record=group)
@@ -113,7 +113,7 @@ class GroupsService(RecordService):
     @unit_of_work()
     def delete(self, identity, id_, uow=None):
         """Delete a group."""
-        group = GroupAggregate.get_record_by_name(id_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             raise PermissionDeniedError()
         self.require_permission(identity, "delete", record=group)
@@ -136,9 +136,9 @@ class GroupsService(RecordService):
 
         return True
 
-    def read_avatar(self, identity, name_):
+    def read_avatar(self, identity, id_):
         """Get a groups's avatar."""
-        group = GroupAggregate.get_record_by_name(name_)
+        group = GroupAggregate.get_record(id_)
         if group is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()
