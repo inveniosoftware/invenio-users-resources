@@ -151,14 +151,15 @@ class GroupSchema(BaseRecordSchema):
             validate.Regexp(
                 r"^[A-Za-z][A-Za-z0-9_-]{0,79}$",
                 error=_t(
-                    "Role name must start with a letter and contain only letters, numbers, hyphens or underscores (max 80 chars)."
+                    "Name must start with a letter and contain only letters, numbers, hyphens or underscores (max 80 chars)."
                 ),
             ),
         ],
-        metadata={"create_only": True},
     )
-    title = fields.String()
-    description = fields.String(validate=[validate.Length(max=255)])
+
+    title = fields.String(validate=validate.Length(max=80))
+
+    description = SanitizedUnicode(validate=validate.Length(max=255))
     provider = fields.String(dump_only=True)
     is_managed = fields.Boolean(dump_only=True)
 

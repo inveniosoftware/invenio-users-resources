@@ -24,8 +24,10 @@ from invenio_records_resources.services.uow import (
     unit_of_work,
 )
 from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from ...records.api import GroupAggregate
+from ...resources.groups.errors import GroupValidationError
 from ..results import AvatarResult
 
 
@@ -35,17 +37,27 @@ class GroupsService(RecordService):
     @unit_of_work()
     def create(self, identity, data, raise_errors=True, uow=None):
         """Create a new group/role."""
-        self.require_permission(identity, "create")
-        data, errors = self.schema.load(
-            data or {},
-            context={"identity": identity},
-            raise_errors=raise_errors,
+        self.require_permission(identity, "create", record=data)
+        try:
+            data, errors = self.schema.load(
+                data or {},
+                context={"identity": identity},
+                raise_errors=raise_errors,
+            )
+        except ValidationError as err:
+            raise GroupValidationError(err.messages)
+
+        try:
+            group = self.record_cls.create(data)
+        except IntegrityError as err:
+            db.session.rollback()
+            raise GroupValidationError(
+                {"name": [_("Role name already used by another group.")]}
+            ) from err
+
+        current_app.logger.debug(
+            "Group created: '%s' by user %s", group.name, identity.id
         )
-
-        # Create group using API
-        group = self.record_cls.create(data)
-
-        current_app.logger.debug(f"Group created: '{group.name}' by user {identity.id}")
 
         self.run_components(
             "create",
@@ -80,17 +92,26 @@ class GroupsService(RecordService):
             raise PermissionDeniedError()
         self.require_permission(identity, "update", record=group)
 
-        data, errors = self.schema.load(
-            data or {},
-            schema_args={"partial": True},
-            context={"identity": identity, "record": group},
-            raise_errors=raise_errors,
+        try:
+            data, errors = self.schema.load(
+                data or {},
+                schema_args={"partial": True},
+                context={"identity": identity, "record": group},
+                raise_errors=raise_errors,
+            )
+        except ValidationError as err:
+            raise GroupValidationError(err.messages) from err
+
+        try:
+            group = group.update(data, id_)
+        except IntegrityError as err:
+            db.session.rollback()
+            raise GroupValidationError(
+                {"name": [_("Role name already used by another group.")]}
+            ) from err
+        current_app.logger.debug(
+            "Group updated: '%s' by user %s", group.name, identity.id
         )
-
-        # Update group using API
-        group = group.update(data, id_)
-
-        current_app.logger.debug(f"Group updated: '{group.name}' by user {identity.id}")
 
         self.run_components(
             "update",
@@ -118,7 +139,9 @@ class GroupsService(RecordService):
             raise PermissionDeniedError()
         self.require_permission(identity, "delete", record=group)
 
-        current_app.logger.debug(f"Group deleted: '{group.name}' by user {identity.id}")
+        current_app.logger.debug(
+            "Group deleted: '%s' by user %s", group.name, identity.id
+        )
 
         # Delete group using API
         group.delete()
@@ -147,6 +170,8 @@ class GroupsService(RecordService):
 
     def rebuild_index(self, identity, uow=None):
         """Reindex all user groups managed by this service."""
-        role_ids = db.session.query(Role.id).yield_per(1000)
-        self.indexer.bulk_index([role_id for (role_id,) in role_ids])
+        roles = db.session.query(Role.id).yield_per(1000)
+
+        self.indexer.bulk_index([r.id for r in roles])
+
         return True

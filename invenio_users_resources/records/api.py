@@ -150,9 +150,9 @@ def _validate_group_data(group_data):
     if not (group_id or name):
         return
 
-    Role = current_datastore.role_model
+    role = current_datastore.role_model
 
-    stmt = db.select(Role).where(or_(Role.id == group_id, Role.name == name)).limit(1)
+    stmt = db.select(role).where(or_(role.id == group_id, role.name == name)).limit(1)
 
     row = db.session.execute(stmt).scalars().first()
     if not row:
@@ -164,8 +164,7 @@ def _validate_group_data(group_data):
     if name and row.name == name:
         errors["name"] = [_("Role name already used by another group.")]
 
-    if errors:
-        raise ValidationError(errors)
+    raise ValidationError(errors)
 
 
 class UserAggregate(BaseAggregate):
@@ -376,12 +375,20 @@ class GroupAggregate(BaseAggregate):
 
     @property
     def revision_id(self):
-        """Return the raw SQLAlchemy version_id without offset.
+        """Return a revision id suitable for search engine versioning.
 
-        Prevents version conflicts when a role is deleted and recreated with the same name.
+        We offset the SQLAlchemy ``version_id`` by 1 so that recreated roles
+        (same id/name) always index with a version >= any previous document in
+        the search index, avoiding version conflicts during reindexing. We also
+        fall back to the ``updated`` timestamp to produce a larger, monotonic
+        value when the DB ``version_id`` is low (e.g., after a recreate).
         """
-        version = getattr(self.model, "version_id", None)
-        return version
+        if not self.model:
+            return 1
+
+        version = self.model.version_id or 0
+        updated_ts = int(self.model.updated.timestamp()) if self.model.updated else 0
+        return max(version + 1, updated_ts)
 
     @classmethod
     def get_record(cls, id_):

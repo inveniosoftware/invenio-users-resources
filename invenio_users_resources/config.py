@@ -14,6 +14,7 @@ from invenio_i18n import lazy_gettext as _
 from marshmallow import Schema, fields, validate
 
 from invenio_users_resources.services.domains import facets as domainfacets
+from invenio_users_resources.services.groups import facets as groupsfacets
 from invenio_users_resources.services.schemas import UserSchema
 from invenio_users_resources.services.users import facets
 
@@ -235,20 +236,47 @@ USERS_RESOURCES_GROUPS_ADMIN_SORT_OPTIONS = {
         fields=["_score"],
     ),
     "name": dict(
-        title=_("Name"),
+        title=_("Name (A-Z)"),
         fields=["name.keyword"],
+    ),
+    "name_desc": dict(
+        title=_("Name (Z-A)"),
+        fields=["-name.keyword"],
+    ),
+    "managed": dict(
+        title=_("Managed first"),
+        fields=["-is_managed", "name.keyword"],
+    ),
+    "unmanaged": dict(
+        title=_("Unmanaged first"),
+        fields=["is_managed", "name.keyword"],
     ),
 }
 """Definitions of available Groups sort options for admin interface. """
 
 USERS_RESOURCES_GROUPS_ADMIN_SEARCH = {
-    "sort": ["bestmatch", "name"],
-    "facets": [],
+    "sort": ["bestmatch", "name", "name_desc", "managed", "unmanaged"],
+    "facets": ["is_managed"],
 }
 """Invenio groups admin search configuration."""
 
-USERS_RESOURCES_GROUPS_ADMIN_FACETS = {}
+USERS_RESOURCES_GROUPS_ADMIN_FACETS = {
+    "is_managed": {
+        "facet": groupsfacets.is_managed,
+        "ui": {
+            "field": "is_managed",
+        },
+    },
+}
 """Invenio groups admin search configuration."""
+
+USERS_RESOURCES_PROTECTED_GROUP_NAMES = [
+    "superuser-access",
+    "admin",
+    "administration",
+    "administration-moderation",
+]
+"""Group identifiers that cannot be mutated via the public API (system process only)."""
 
 
 class OrgPropsSchema(Schema):

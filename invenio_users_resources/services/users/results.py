@@ -27,13 +27,18 @@ def _role_names(user):
     return [role.name for role in roles]
 
 
-def _apply_roles(payload, roles, identity, service):
-    """Populate flat/profile role projections."""
+def _can_manage_groups(identity, service):
+    """Return True if the identity can manage groups."""
     policy = service.config.permission_policy_cls
     permission = policy(action="manage_groups", identity=identity)
-    has_permission = permission.allows(identity)
+    return permission.allows(identity)
 
+
+def _apply_roles(payload, roles, has_permission):
+    """Populate flat/profile role projections."""
     if has_permission:
+        # Admin responses expose the same roles list both at the top level
+        # and inside the profile projection, so we set both here.
         payload["roles"] = ", ".join(roles) if roles else ""
         profile = dict(payload.get("profile") or {})
         profile["roles"] = ", ".join(roles) if roles else ""
@@ -97,7 +102,8 @@ class UserItem(RecordItem):
             },
         )
         roles = _role_names(self._user)
-        _apply_roles(self._data, roles, self._identity, self._service)
+        has_permission = _can_manage_groups(self._identity, self._service)
+        _apply_roles(self._data, roles, has_permission)
 
         if self._links_tpl:
             self._data["links"] = self.links
@@ -124,6 +130,7 @@ class UserList(RecordList):
     def hits(self):
         """Iterator over the hits."""
         user_cls = self._service.record_cls
+        has_permission = _can_manage_groups(self._identity, self._service)
 
         for hit in self._results:
             # load dump
@@ -140,7 +147,7 @@ class UserList(RecordList):
             )
 
             roles = _role_names(user)
-            _apply_roles(projection, roles, self._identity, self._service)
+            _apply_roles(projection, roles, has_permission)
 
             # inject the links
             if self._links_item_tpl:

@@ -45,7 +45,7 @@ def test_group_schema_errors():
         )
     assert exc_info.value.args[0] == {
         "name": [
-            "Role name must start with a letter and contain only letters, numbers, "
+            "Name must start with a letter and contain only letters, numbers, "
             "hyphens or underscores (max 80 chars).",
         ]
     }
@@ -59,7 +59,7 @@ def test_group_schema_errors():
     assert exc_info.value.args[0] == {
         "name": [
             "Length must be between 1 and 80.",
-            "Role name must start with a letter and contain only letters, numbers, "
+            "Name must start with a letter and contain only letters, numbers, "
             "hyphens or underscores (max 80 chars).",
         ]
     }

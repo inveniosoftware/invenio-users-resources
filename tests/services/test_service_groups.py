@@ -15,7 +15,8 @@ from uuid import UUID
 import pytest
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
-from marshmallow import ValidationError
+
+from invenio_users_resources.resources.groups.errors import GroupValidationError
 
 
 def is_uuid(value):
@@ -30,24 +31,23 @@ def test_groups_sort(app, groups, group_service):
     """Test default sort."""
     sorted_groups = sorted(groups, key=attrgetter("name"))
     res = group_service.search(system_identity).to_dict()
-    assert res["sortBy"] == "name"
+    assert "name" == res["sortBy"]
     assert res["hits"]["total"] > 0
     hits = res["hits"]["hits"]
-    assert hits[0]["id"] == sorted_groups[0].id
-    assert hits[1]["id"] == sorted_groups[1].id
+    assert sorted_groups[0].id == hits[0]["id"]
+    assert sorted_groups[1].id == hits[1]["id"]
 
 
 def test_groups_no_facets(app, group, group_service):
     """Make sure certain fields ARE searchable."""
     res = group_service.search(system_identity)
-    # if facets were enabled but not configured the value would be {}
-    assert res.aggregations is None
+    assert res.aggregations is not None
 
 
 def test_groups_fixed_pagination(app, groups, group_service):
     res = group_service.search(system_identity, params={"size": 1, "page": 2})
-    assert res.pagination.page == 1
-    assert res.pagination.size == 10
+    assert 1 == res.pagination.page
+    assert 10 == res.pagination.size
 
 
 @pytest.mark.parametrize(
@@ -74,15 +74,15 @@ def test_groups_search(
 
     # System can retrieve all groups.
     res = group_service.search(system_identity).to_dict()
-    assert res["hits"]["total"] == len(groups)
+    assert len(groups) == res["hits"]["total"]
 
     # Authenticated user can retrieve unmanaged groups
     res = group_service.search(user_pub.identity).to_dict()
-    assert res["hits"]["total"] == len([g for g in groups if not g.is_managed])
+    assert len([g for g in groups if not g.is_managed]) == res["hits"]["total"]
 
     # Super Admin can see everything
     res = group_service.search(user_admin.identity).to_dict()
-    assert res["hits"]["total"] == len(groups)
+    assert len(groups) == res["hits"]["total"]
 
     # FIXME: uncomment when permissions are fixed
     # # User Admin can see everything but admin groups
@@ -180,6 +180,28 @@ def test_groups_crud(app, group_service, user_pub):
         group_service.read(system_identity, item["id"])
 
 
+def test_group_update_validation_error(app, group_service):
+    """Ensure validation errors bubble up cleanly."""
+    item = group_service.create(
+        system_identity,
+        {
+            "name": "valid-role-name",
+            "description": "Valid description",
+        },
+    ).to_dict()
+
+    invalid_description = "x" * 256
+
+    with pytest.raises(GroupValidationError) as err:
+        group_service.update(
+            system_identity,
+            item["id"],
+            {"description": invalid_description},
+        )
+
+    assert {"description": ["Longer than maximum length 255."]} == err.value.errors
+
+
 def test_groups_manage_permission_required(
     app, group_service, user_pub, user_pubres, user_moderator, groups
 ):
@@ -216,6 +238,81 @@ def test_groups_manage_permission_required(
     assert "updated by admin" == updated["description"]
 
     assert group_service.delete(user_moderator.identity, created["id"])
+
+
+def test_protected_group_not_editable_via_api(
+    app, group_service, user_moderator, superadmin_group
+):
+    """Protected groups cannot be edited or removed via API."""
+
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = [
+        "admin",
+        "administration",
+        "administration-moderation",
+        "superuser-access",
+    ]
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_moderator.identity,
+            superadmin_group.id,
+            {"description": "attempted change"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_moderator.identity, superadmin_group.id)
+
+    # System process can still manage it (e.g. via CLI)
+    result = group_service.update(
+        system_identity,
+        superadmin_group.id,
+        {"description": superadmin_group.description},
+    )
+    assert result["description"] == superadmin_group.description
+
+
+def test_groups_update_requires_managed(app, group_service, not_managed_group):
+    """Unmanaged groups can only be updated by system process, not by regular admins."""
+
+    # System process CAN update unmanaged groups
+    result = group_service.update(
+        system_identity,
+        not_managed_group.id,
+        {"description": "updated by system"},
+    )
+    assert result["description"] == "updated by system"
+
+
+def test_groups_delete_requires_managed(app, group_service, not_managed_group):
+    """Unmanaged groups can only be deleted by system process, not by regular admins."""
+
+    # System process CAN delete unmanaged groups
+    result = group_service.delete(system_identity, not_managed_group.id)
+    assert result is True
+
+
+def test_admin_moderator_cannot_edit_unmanaged_groups(
+    app, group_service, not_managed_group, user_moderator
+):
+    """Administration-moderation users cannot update unmanaged groups."""
+
+    # Admin moderator CANNOT update unmanaged groups
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_moderator.identity,
+            not_managed_group.id,
+            {"description": "attempted update by admin"},
+        )
+
+
+def test_admin_moderator_cannot_delete_unmanaged_groups(
+    app, group_service, not_managed_group, user_moderator
+):
+    """Administration-moderation users cannot delete unmanaged groups."""
+
+    # Admin moderator CANNOT delete unmanaged groups
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_moderator.identity, not_managed_group.id)
 
 
 def test_groups_recreate_same_name(app, group_service):

@@ -30,6 +30,45 @@ def test_group_create_api(app, client, user_moderator):
     assert 204 == res.status_code
 
 
+def test_group_update_validation_error_api(app, client, user_moderator, group):
+    """Invalid payloads should produce a clean JSON error."""
+    user_moderator.login(client)
+
+    invalid_description = "x" * 256
+
+    res = client.put(
+        f"/groups/{group.id}",
+        json={"description": invalid_description},
+    )
+
+    assert 400 == res.status_code
+    data = res.get_json()
+    assert "A validation error occurred." == data["message"]
+    assert data["errors"] == [
+        {
+            "field": "description",
+            "messages": ["Longer than maximum length 255."],
+        }
+    ]
+
+
+def test_group_update_requires_managed_api(
+    app, client, user_moderator, not_managed_group
+):
+    """Unmanaged groups should return a friendly error."""
+    user_moderator.login(client)
+
+    res = client.put(
+        f"/groups/{not_managed_group.id}",
+        json={"description": "updated"},
+    )
+
+    assert 403 == res.status_code
+    data = res.get_json()
+    assert "Permission denied." == data["message"]
+    assert "errors" not in data
+
+
 def test_groups_search(app, client, group, user_moderator):
     user_moderator.login(client)
 
