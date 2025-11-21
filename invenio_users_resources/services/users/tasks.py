@@ -54,7 +54,7 @@ def reindex_users(user_ids):
                 ],
             )
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not bulk-reindex users: {e}")
+            current_app.logger.warning(f"Could not bulk-reindex users: {e}")
 
 
 @shared_task(ignore_result=True)
@@ -65,7 +65,7 @@ def unindex_users(user_ids):
         try:
             current_users_service.indexer.bulk_delete(user_ids)
         except search.exceptions.ConflictError as e:
-            current_app.logger.warn(f"Could not bulk-unindex users: {e}")
+            current_app.logger.warning(f"Could not bulk-unindex users: {e}")
 
 
 @shared_task(ignore_result=True, acks_late=True, retry=True)
@@ -93,7 +93,7 @@ def execute_moderation_actions(user_id=None, action=None):
             # Commit the uow when all the callbacks succeeded
             uow.commit()
         except Exception as e:
-            current_app.logger.warn(
+            current_app.logger.warning(
                 f"Could not execute action '{action}' for user: {e}"
             )
             # If a callback fails, rollback the operation and stop processing callbacks

@@ -1,6 +1,7 @@
 ..
     Copyright (C) 2023-2025 CERN.
     Copyright (C) 2024-2025 Graz University of Technology.
+    Copyright (C) 2026 Northwestern University.
 
     Invenio-Users-Resources is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -8,6 +9,11 @@
 
 Changes
 =======
+
+Version vNext (released YYYY-mm-dd)
+
+- chore+fix: replace usage of Link by EndpointLink and co.
+- chore: replace deprecated logger.warn->warning
 
 Version v9.0.3 (released 2025-11-12)
 
