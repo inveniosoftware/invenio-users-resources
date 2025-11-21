@@ -71,7 +71,21 @@ def app_config(app_config):
 
 
 @pytest.fixture(scope="module")
-def create_app(instance_path):
+def extra_entry_points():
+    """Extra entry points to load the mock_module features."""
+    return {
+        "invenio_administration.views": [
+            "invenio_users_resources_domains_detail = administration.domains:DomainsDetailView",
+            "invenio_users_resources_users_list = administration.users:UsersListView",
+            "invenio_app_rdm_records_list = administration.records:RecordAdminListView",
+            "invenio_app_rdm_drafts_list = administration.records:DraftAdminListView",
+            "invenio_requests_user_moderation_list = administration.users:UserModerationListView",
+        ],
+    }
+
+
+@pytest.fixture(scope="module")
+def create_app(instance_path, entry_points):
     """Application factory fixture."""
     return create_api
 

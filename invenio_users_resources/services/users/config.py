@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022-2024 CERN.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -11,7 +12,11 @@
 """Users service configuration."""
 
 from invenio_accounts.utils import DomainStatus
-from invenio_records_resources.services import RecordServiceConfig, pagination_links
+from invenio_records_resources.services import (
+    EndpointLink,
+    RecordServiceConfig,
+    pagination_endpoint_links,
+)
 from invenio_records_resources.services.base.config import (
     ConfiguratorMixin,
     FromConfig,
@@ -34,7 +39,7 @@ from invenio_records_resources.services.records.queryparser import (
 from luqum.tree import Word
 
 from ...records.api import UserAggregate
-from ..common import Link
+from ..common import EndpointLinkWithId, vars_func_set_querystring
 from ..params import FixedPagination
 from ..permissions import UsersPermissionPolicy
 from ..schemas import UserSchema
@@ -200,23 +205,45 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
 
     # links configuration
     links_item = {
-        "self": Link("{+api}/users/{id}"),
-        "avatar": Link("{+api}/users/{id}/avatar.svg"),
-        "records_html": Link("{+ui}/search/records?q=parent.access.owned_by.user:{id}"),
-        "admin_records_html": Link(
-            "{+ui}/administration/records?q=parent.access.owned_by.user:{id}&f=allversions",
+        "self": EndpointLinkWithId("users.read"),
+        "avatar": EndpointLinkWithId("users.avatar"),
+        "records_html": EndpointLink(
+            "invenio_search_ui.search",
+            vars=vars_func_set_querystring(
+                lambda obj, vars: {"q": f"parent.access.owned_by.user:{obj.id}"}
+            ),
+        ),
+        "admin_records_html": EndpointLink(
+            "administration.records",
+            vars=vars_func_set_querystring(
+                lambda obj, vars: {
+                    "q": f"parent.access.owned_by.user:{obj.id}",
+                    "f": "allversions",
+                }
+            ),
             when=can_manage,
         ),
-        "admin_drafts_html": Link(
-            "{+ui}/administration/drafts?q=parent.access.owned_by.user:{id}&f=allversions",
+        "admin_drafts_html": EndpointLink(
+            "administration.drafts",
+            vars=vars_func_set_querystring(
+                lambda obj, vars: {
+                    "q": f"parent.access.owned_by.user:{obj.id}",
+                    "f": "allversions",
+                }
+            ),
             when=can_manage,
         ),
-        "admin_moderation_html": Link(
-            "{+ui}/administration/moderation?q=topic.user:{id}", when=can_manage
+        "admin_moderation_html": EndpointLink(
+            "administration.moderation",
+            vars=vars_func_set_querystring(
+                lambda obj, vars: {"q": f"topic.user:{obj.id}"}
+            ),
+            when=can_manage,
         ),
         # TODO missing moderation actions based on permissions
     }
-    links_search = pagination_links("{+api}/users{?args*}")
+
+    links_search = pagination_endpoint_links("users.search")
 
     components = [
         # order of components are important!

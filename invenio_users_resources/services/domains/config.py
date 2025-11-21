@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2024 CERN.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -12,9 +13,11 @@
 
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services import (
+    EndpointLink,
+    RecordEndpointLink,
     RecordServiceConfig,
     SearchOptions,
-    pagination_links,
+    pagination_endpoint_links,
 )
 from invenio_records_resources.services.base.config import (
     ConfiguratorMixin,
@@ -30,7 +33,7 @@ from invenio_records_resources.services.records.params import (
 from invenio_records_resources.services.records.queryparser import QueryParser
 
 from ...records.api import DomainAggregate
-from ..common import Link
+from ..common import vars_func_set_querystring
 from ..permissions import DomainPermissionPolicy
 from ..schemas import DomainSchema
 from .components import DomainComponent
@@ -62,11 +65,6 @@ class DomainsSearchOptions(SearchOptions, SearchOptionsMixin):
     ]
 
 
-def domainvar(obj, vars):
-    """Add domain into link vars."""
-    vars["domain"] = obj.domain
-
-
 class DomainsServiceConfig(RecordServiceConfig, ConfiguratorMixin):
     """Requests service configuration."""
 
@@ -88,15 +86,18 @@ class DomainsServiceConfig(RecordServiceConfig, ConfiguratorMixin):
 
     # links configuration
     links_item = {
-        "self": Link("{+api}/domains/{domain}", vars=domainvar),
-        "admin_self_html": Link(
-            "{+ui}/administration/domains/{domain}", vars=domainvar
-        ),
-        "admin_users_html": Link(
-            "{+ui}/administration/users?q=domain:{domain}", vars=domainvar
+        "self": RecordEndpointLink("domains.read"),
+        "admin_self_html": RecordEndpointLink("administration.domains_details"),
+        "admin_users_html": EndpointLink(
+            "administration.users",
+            vars=vars_func_set_querystring(
+                lambda obj, vars: {
+                    "q": f"domain:{obj.domain}",
+                }
+            ),
         ),
     }
-    links_search = pagination_links("{+api}/domains{?args*}")
+    links_search = pagination_endpoint_links("domains.search")
 
     components = [
         DomainComponent,

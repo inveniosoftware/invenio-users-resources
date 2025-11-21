@@ -70,9 +70,14 @@ def test_domains_read(app, client, domains, user_moderator):
 
     user_moderator.login(client)
     res = client.get(f"/domains/cern.ch")
-    assert res.json["links"]["self"].endswith("/domains/cern.ch")
+
     assert res.status_code == 200
     d = res.json
+    assert d["links"]["self"].endswith("/api/domains/cern.ch")
+    assert d["links"]["admin_self_html"].endswith("/administration/domains/cern.ch")
+    assert d["links"]["admin_users_html"].endswith(
+        "/administration/users?q=domain:cern.ch"
+    )
     assert d["domain"] == "cern.ch"
     assert d["tld"] == "ch"
     assert d["status"] == 3

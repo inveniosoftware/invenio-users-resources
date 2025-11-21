@@ -4,12 +4,15 @@
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
 # details.
 
 """User resource tests."""
+
+import urllib.parse
 
 import pytest
 
@@ -58,7 +61,7 @@ def test_read_self_serialization(client, headers, users, user_pub):
     assert data["links"] == {
         "self": f"https://127.0.0.1:5000/api/users/{user_pub.id}",
         "avatar": f"https://127.0.0.1:5000/api/users/{user_pub.id}/avatar.svg",
-        "records_html": f"https://127.0.0.1:5000/search/records?q=parent.access.owned_by.user:{user_pub.id}",
+        "records_html": f"https://127.0.0.1:5000/search?q=parent.access.owned_by.user:{user_pub.id}",
     }
 
 
@@ -111,7 +114,7 @@ def test_read_logged_in_serialization(client, headers, users, user_accented, use
         assert data["links"] == {
             "self": f"https://127.0.0.1:5000/api/users/{u.id}",
             "avatar": f"https://127.0.0.1:5000/api/users/{u.id}/avatar.svg",
-            "records_html": f"https://127.0.0.1:5000/search/records?q=parent.access.owned_by.user:{u.id}",
+            "records_html": f"https://127.0.0.1:5000/search?q=parent.access.owned_by.user:{u.id}",
         }
 
         for k in [
@@ -279,40 +282,48 @@ def test_admin_links(
 ):
     """Test admin links."""
     client = user_moderator.login(client)
+
     res = client.get(f"/users/{user_pub.id}", headers=headers)
+
     assert res.status_code == 200
     data = res.json
+
+    expected_url = expected_url.format(id=user_pub.id)
+    expected_url_parsed = urllib.parse.urlparse(expected_url)
+    qs_parameters_expected = urllib.parse.parse_qs(expected_url_parsed.query)
+
     assert link_name in data["links"]
-    assert (
-        data["links"][link_name]
-        == f"https://127.0.0.1:5000{expected_url.format(id=user_pub.id)}"
-    )
+    received_url = data["links"][link_name]
+    received_url_parsed = urllib.parse.urlparse(received_url)
+    qs_parameters_received = urllib.parse.parse_qs(received_url_parsed.query)
+
+    assert expected_url_parsed.path == received_url_parsed.path
+    assert qs_parameters_expected == qs_parameters_received
 
 
-@pytest.mark.parametrize(
-    "username,expected_admin_links",
-    [
-        ("user_moderator", True),  # user_moderator should have admin links
-        ("pub", False),  # regular user should not have admin links
-        ("res", False),  # regular user should not have admin links
-    ],
-)
-def test_admin_links_visibility(client, headers, users, username, expected_admin_links):
+def test_admin_links_visibility(client, headers, user_moderator, user_pub):
     """Test admin links visibility based on user permissions."""
-    user = users[username]
-    client = user.login(client)
-    res = client.get(f"/users/{user.id}", headers=headers)
+    # User moderator should see links
+    client = user_moderator.login(client)
+
+    res = client.get(f"/users/{user_moderator.id}", headers=headers)
+
     assert res.status_code == 200
     data = res.json
+    assert "admin_records_html" in data["links"]
+    assert "admin_drafts_html" in data["links"]
+    assert "admin_moderation_html" in data["links"]
 
-    if expected_admin_links:
-        assert "admin_records_html" in data["links"]
-        assert "admin_drafts_html" in data["links"]
-        assert "admin_moderation_html" in data["links"]
-    else:
-        assert "admin_records_html" not in data["links"]
-        assert "admin_drafts_html" not in data["links"]
-        assert "admin_moderation_html" not in data["links"]
+    # Other (regular) users should not
+    client = user_pub.login(client, logout_first=True)
+
+    res = client.get(f"/users/{user_pub.id}", headers=headers)
+
+    assert res.status_code == 200
+    data = res.json
+    assert "admin_records_html" not in data["links"]
+    assert "admin_drafts_html" not in data["links"]
+    assert "admin_moderation_html" not in data["links"]
 
 
 # TODO: test conditional requests

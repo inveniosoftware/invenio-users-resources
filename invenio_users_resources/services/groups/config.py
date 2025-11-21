@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -14,13 +15,13 @@ from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services import (
     RecordServiceConfig,
     SearchOptions,
-    pagination_links,
+    pagination_endpoint_links,
 )
 from invenio_records_resources.services.records.params import QueryStrParam, SortParam
 from invenio_records_resources.services.records.queryparser import QueryParser
 
 from ...records.api import GroupAggregate
-from ..common import Link
+from ..common import EndpointLinkWithId
 from ..params import FixedPagination
 from ..permissions import GroupsPermissionPolicy
 from ..schemas import GroupSchema
@@ -75,10 +76,10 @@ class GroupsServiceConfig(RecordServiceConfig):
 
     # links configuration
     links_item = {
-        "self": Link("{+api}/groups/{id}"),
-        "avatar": Link("{+api}/groups/{id}/avatar.svg"),
+        "self": EndpointLinkWithId("groups.read"),
+        "avatar": EndpointLinkWithId("groups.avatar"),
     }
-    links_search = pagination_links("{+api}/groups{?args*}")
+    links_search = pagination_endpoint_links("groups.search")
 
     components = [
         # Order of components are important!
