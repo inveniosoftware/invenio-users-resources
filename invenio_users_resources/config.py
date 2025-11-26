@@ -271,12 +271,19 @@ USERS_RESOURCES_GROUPS_ADMIN_FACETS = {
 """Invenio groups admin search configuration."""
 
 USERS_RESOURCES_PROTECTED_GROUP_NAMES = [
-    "superuser-access",
     "admin",
     "administration",
+    "superuser-access",
     "administration-moderation",
 ]
-"""Group identifiers that cannot be mutated via the public API (system process only)."""
+"""Group identifiers that cannot be mutated via API (system process only).
+
+References:
+- superuser-access: https://github.com/inveniosoftware/invenio-access/blob/master/invenio_access/permissions.py
+- administration: https://github.com/inveniosoftware/invenio-administration/blob/master/invenio_administration/permissions.py
+- admin: https://github.com/inveniosoftware/invenio-cli/blob/master/invenio_cli/commands/services.py (created during instance setup)
+- administration-moderation: https://github.com/inveniosoftware/invenio-users-resources/blob/master/invenio_users_resources/permissions.py
+"""
 
 
 class OrgPropsSchema(Schema):

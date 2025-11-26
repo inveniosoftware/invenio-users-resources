@@ -13,6 +13,7 @@ from operator import attrgetter
 from uuid import UUID
 
 import pytest
+from invenio_access import ActionRoles, superuser_access
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
 
@@ -46,8 +47,8 @@ def test_groups_no_facets(app, group, group_service):
 
 def test_groups_fixed_pagination(app, groups, group_service):
     res = group_service.search(system_identity, params={"size": 1, "page": 2})
-    assert 1 == res.pagination.page
-    assert 10 == res.pagination.size
+    assert 2 == res.pagination.page
+    assert 1 == res.pagination.size
 
 
 @pytest.mark.parametrize(
@@ -239,7 +240,7 @@ def test_groups_manage_permission_required(
 
 
 def test_protected_group_not_editable_via_api(
-    app, group_service, user_moderator, superadmin_group
+    app, group_service, user_moderator, user_admin, superadmin_group
 ):
     """Protected groups cannot be edited or removed via API."""
 
@@ -256,9 +257,17 @@ def test_protected_group_not_editable_via_api(
             superadmin_group.id,
             {"description": "attempted change"},
         )
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_admin.identity,
+            superadmin_group.id,
+            {"description": "attempted change"},
+        )
 
     with pytest.raises(PermissionDeniedError):
         group_service.delete(user_moderator.identity, superadmin_group.id)
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_admin.identity, superadmin_group.id)
 
     # System process can still manage it (e.g. via CLI)
     result = group_service.update(
@@ -267,6 +276,65 @@ def test_protected_group_not_editable_via_api(
         {"description": superadmin_group.description},
     )
     assert result["description"] == superadmin_group.description
+
+
+def test_protected_group_not_creatable_via_api(
+    app, group_service, user_moderator, user_admin
+):
+    """Protected groups cannot be created via API by admins."""
+
+    previous = app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"]
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["protected-role"]
+
+    payload = {"name": "protected-role", "description": "attempted creation"}
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.create(user_moderator.identity, payload)
+        with pytest.raises(PermissionDeniedError):
+            group_service.create(user_admin.identity, payload)
+
+        created = group_service.create(system_identity, payload).to_dict()
+        assert created["name"] == "protected-role"
+        assert group_service.delete(system_identity, created["id"])
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+
+
+def test_protected_group_cannot_become_protected(
+    app, group_service, user_moderator, user_admin
+):
+    """Renaming a group into a protected identifier is blocked for admins."""
+
+    previous = app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"]
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["protected-admin-role"]
+
+    created = group_service.create(
+        user_moderator.identity,
+        {"name": "temp-protected-rename", "description": "temp"},
+    ).to_dict()
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_moderator.identity,
+                created["id"],
+                {"name": "protected-admin-role"},
+            )
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_admin.identity,
+                created["id"],
+                {"name": "protected-admin-role"},
+            )
+
+        result = group_service.update(
+            system_identity, created["id"], {"name": "protected-admin-role"}
+        ).to_dict()
+        assert result["name"] == "protected-admin-role"
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+        group_service.delete(system_identity, created["id"])
 
 
 def test_groups_update_requires_managed(app, group_service, not_managed_group):
@@ -324,3 +392,55 @@ def test_groups_recreate_same_name(app, group_service):
     assert payload["name"] == recreated["name"]
 
     assert group_service.delete(system_identity, recreated["id"])
+
+
+def test_super_admin_can_manage_groups(app, group_service, user_admin):
+    """Super users can update and delete managed groups."""
+
+    payload = {
+        "name": "superuser-managed-role",
+        "description": "temp description",
+    }
+
+    # Created by system to focus the check on super user capabilities
+    created = group_service.create(system_identity, payload).to_dict()
+
+    updated = group_service.update(
+        user_admin.identity,
+        created["id"],
+        {"description": "updated by superuser"},
+    ).to_dict()
+    assert updated["description"] == "updated by superuser"
+
+    assert group_service.delete(user_admin.identity, created["id"])
+
+
+def test_super_admin_loses_manage_when_superuser_removed(
+    app, group_service, user_admin, group, superadmin_group, database
+):
+    """Removing superuser access strips manage permissions for managed groups."""
+
+    # Drop the superuser action from the superadmin role
+    action_role = (
+        ActionRoles.query_by_action(superuser_access)
+        .filter_by(role_id=superadmin_group.id)
+        .one()
+    )
+    database.session.delete(action_role)
+    database.session.commit()
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_admin.identity,
+                group.id,
+                {"description": "should not be allowed"},
+            )
+
+        with pytest.raises(PermissionDeniedError):
+            group_service.delete(user_admin.identity, group.id)
+    finally:
+        # Restore superuser access to keep other tests intact
+        restored = ActionRoles.create(action=superuser_access, role=superadmin_group)
+        database.session.add(restored)
+        database.session.commit()

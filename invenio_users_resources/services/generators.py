@@ -3,7 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2023 Graz University of Technology.
-# Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024-2025 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -186,19 +186,28 @@ class DenyAll(Generator):
 class ProtectedGroupIdentifiers(Generator):
     """Exclude access to protected groups unless system process."""
 
-    def _is_protected(self, record):
-        protected = current_app.config.get("USERS_RESOURCES_PROTECTED_GROUP_NAMES", [])
+    def _is_protected(self, record, **kwargs):
+        """Check if the role is a protected."""
+        protected = set(
+            current_app.config.get("USERS_RESOURCES_PROTECTED_GROUP_NAMES", [])
+        )
         if not protected or record is None:
             return False
 
-        values = [getattr(record, "id", None), getattr(record, "name", None)]
+        # create new role
+        name_dict = record.get("name") if isinstance(record, dict) else None
+        # update protected role (object form)
+        name_obj = getattr(record, "name", None)
+        id_obj = getattr(record, "id", None)
+        # update role to protected
+        update_name = kwargs.get("update_grp", {}).get("name")
 
-        candidates = {str(val) for val in values if val is not None}
-        return bool(set(protected).intersection(candidates))
+        candidates = {str(v) for v in (name_dict, name_obj, id_obj, update_name) if v}
+        return bool(protected & candidates)
 
     def excludes(self, record=None, identity=None, **kwargs):
         """Exclude non-system identities from protected groups."""
-        if not self._is_protected(record):
+        if not self._is_protected(record, **kwargs):
             return []
         if identity and system_process in identity.provides:
             return []

@@ -27,7 +27,7 @@ from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 from marshmallow import ValidationError
-from sqlalchemy import or_
+from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -142,29 +142,25 @@ def _validate_user_data(user_data):
         raise ValidationError(errors)
 
 
-def _validate_group_data(group_data):
-    """Validate data for group creation."""
-    group_id = group_data.get("id")
-    name = group_data.get("name")
-
-    if not (group_id or name):
-        return
-
-    role = current_datastore.role_model
-
-    stmt = db.select(role).where(or_(role.id == group_id, role.name == name)).limit(1)
-
-    row = db.session.execute(stmt).scalars().first()
-    if not row:
+def _validate_group_data(data, exclude_id=None):
+    """Validate the group data."""
+    name = data.get("name")
+    if not name:
         return
 
     errors = {}
-    if group_id and row.id == group_id:
-        errors["id"] = [_("Role id already used by another group.")]
-    if name and row.name == name:
-        errors["name"] = [_("Role name already used by another group.")]
+    stmt = select(current_datastore.role_model.id).where(
+        current_datastore.role_model.name == name
+    )
+    if exclude_id is not None:
+        stmt = stmt.where(current_datastore.role_model.id != exclude_id)
 
-    raise ValidationError(errors)
+    existing_role_id = db.session.execute(stmt).scalar_one_or_none()
+
+    if existing_role_id:
+        errors["name"] = [_("Role name already used by another group.")]
+    if errors:
+        raise ValidationError(errors)
 
 
 class UserAggregate(BaseAggregate):
@@ -270,9 +266,6 @@ class UserAggregate(BaseAggregate):
     def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
         """Create a new User and store it in the database."""
         try:
-            #  Admin group view passes in an empty string as id, which will be a valid Role id.
-            if "id" in data and data["id"] == "":
-                data.pop("id")
             # Check if email and  username already exists by another account.
             _validate_user_data(data)
             # Create User
@@ -436,6 +429,9 @@ class GroupAggregate(BaseAggregate):
         role = self.model.model_obj
         if role is None:
             role = db.session.get(current_datastore.role_model, id_)
+
+        if "name" in data:
+            _validate_group_data({"name": data["name"]}, exclude_id=role.id)
 
         role.name = data.get("name", role.name)
         role.description = data.get("description", role.description)

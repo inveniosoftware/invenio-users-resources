@@ -23,6 +23,6 @@ class GroupValidationError(GroupsException):
 
     def __init__(self, errors):
         """Marshmallow validation errors."""
-        self.errors = errors or {}
+        self.errors = errors
         self.description = self.message
         super().__init__(self.message)

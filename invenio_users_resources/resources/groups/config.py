@@ -35,7 +35,7 @@ class GroupSearchRequestArgsSchema(SearchRequestArgsSchema):
 
 def handle_group_validation_error(err):
     """Handle groups errors."""
-    marshmallow_error = ValidationError(err.errors or {})
+    marshmallow_error = ValidationError(err.errors)
     response = HTTPJSONException(
         code=400,
         description=err.description,

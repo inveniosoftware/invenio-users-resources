@@ -15,7 +15,6 @@
 from flask import current_app
 from invenio_accounts.models import Role
 from invenio_db import db
-from invenio_i18n import gettext as _
 from invenio_records_resources.resources.errors import PermissionDeniedError
 from invenio_records_resources.services import RecordService
 from invenio_records_resources.services.uow import (
@@ -24,7 +23,6 @@ from invenio_records_resources.services.uow import (
     unit_of_work,
 )
 from marshmallow import ValidationError
-from sqlalchemy.exc import IntegrityError
 
 from ...records.api import GroupAggregate
 from ...resources.groups.errors import GroupValidationError
@@ -48,12 +46,10 @@ class GroupsService(RecordService):
             raise GroupValidationError(err.messages)
 
         try:
+            # Create group using API
             group = self.record_cls.create(data)
-        except IntegrityError as err:
-            db.session.rollback()
-            raise GroupValidationError(
-                {"name": [_("Role name already used by another group.")]}
-            ) from err
+        except ValidationError as err:
+            raise GroupValidationError(err.messages) from err
 
         current_app.logger.debug(
             "Group created: '%s' by user %s", group.name, identity.id
@@ -90,7 +86,7 @@ class GroupsService(RecordService):
         group = GroupAggregate.get_record(id_)
         if group is None:
             raise PermissionDeniedError()
-        self.require_permission(identity, "update", record=group)
+        self.require_permission(identity, "update", record=group, update_grp=data)
 
         try:
             data, errors = self.schema.load(
@@ -103,12 +99,10 @@ class GroupsService(RecordService):
             raise GroupValidationError(err.messages) from err
 
         try:
+            # Update group using API
             group = group.update(data, id_)
-        except IntegrityError as err:
-            db.session.rollback()
-            raise GroupValidationError(
-                {"name": [_("Role name already used by another group.")]}
-            ) from err
+        except ValidationError as err:
+            raise GroupValidationError(err.messages) from err
         current_app.logger.debug(
             "Group updated: '%s' by user %s", group.name, identity.id
         )

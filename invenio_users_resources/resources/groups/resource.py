@@ -33,8 +33,8 @@ class GroupsResource(RecordResource):
         routes = self.config.routes
         return [
             route("GET", routes["list"], self.search),
-            route("POST", routes["list"], self.create),
             route("GET", routes["item"], self.read),
+            route("POST", routes["list"], self.create),
             route("PUT", routes["item"], self.update),
             route("DELETE", routes["item"], self.delete),
             route("GET", routes["item-avatar"], self.avatar),

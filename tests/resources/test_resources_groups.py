@@ -77,7 +77,7 @@ def test_groups_search(app, client, group, user_moderator):
     assert res.status_code == 200
     data = res.json
     assert data["links"] == {
-        "self": "https://127.0.0.1:5000/api/groups?facets=%7B%7D&page=1&size=10&sort=name"
+        "self": "https://127.0.0.1:5000/api/groups?page=1&size=20&sort=name"
     }
 
 

@@ -21,6 +21,7 @@ from invenio_records_resources.services import (
 from invenio_records_resources.services.base.config import ConfiguratorMixin
 from invenio_records_resources.services.records.params import (
     FacetsParam,
+    PaginationParam,
     QueryStrParam,
     SortParam,
 )
@@ -28,7 +29,6 @@ from invenio_records_resources.services.records.queryparser import QueryParser
 
 from ...records.api import GroupAggregate
 from ..common import EndpointLinkWithId
-from ..params import FixedPagination
 from ..permissions import GroupsPermissionPolicy
 from ..schemas import GroupSchema
 from . import facets as groups_facets
@@ -39,8 +39,8 @@ class GroupSearchOptions(SearchOptions):
     """Search options."""
 
     pagination_options = {
-        "default_results_per_page": 10,
-        "default_max_results": 10,
+        "default_results_per_page": 20,
+        "default_max_results": 50,
     }
 
     query_parser_cls = QueryParser.factory(fields=["id", "name"])
@@ -77,7 +77,7 @@ class GroupSearchOptions(SearchOptions):
     params_interpreters_cls = [
         QueryStrParam,
         SortParam,
-        FixedPagination,
+        PaginationParam,
         FacetsParam,
     ]
 
