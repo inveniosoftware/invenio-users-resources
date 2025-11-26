@@ -12,9 +12,20 @@
 
 """Permission generators for users and groups."""
 
+from abc import abstractmethod
+
 from flask import current_app
-from invenio_access import Permission, any_user
+from invenio_access import (
+    ActionRoles,
+    ActionUsers,
+    Permission,
+    any_user,
+    superuser_access,
+)
+from invenio_access.models import Role
 from invenio_access.permissions import system_process
+from invenio_access.utils import get_identity
+from invenio_db import db
 from invenio_records.dictutils import dict_lookup
 from invenio_records_permissions.generators import (
     ConditionalGenerator,
@@ -22,6 +33,7 @@ from invenio_records_permissions.generators import (
     UserNeed,
 )
 from invenio_search.engine import dsl
+from sqlalchemy import exists
 
 
 class IfPublic(ConditionalGenerator):
@@ -191,3 +203,111 @@ class ProtectedGroupIdentifiers(Generator):
         if identity and system_process in identity.provides:
             return []
         return [any_user]
+
+
+class AdministrationAction(Generator):
+    """Similar to `AdminnAction` but it safe gards superadmin users and/or roles."""
+
+    def __init__(self, action):
+        """Constructor.
+
+        :param action: The action to check permissions against, i.e. `administration-moderation`
+        """
+        self.action = action
+
+    @abstractmethod
+    def _records_to_exclude(self):
+        """Get IDs of records to exclude from the query."""
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [self.action]
+
+    def query_filter(self, identity=None, **kwargs):
+        """Filter query to exclude protected records if user has permission."""
+        if not identity:
+            return []
+
+        permission = Permission(self.action)
+        if not permission.allows(identity):
+            return []
+
+        exclude_ids = self._records_to_exclude()
+        if not exclude_ids:
+            return dsl.Q("match_all")
+
+        return dsl.Q("match_all") & ~dsl.Q("terms", id=exclude_ids)
+
+
+class AdministrationUserAction(AdministrationAction):
+    """Administration action to hide superadmin users from non-superadmin users."""
+
+    def _records_to_exclude(self):
+        """Get IDs of users with superadmin access."""
+        # Users via role membership
+        users_via_roles = {
+            user.id
+            for action_role in ActionRoles.query_by_action(superuser_access).all()
+            for user in action_role.role.users
+        }
+
+        # Users with direct action assignments
+        users_via_actions = {
+            action_user.user_id
+            for action_user in ActionUsers.query_by_action(superuser_access).all()
+        }
+        # Return the union of both
+        return list(users_via_roles | users_via_actions)
+
+
+class AdministrationGroupAction(AdministrationAction):
+    """Administration action to hide superadmin roles from non-superadmin users."""
+
+    def _records_to_exclude(self):
+        """Get IDs of roles with superadmin access."""
+        return [
+            action_role.role_id
+            for action_role in ActionRoles.query_by_action(superuser_access).all()
+        ]
+
+
+class IfSuperAdmin(ConditionalGenerator):
+    """Generator that conditionally grants access based on superadmin status."""
+
+    def _is_user_superadmin(self, identity):
+        """Check if the identity has superadmin access."""
+        if not identity:
+            return False
+        return Permission(superuser_access).allows(identity)
+
+    def _is_role_superadmin(self, record):
+        """Check if a role record has superadmin access."""
+        return db.session.query(
+            exists(
+                ActionRoles.query_by_action(superuser_access)
+                .filter_by(role_id=record.id)
+                .statement
+            )
+        ).scalar()
+
+    def _is_record_superadmin(self, record):
+        """Check if a record represents a superadmin role or user."""
+        if isinstance(record.model.model_obj, Role):
+            return self._is_role_superadmin(record)
+
+        record_identity = get_identity(record.model.model_obj)
+        return self._is_user_superadmin(record_identity)
+
+    def _condition(self, record=None, identity=None, **kwargs):
+        """Check if user or record has superadmin access."""
+        # Check current user's identity first
+        if identity and self._is_user_superadmin(identity):
+            return True
+
+        # Check the record if provided
+        return record is not None and self._is_record_superadmin(record)
+
+    def query_filter(self, identity=None, **kwargs):
+        """Generate query filter based on superadmin status."""
+        generator = self.then_ if self._is_user_superadmin(identity) else self.else_
+        return self._make_query(generator, identity=identity, **kwargs)

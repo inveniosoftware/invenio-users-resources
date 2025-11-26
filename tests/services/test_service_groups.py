@@ -84,10 +84,9 @@ def test_groups_search(
     res = group_service.search(user_admin.identity).to_dict()
     assert len(groups) == res["hits"]["total"]
 
-    # FIXME: uncomment when permissions are fixed
-    # # User Admin can see everything but admin groups
-    # res = group_service.search(user_moderator.identity).to_dict()
-    # assert res["hits"]["total"] == len(groups) - 1  # There is one superadmin group
+    # User Admin can see everything but admin groups
+    res = group_service.search(user_moderator.identity).to_dict()
+    assert res["hits"]["total"] == len(groups) - 1  # There is one superadmin group
 
     # Anon does not have permission to search
     with pytest.raises(PermissionDeniedError):
@@ -123,15 +122,14 @@ def test_groups_read(
     group_service.read(system_identity, superadmin_group.id).to_dict()
     # Super user
     group_service.read(user_admin.identity, superadmin_group.id)
-    # FIXME: uncomment when permissions are fixed
-    # # Authenicated user
-    # with pytest.raises(PermissionDeniedError):
-    #     group_service.read(user_pub.identity, superadmin_group.id)
-    # # User moderator
-    # with pytest.raises(PermissionDeniedError):
-    #     group_service.read(user_moderator.identity, superadmin_group.id)
-    # with pytest.raises(PermissionDeniedError):
-    #     group_service.read(anon_identity, superadmin_group.id)
+    # Authenicated user
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_pub.identity, superadmin_group.id)
+    # User moderator
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_moderator.identity, superadmin_group.id)
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(anon_identity, superadmin_group.id)
 
 
 def test_groups_crud(app, group_service, user_pub):
