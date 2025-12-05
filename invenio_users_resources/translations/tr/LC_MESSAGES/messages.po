@@ -9,6 +9,7 @@
 # Berat Aldemir <berataldemir@gmail.com>, 2024
 # Ben Translation and Interpreting Services <info@bentercume.com>, 2024
 # BEN TERCÜME, 2024
+# Eylül-1 -, 2025
 # 
 #, fuzzy
 msgid ""
@@ -17,7 +18,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: info@inveniosoftware.org\n"
 "POT-Creation-Date: 2025-03-26 17:19+0000\n"
 "PO-Revision-Date: 2022-02-16 11:58+0000\n"
-"Last-Translator: BEN TERCÜME, 2024\n"
+"Last-Translator: Eylül-1 -, 2025\n"
 "Language-Team: Turkish (https://app.transifex.com/inveniosoftware/teams/23537/tr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -167,7 +168,7 @@ msgstr "Etki alanı durumu"
 
 #: invenio_users_resources/services/users/facets.py:32
 msgid "Affiliations"
-msgstr "Bağlı olunan kurumlar/kuruluşlar"
+msgstr "Bağlı olunan kurum/kuruluşlar"
 
 #: invenio_users_resources/services/users/facets.py:37
 msgid "Account status"
