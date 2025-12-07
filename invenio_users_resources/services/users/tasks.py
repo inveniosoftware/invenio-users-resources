@@ -103,7 +103,7 @@ def execute_moderation_actions(user_id=None, action=None):
 @shared_task(ignore_result=True, acks_late=True, retry=True)
 def execute_reset_password_email(user_id=None, token=None, reset_link=None):
     """Send email to email address of new user to reset password."""
-    account_user = current_datastore.get_user(user_id)
+    account_user = current_datastore.get_user_by_id(user_id)
     send_mail(
         config_value("EMAIL_SUBJECT_PASSWORD_RESET"),
         account_user.email,

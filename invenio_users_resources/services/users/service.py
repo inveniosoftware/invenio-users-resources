@@ -5,6 +5,7 @@
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 Graz University of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -69,7 +70,7 @@ class UsersService(RecordService):
         )
         uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
         # get email token and reset info
-        account_user = current_datastore.get_user(user.id)
+        account_user = current_datastore.get_user_by_id(user.id)
         token, reset_link = default_reset_password_link_func(account_user)
         # trigger celery task to send email after the user was successfully created
         uow.register(
