@@ -13,6 +13,7 @@
 """Permission generators for users and groups."""
 
 from flask import current_app
+from flask_principal import ItemNeed
 from invenio_access import Permission, any_user
 from invenio_records.dictutils import dict_lookup
 from invenio_records_permissions.generators import (
@@ -159,4 +160,24 @@ class GroupsEnabled(Generator):
                 and not current_app.config["USERS_RESOURCES_GROUPS_ENABLED"]
             ):
                 return [any_user]
+        return []
+
+
+class UserGrant(Generator):
+    def __init__(self, action) -> None:
+        self._action = action
+
+    def needs(self, record=None, **kwargs):
+        """Set of Needs granting permission."""
+        if record is not None:
+            return [ItemNeed(self._action, record.id, "user")]
+        return []
+
+    def query_filter(self, identity=None, **kwargs):
+        """Filters for the current identity."""
+        if identity is not None:
+            for need in identity.provides:
+                if need.method == self._action and need.type == "user":
+                    return dsl.Q("term", id=need.value)
+
         return []
