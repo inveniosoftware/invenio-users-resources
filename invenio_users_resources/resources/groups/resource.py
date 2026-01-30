@@ -10,7 +10,6 @@
 
 """User groups resource."""
 
-
 from flask import g, send_file
 from flask_resources import resource_requestctx, response_handler, route
 from invenio_records_resources.resources import RecordResource

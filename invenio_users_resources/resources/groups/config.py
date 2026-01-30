@@ -9,7 +9,6 @@
 
 """User roles/groups resource config."""
 
-
 import marshmallow as ma
 from invenio_records_resources.resources import (
     RecordResourceConfig,

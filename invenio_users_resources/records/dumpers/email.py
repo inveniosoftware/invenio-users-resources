@@ -8,7 +8,6 @@
 
 """Search dumper for the email field."""
 
-
 from invenio_records.dumpers import SearchDumperExt
 
 
