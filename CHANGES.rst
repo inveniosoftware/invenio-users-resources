@@ -1,6 +1,6 @@
 ..
     Copyright (C) 2023-2025 CERN.
-    Copyright (C) 2024-2025 Graz University of Technology.
+    Copyright (C) 2024-2026 Graz University of Technology.
     Copyright (C) 2026 Northwestern University.
 
     Invenio-Users-Resources is free software; you can redistribute it
@@ -9,6 +9,17 @@
 
 Changes
 =======
+
+Version v10.0.0 (released 2026-01-30)
+
+- chore(setup): bump dependencies
+- chore(black): update formatting to >= 26.0
+- fix: DeprecationWarning
+- fix(chore): DeprecationWarning stdlib
+- refactor: move to context_schema
+- chore: replace deprecated logger.warn->warning
+- chore+fix: replace usage of Link by EndpointLink and co
+
 
 Version vNext (released YYYY-mm-dd)
 
