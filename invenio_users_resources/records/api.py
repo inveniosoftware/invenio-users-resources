@@ -3,6 +3,8 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Graz University of Technology.
+# Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -18,11 +20,14 @@ from flask import current_app
 from invenio_accounts.models import Domain
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
+from invenio_i18n import gettext as _
 from invenio_records.dumpers import SearchDumper, SearchDumperExt
 from invenio_records.dumpers.indexedat import IndexedAtDumperExt
 from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
+from marshmallow import ValidationError
+from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -111,6 +116,51 @@ class BaseAggregate(Record):
         model = self.model_cls(model_obj=self.model._model_obj)
         self.model = model
         return self
+
+
+def _validate_user_data(user_data):
+    """Validate the entered data for the user creation.
+
+    This is a special case for validation done outside of the schema because it requires
+    database queries that can significantly slow down serialization. We want to perform
+    this validation upon account creation.
+    Also, we can't let this fail naturaly at the DB level because it will happen during the
+    `commit` state of the UOW and the feedback to the form can't be sent.
+    """
+    errors = {}
+    username = user_data["username"]
+    email = user_data["email"]
+    # Check if Email exists already
+    existing_email = db.session.query(User).filter_by(email=email).first()
+    if existing_email:
+        errors["email"] = [_("Email already used by another account.")]
+    # Check if Username exists already
+    existing_username = db.session.query(User).filter_by(username=username).first()
+    if existing_username:
+        errors["username"] = [_("Username already used by another account.")]
+    if errors:
+        raise ValidationError(errors)
+
+
+def _validate_group_data(data, exclude_id=None):
+    """Validate the group data."""
+    name = data.get("name")
+    if not name:
+        return
+
+    errors = {}
+    stmt = select(current_datastore.role_model.id).where(
+        current_datastore.role_model.name == name
+    )
+    if exclude_id is not None:
+        stmt = stmt.where(current_datastore.role_model.id != exclude_id)
+
+    existing_role_id = db.session.execute(stmt).scalar_one_or_none()
+
+    if existing_role_id:
+        errors["name"] = [_("Role name already used by another group.")]
+    if errors:
+        raise ValidationError(errors)
 
 
 class UserAggregate(BaseAggregate):
@@ -313,6 +363,23 @@ class GroupAggregate(BaseAggregate):
         )
         return colors[int(normalized_group_initial, base=36) % len(colors)]
 
+    @property
+    def revision_id(self):
+        """Return a revision id suitable for search engine versioning.
+
+        We offset the SQLAlchemy ``version_id`` by 1 so that recreated roles
+        (same id/name) always index with a version >= any previous document in
+        the search index, avoiding version conflicts during reindexing. We also
+        fall back to the ``updated`` timestamp to produce a larger, monotonic
+        value when the DB ``version_id`` is low (e.g., after a recreate).
+        """
+        if not self.model:
+            return 1
+
+        version = self.model.version_id or 0
+        updated_ts = int(self.model.updated.timestamp()) if self.model.updated else 0
+        return max(version + 1, updated_ts)
+
     @classmethod
     def get_record(cls, id_):
         """Get the user group via the specified ID."""
@@ -336,6 +403,47 @@ class GroupAggregate(BaseAggregate):
             if role is None:
                 return None
             return cls.from_model(role)
+
+    @classmethod
+    def create(cls, data):
+        """Create a new group/role and store it in the database."""
+        # Filter out fields sqlalchemy model rejects
+        accepted_fields = [
+            "name",
+            "description",
+        ]
+        role_data = {k: v for k, v in data.items() if k in accepted_fields}
+
+        _validate_group_data(role_data)
+        role = current_datastore.create_role(**role_data)
+        return cls.from_model(role)
+
+    def update(self, data, id_):
+        """Update the group/role attributes.
+
+        Update is proxied through direct attribute modification.
+        """
+        role = self.model.model_obj
+        if role is None:
+            role = db.session.get(current_datastore.role_model, id_)
+
+        if "name" in data:
+            _validate_group_data({"name": data["name"]}, exclude_id=role.id)
+
+        role.name = data.get("name", role.name)
+        role.description = data.get("description", role.description)
+        role = current_datastore.update_role(role)
+        return self.from_model(role)
+
+    def delete(self):
+        """Delete the group/role.
+
+        Deletion is proxied through the datastore.
+        """
+        role = self.model.model_obj
+        if role is None:
+            raise ValueError("Cannot delete group without an underlying model.")
+        current_datastore.delete(role)
 
 
 class OrgNameDumperExt(SearchDumperExt):

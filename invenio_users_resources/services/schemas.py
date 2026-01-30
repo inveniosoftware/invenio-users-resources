@@ -2,6 +2,8 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2023-2025 Graz University of Technology.
+# Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -18,6 +20,7 @@ from invenio_accounts.profiles.schemas import (
     validate_visibility,
 )
 from invenio_accounts.utils import DomainStatus
+from invenio_i18n import gettext as _t
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.services.records.schema import (
     BaseGhostSchema,
@@ -92,6 +95,7 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     }
 
     # NOTE: API should only deliver users that are active & confirmed
+    id = fields.Str(dump_only=True)
     active = fields.Boolean()
     confirmed = fields.Boolean(dump_only=True)
     blocked = fields.Boolean(dump_only=True)
@@ -100,8 +104,8 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     visibility = fields.Str(dump_only=True)
     is_current_user = fields.Method("is_self", dump_only=True)
 
-    email = fields.String()
-    domain = fields.String()
+    email = fields.Email(required=True)
+    domain = fields.String(dump_only=True)
     domaininfo = fields.Nested(DomainInfoSchema)
     identities = fields.Nested(IdentitiesSchema, dump_default={})
     username = fields.String()
@@ -131,9 +135,23 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
 class GroupSchema(BaseRecordSchema):
     """Schema for user groups."""
 
-    name = fields.String()
-    title = fields.String()
-    description = fields.String()
+    id = fields.Str(dump_only=True)
+    name = fields.String(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=80),
+            validate.Regexp(
+                r"^[A-Za-z][A-Za-z0-9_-]{0,79}$",
+                error=_t(
+                    "Name must start with a letter and contain only letters, numbers, hyphens or underscores (max 80 chars)."
+                ),
+            ),
+        ],
+    )
+
+    title = fields.String(validate=validate.Length(max=80))
+
+    description = SanitizedUnicode(validate=validate.Length(max=255))
     provider = fields.String(dump_only=True)
     is_managed = fields.Boolean(dump_only=True)
 

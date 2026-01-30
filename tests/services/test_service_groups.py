@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -8,32 +9,46 @@
 
 """User service tests."""
 
+from operator import attrgetter
+from uuid import UUID
+
 import pytest
+from invenio_access import ActionRoles, superuser_access
 from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
 
+from invenio_users_resources.resources.groups.errors import GroupValidationError
+
+
+def is_uuid(value):
+    try:
+        UUID(value)
+        return True
+    except ValueError:
+        return False
+
 
 def test_groups_sort(app, groups, group_service):
-    # default sort by name
+    """Test default sort."""
+    sorted_groups = sorted(groups, key=attrgetter("name"))
     res = group_service.search(system_identity).to_dict()
-    assert res["sortBy"] == "name"
+    assert "name" == res["sortBy"]
     assert res["hits"]["total"] > 0
     hits = res["hits"]["hits"]
-    assert hits[0]["id"] == "hr-dep"
-    assert hits[1]["id"] == "it-dep"
+    assert sorted_groups[0].id == hits[0]["id"]
+    assert sorted_groups[1].id == hits[1]["id"]
 
 
 def test_groups_no_facets(app, group, group_service):
     """Make sure certain fields ARE searchable."""
     res = group_service.search(system_identity)
-    # if facets were enabled but not configured the value would be {}
-    assert res.aggregations is None
+    assert res.aggregations is not None
 
 
 def test_groups_fixed_pagination(app, groups, group_service):
     res = group_service.search(system_identity, params={"size": 1, "page": 2})
-    assert res.pagination.page == 1
-    assert res.pagination.size == 10
+    assert 2 == res.pagination.page
+    assert 1 == res.pagination.size
 
 
 @pytest.mark.parametrize(
@@ -53,38 +68,379 @@ def test_groups_search_field(app, group, group_service, query):
     assert res.total > 0
 
 
-def test_groups_search(app, groups, group_service, user_pub, anon_identity):
+def test_groups_search(
+    app, groups, group_service, user_pub, user_admin, user_moderator, anon_identity
+):
     """Test group search."""
 
     # System can retrieve all groups.
     res = group_service.search(system_identity).to_dict()
-    assert res["hits"]["total"] == len(groups)
+    assert len(groups) == res["hits"]["total"]
 
     # Authenticated user can retrieve unmanaged groups
     res = group_service.search(user_pub.identity).to_dict()
-    assert res["hits"]["total"] == len([g for g in groups if not g.is_managed])
+    assert len([g for g in groups if not g.is_managed]) == res["hits"]["total"]
+
+    # Super Admin can see everything
+    res = group_service.search(user_admin.identity).to_dict()
+    assert len(groups) == res["hits"]["total"]
+
+    # User Admin can see everything but admin groups
+    res = group_service.search(user_moderator.identity).to_dict()
+    assert res["hits"]["total"] == len(groups) - 1  # There is one superadmin group
 
     # Anon does not have permission to search
     with pytest.raises(PermissionDeniedError):
         group_service.search(anon_identity).to_dict()
 
 
-def test_groups_read(app, groups, group_service, user_pub, anon_identity):
+def test_groups_read(
+    app, groups, group_service, user_admin, user_moderator, user_pub, anon_identity
+):
     """Test group read."""
-
-    from invenio_accounts.models import Role
-
-    for g in groups:
+    *regular_groups, superadmin_group = groups
+    for g in regular_groups:
         # System can retrieve all groups.
-        group_service.read(system_identity, g.name).to_dict()
-
+        group_service.read(system_identity, g.id).to_dict()
+        # Super admin can retrieve all groups
+        group_service.read(user_admin.identity, g.id).to_dict()
+        # User moderator can retrieve all groups
+        group_service.read(user_moderator.identity, g.id).to_dict()
         # Authenticated user can retrieve unmanaged groups
         if g.is_managed:
             with pytest.raises(PermissionDeniedError):
-                group_service.read(user_pub.identity, g.name).to_dict()
+                group_service.read(user_pub.identity, g.id).to_dict()
         else:
-            group_service.read(user_pub.identity, g.name).to_dict()
+            group_service.read(user_pub.identity, g.id).to_dict()
 
         # Anon does not have permission to search
         with pytest.raises(PermissionDeniedError):
-            group_service.read(anon_identity, g.name).to_dict()
+            group_service.read(anon_identity, g.id).to_dict()
+
+    # Only admin and system users should have access to the super admin group
+
+    # System user
+    group_service.read(system_identity, superadmin_group.id).to_dict()
+    # Super user
+    group_service.read(user_admin.identity, superadmin_group.id)
+    # Authenicated user
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_pub.identity, superadmin_group.id)
+    # User moderator
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(user_moderator.identity, superadmin_group.id)
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(anon_identity, superadmin_group.id)
+
+
+def test_groups_crud(app, group_service, user_pub):
+    """Test creating, updating and deleting a group by name."""
+
+    payload = {
+        "name": "test-role",
+        "description": "Initial description",
+    }
+
+    item = group_service.create(system_identity, payload).to_dict()
+    assert is_uuid(item["id"])
+    assert payload["name"] == item["name"]
+    assert payload["description"] == item["description"]
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pub.identity, {"name": "another-role"})
+
+    updated = group_service.update(
+        system_identity,
+        item["id"],
+        {"description": "Updated"},
+    ).to_dict()
+    assert "Updated" == updated["description"]
+
+    updated = group_service.update(
+        system_identity,
+        item["id"],
+        {"name": "another"},
+    )
+    assert "another" == updated["name"]
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_pub.identity,
+            item["id"],
+            {"description": "Nope"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_pub.identity, item["id"])
+
+    assert group_service.delete(system_identity, item["id"])
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.read(system_identity, item["id"])
+
+
+def test_group_update_validation_error(app, group_service):
+    """Ensure validation errors bubble up cleanly."""
+    item = group_service.create(
+        system_identity,
+        {
+            "name": "valid-role-name",
+            "description": "Valid description",
+        },
+    ).to_dict()
+
+    invalid_description = "x" * 256
+
+    with pytest.raises(GroupValidationError) as err:
+        group_service.update(
+            system_identity,
+            item["id"],
+            {"description": invalid_description},
+        )
+
+    assert {"description": ["Longer than maximum length 255."]} == err.value.errors
+
+
+def test_groups_manage_permission_required(
+    app, group_service, user_pub, user_pubres, user_moderator, groups
+):
+    """Ensure non managers cannot mutate groups."""
+
+    payload = {"name": "perm-check-role"}
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pub.identity, payload)
+    with pytest.raises(PermissionDeniedError):
+        group_service.create(user_pubres.identity, {"name": "perm-check-role-2"})
+
+    target = groups[0]
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_pub.identity,
+            target.id,
+            {"description": "attempted change"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_pub.identity, target.id)
+
+    created = group_service.create(
+        user_moderator.identity,
+        {"name": "perm-check-role-admin", "description": "managed"},
+    ).to_dict()
+    assert is_uuid(created["id"])
+
+    updated = group_service.update(
+        user_moderator.identity,
+        created["id"],
+        {"description": "updated by admin"},
+    ).to_dict()
+    assert "updated by admin" == updated["description"]
+
+    assert group_service.delete(user_moderator.identity, created["id"])
+
+
+def test_protected_group_not_editable_via_api(
+    app, group_service, user_moderator, user_admin, superadmin_group
+):
+    """Protected groups cannot be edited or removed via API."""
+
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = [
+        "admin",
+        "administration",
+        "administration-moderation",
+        "superuser-access",
+    ]
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_moderator.identity,
+            superadmin_group.id,
+            {"description": "attempted change"},
+        )
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_admin.identity,
+            superadmin_group.id,
+            {"description": "attempted change"},
+        )
+
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_moderator.identity, superadmin_group.id)
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_admin.identity, superadmin_group.id)
+
+    # System process can still manage it (e.g. via CLI)
+    result = group_service.update(
+        system_identity,
+        superadmin_group.id,
+        {"description": superadmin_group.description},
+    )
+    assert result["description"] == superadmin_group.description
+
+
+def test_protected_group_not_creatable_via_api(
+    app, group_service, user_moderator, user_admin
+):
+    """Protected groups cannot be created via API by admins."""
+
+    previous = app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"]
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["protected-role"]
+
+    payload = {"name": "protected-role", "description": "attempted creation"}
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.create(user_moderator.identity, payload)
+        with pytest.raises(PermissionDeniedError):
+            group_service.create(user_admin.identity, payload)
+
+        created = group_service.create(system_identity, payload).to_dict()
+        assert created["name"] == "protected-role"
+        assert group_service.delete(system_identity, created["id"])
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+
+
+def test_protected_group_cannot_become_protected(
+    app, group_service, user_moderator, user_admin
+):
+    """Renaming a group into a protected identifier is blocked for admins."""
+
+    previous = app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"]
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["protected-admin-role"]
+
+    created = group_service.create(
+        user_moderator.identity,
+        {"name": "temp-protected-rename", "description": "temp"},
+    ).to_dict()
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_moderator.identity,
+                created["id"],
+                {"name": "protected-admin-role"},
+            )
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_admin.identity,
+                created["id"],
+                {"name": "protected-admin-role"},
+            )
+
+        result = group_service.update(
+            system_identity, created["id"], {"name": "protected-admin-role"}
+        ).to_dict()
+        assert result["name"] == "protected-admin-role"
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+        group_service.delete(system_identity, created["id"])
+
+
+def test_groups_update_requires_managed(app, group_service, not_managed_group):
+    """Unmanaged groups can only be updated by system process, not by regular admins."""
+
+    # System process CAN update unmanaged groups
+    result = group_service.update(
+        system_identity,
+        not_managed_group.id,
+        {"description": "updated by system"},
+    )
+    assert result["description"] == "updated by system"
+
+
+def test_groups_delete_requires_managed(app, group_service, not_managed_group):
+    """Unmanaged groups can only be deleted by system process, not by regular admins."""
+
+    # System process CAN delete unmanaged groups
+    result = group_service.delete(system_identity, not_managed_group.id)
+    assert result is True
+
+
+def test_admin_moderator_cannot_edit_unmanaged_groups(
+    app, group_service, not_managed_group, user_moderator
+):
+    """Administration-moderation users cannot update unmanaged groups."""
+
+    # Admin moderator CANNOT update unmanaged groups
+    with pytest.raises(PermissionDeniedError):
+        group_service.update(
+            user_moderator.identity,
+            not_managed_group.id,
+            {"description": "attempted update by admin"},
+        )
+
+
+def test_admin_moderator_cannot_delete_unmanaged_groups(
+    app, group_service, not_managed_group, user_moderator
+):
+    """Administration-moderation users cannot delete unmanaged groups."""
+
+    # Admin moderator CANNOT delete unmanaged groups
+    with pytest.raises(PermissionDeniedError):
+        group_service.delete(user_moderator.identity, not_managed_group.id)
+
+
+def test_groups_recreate_same_name(app, group_service):
+    """Recreating a role with the same name should succeed."""
+
+    payload = {"name": "recreate-role", "description": "first"}
+    group = group_service.create(system_identity, payload)
+    assert group_service.delete(system_identity, group["id"])
+
+    recreated = group_service.create(system_identity, payload).to_dict()
+    assert payload["name"] == recreated["name"]
+
+    assert group_service.delete(system_identity, recreated["id"])
+
+
+def test_super_admin_can_manage_groups(app, group_service, user_admin):
+    """Super users can update and delete managed groups."""
+
+    payload = {
+        "name": "superuser-managed-role",
+        "description": "temp description",
+    }
+
+    # Created by system to focus the check on super user capabilities
+    created = group_service.create(system_identity, payload).to_dict()
+
+    updated = group_service.update(
+        user_admin.identity,
+        created["id"],
+        {"description": "updated by superuser"},
+    ).to_dict()
+    assert updated["description"] == "updated by superuser"
+
+    assert group_service.delete(user_admin.identity, created["id"])
+
+
+def test_super_admin_loses_manage_when_superuser_removed(
+    app, group_service, user_admin, group, superadmin_group, database
+):
+    """Removing superuser access strips manage permissions for managed groups."""
+
+    # Drop the superuser action from the superadmin role
+    action_role = (
+        ActionRoles.query_by_action(superuser_access)
+        .filter_by(role_id=superadmin_group.id)
+        .one()
+    )
+    database.session.delete(action_role)
+    database.session.commit()
+
+    try:
+        with pytest.raises(PermissionDeniedError):
+            group_service.update(
+                user_admin.identity,
+                group.id,
+                {"description": "should not be allowed"},
+            )
+
+        with pytest.raises(PermissionDeniedError):
+            group_service.delete(user_admin.identity, group.id)
+    finally:
+        # Restore superuser access to keep other tests intact
+        restored = ActionRoles.create(action=superuser_access, role=superadmin_group)
+        database.session.add(restored)
+        database.session.commit()

@@ -3,6 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 European Union.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,11 +11,11 @@
 
 """User groups resource."""
 
-
 from flask import g, send_file
 from flask_resources import resource_requestctx, response_handler, route
 from invenio_records_resources.resources import RecordResource
 from invenio_records_resources.resources.records.resource import (
+    request_data,
     request_search_args,
     request_view_args,
 )
@@ -33,6 +34,9 @@ class GroupsResource(RecordResource):
         return [
             route("GET", routes["list"], self.search),
             route("GET", routes["item"], self.read),
+            route("POST", routes["list"], self.create),
+            route("PUT", routes["item"], self.update),
+            route("DELETE", routes["item"], self.delete),
             route("GET", routes["item-avatar"], self.avatar),
         ]
 
@@ -58,11 +62,42 @@ class GroupsResource(RecordResource):
         )
         return item.to_dict(), 200
 
+    @request_data
+    @response_handler()
+    def create(self):
+        """Create a group."""
+        item = self.service.create(
+            identity=g.identity,
+            data=resource_requestctx.data or {},
+        )
+        return item.to_dict(), 201
+
+    @request_view_args
+    @request_data
+    @response_handler()
+    def update(self):
+        """Update a group."""
+        item = self.service.update(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+            data=resource_requestctx.data or {},
+        )
+        return item.to_dict(), 200
+
+    @request_view_args
+    def delete(self):
+        """Delete a group."""
+        self.service.delete(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return "", 204
+
     @request_view_args
     def avatar(self):
         """Get a groups's avatar."""
         avatar = self.service.read_avatar(
-            name_=resource_requestctx.view_args["id"],
+            id_=resource_requestctx.view_args["id"],
             identity=g.identity,
         )
         return send_file(

@@ -288,17 +288,32 @@ def test_restore(app, db, user_service, user_res, user_moderator, clear_cache):
     assert blocked
 
     ur = user_service.read(user_moderator.identity, user_res.id)
-    assert ur.data["active"] == False
+    assert ur.data["active"] is False
     assert ur.data["blocked_at"] is not None
 
     restored = user_service.restore(user_moderator.identity, user_res.id)
     assert restored
 
     ur = user_service.read(user_moderator.identity, user_res.id)
-    assert ur.data["active"] == True
+    assert ur.data["active"] is True
     assert ur.data["confirmed_at"] is not None
     assert ur.data["verified_at"] is None
     assert ur.data["blocked_at"] is None
+
+
+def test_can_impersonate_user(
+    app, db, user_service, user_pub, user_moderator, user_admin
+):
+    """Test permissions on user impersonate."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.can_impersonate(user_pub.identity, user_moderator.id)
+
+    assert user_service.can_impersonate(user_moderator.identity, user_pub.id)
+    with pytest.raises(PermissionDeniedError):
+        assert user_service.can_impersonate(user_moderator.identity, user_admin.id)
+
+    assert user_service.can_impersonate(user_admin.identity, user_pub.id)
+    assert user_service.can_impersonate(user_admin.identity, user_moderator.id)
 
 
 # TODO Clear the cache to test actions without locking side-effects

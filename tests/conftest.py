@@ -19,8 +19,12 @@ import pytest
 from flask_principal import AnonymousIdentity
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import any_user as any_user_need
-from invenio_access.permissions import system_identity
-from invenio_accounts.models import Domain, DomainCategory, DomainOrg, Role
+from invenio_access.permissions import (
+    authenticated_user,
+    superuser_access,
+    system_identity,
+)
+from invenio_accounts.models import Domain, DomainCategory, DomainOrg
 from invenio_accounts.proxies import current_datastore
 from invenio_app.factory import create_api
 from invenio_cache.proxies import current_cache
@@ -112,25 +116,29 @@ def anon_identity():
 
 
 @pytest.fixture(scope="module")
-def user_moderator(UserFixture, app, database, users):
+def user_moderator(UserFixture, app, database, users, administration_group):
     """Admin user for requests."""
-    action_name = user_management_action.value
     moderator = users["user_moderator"]
+    moderator.roles = [administration_group]
+    moderator.user.roles.append(administration_group)
 
-    role = current_datastore.create_role(
-        id=action_name,
-        name=action_name,
-        description="user_management_action group",
-        is_managed=True,
-    )
-    moderator.roles = [role]
-
-    action_role = ActionRoles.create(action=user_management_action, role=role)
-    database.session.add(action_role)
-
-    moderator.user.roles.append(role)
     database.session.commit()
+    current_groups_service.indexer.process_bulk_queue()
+    current_groups_service.record_cls.index.refresh()
     return moderator
+
+
+@pytest.fixture(scope="module")
+def user_admin(users, database, superadmin_group):
+    """User with notfications disabled."""
+    super_admin = users["admin_user"]
+    super_admin.roles = [superadmin_group]
+    super_admin.user.roles.append(superadmin_group)
+
+    database.session.commit()
+    current_groups_service.indexer.process_bulk_queue()
+    current_groups_service.record_cls.index.refresh()
+    return super_admin
 
 
 @pytest.fixture(scope="module")
@@ -251,6 +259,21 @@ def users_data():
                 },
             },
         },
+        {
+            "username": "admin_user",
+            "email": "super_admin@inveniosoftware.org",
+            "profile": {
+                "full_name": "Mr",
+                "affiliations": "Super Admin",
+            },
+            "preferences": {
+                "visibility": "restricted",
+                "email_visibility": "public",
+                "notifications": {
+                    "enabled": False,
+                },
+            },
+        },
     ]
 
 
@@ -283,6 +306,37 @@ def _create_group(id, name, description, is_managed, database):
     )
     current_datastore.commit()
     return r
+
+
+@pytest.fixture(scope="module")
+def superadmin_group(database):
+    """Superadmin group."""
+    role = _create_group(
+        id="admin",
+        name="admin",
+        description="Super Admin Group",
+        is_managed=True,
+        database=database,
+    )
+    action_role = ActionRoles.create(action=superuser_access, role=role)
+    database.session.add(action_role)
+    return role
+
+
+@pytest.fixture(scope="module")
+def administration_group(database):
+    """Admin group."""
+    action_name = user_management_action.value
+    role = _create_group(
+        id=action_name,
+        name=action_name,
+        description="user_management_action group",
+        is_managed=True,
+        database=database,
+    )
+    action_role = ActionRoles.create(action=user_management_action, role=role)
+    database.session.add(action_role)
+    return role
 
 
 @pytest.fixture(scope="module")
@@ -325,9 +379,11 @@ def not_managed_group(database):
 
 
 @pytest.fixture(scope="module")
-def groups(database, group, group2, not_managed_group):
+def groups(
+    database, group, group2, not_managed_group, administration_group, superadmin_group
+):
     """Available indexed groups."""
-    roles = [group, group2, not_managed_group]
+    roles = [group, group2, not_managed_group, administration_group, superadmin_group]
 
     current_groups_service.indexer.process_bulk_queue()
     current_groups_service.record_cls.index.refresh()
@@ -380,12 +436,6 @@ def user_notification_enabled(users):
 def user_notification_disabled(users):
     """User with notfications disabled."""
     return users["notification_disabled"]
-
-
-@pytest.fixture(scope="module")
-def user_admin(users):
-    """User with notfications disabled."""
-    return users["admin_user"]
 
 
 @pytest.fixture(scope="function")

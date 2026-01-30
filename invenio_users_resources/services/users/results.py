@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,6 +10,41 @@
 """Results for the users service."""
 
 from invenio_records_resources.services.records.results import RecordItem, RecordList
+
+
+def _role_names(user):
+    """Return list of role names."""
+    model = getattr(user, "model", user)
+    model_obj = getattr(model, "_model_obj", model)
+
+    if not hasattr(model_obj, "roles"):
+        model_obj = user
+
+    roles = getattr(model_obj, "roles", None)
+    if not roles:
+        return []
+
+    return [role.name for role in roles]
+
+
+def _can_manage_groups(identity, service):
+    """Return True if the identity can manage groups."""
+    policy = service.config.permission_policy_cls
+    permission = policy(action="manage_groups", identity=identity)
+    return permission.allows(identity)
+
+
+def _apply_roles(payload, roles, has_permission):
+    """Populate flat/profile role projections."""
+    if has_permission:
+        # Admin responses expose the same roles list both at the top level
+        # and inside the profile projection, so we set both here.
+        payload["roles"] = ", ".join(roles) if roles else ""
+        profile = dict(payload.get("profile") or {})
+        profile["roles"] = ", ".join(roles) if roles else ""
+        payload["profile"] = profile
+
+    return payload
 
 
 class UserItem(RecordItem):
@@ -65,6 +101,9 @@ class UserItem(RecordItem):
                 "record": self._user,
             },
         )
+        roles = _role_names(self._user)
+        has_permission = _can_manage_groups(self._identity, self._service)
+        _apply_roles(self._data, roles, has_permission)
 
         if self._links_tpl:
             self._data["links"] = self.links
@@ -91,6 +130,7 @@ class UserList(RecordList):
     def hits(self):
         """Iterator over the hits."""
         user_cls = self._service.record_cls
+        has_permission = _can_manage_groups(self._identity, self._service)
 
         for hit in self._results:
             # load dump
@@ -105,6 +145,9 @@ class UserList(RecordList):
                     "record": user,
                 },
             )
+
+            roles = _role_names(user)
+            _apply_roles(projection, roles, has_permission)
 
             # inject the links
             if self._links_item_tpl:

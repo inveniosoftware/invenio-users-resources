@@ -2,6 +2,8 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -9,6 +11,7 @@
 
 """Users and user groups permissions."""
 
+from invenio_access import superuser_access
 from invenio_records_permissions import BasePermissionPolicy
 from invenio_records_permissions.generators import (
     AdminAction,
@@ -20,15 +23,22 @@ from invenio_records_permissions.generators import (
 from invenio_users_resources.permissions import user_management_action
 
 from .generators import (
+    AdministrationGroupAction,
+    AdministrationUserAction,
+    DenyAll,
     GroupsEnabled,
     IfGroupNotManaged,
     IfPublicEmail,
     IfPublicUser,
+    IfSuperAdmin,
     PreventSelf,
+    ProtectedGroupIdentifiers,
     Self,
 )
 
-UserManager = AdminAction(user_management_action)
+UserManager = AdministrationUserAction(user_management_action)
+GroupManager = AdministrationGroupAction(user_management_action)
+SuperAdmin = AdminAction(superuser_access)
 
 
 class UsersPermissionPolicy(BasePermissionPolicy):
@@ -56,7 +66,21 @@ class UsersPermissionPolicy(BasePermissionPolicy):
     can_manage = [UserManager, PreventSelf(), SystemProcess()]
     can_search_all = [UserManager, SystemProcess()]
     can_read_system_details = [UserManager, SystemProcess()]
-    can_impersonate = [UserManager, PreventSelf(), SystemProcess()]
+    can_impersonate = [
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[UserManager],
+        ),
+        PreventSelf(),
+        SystemProcess(),
+    ]
+    can_manage_groups = [
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[GroupManager],
+        ),
+        SystemProcess(),
+    ]
 
 
 class GroupsPermissionPolicy(BasePermissionPolicy):
@@ -66,13 +90,35 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
         GroupsEnabled("group"),
         SystemProcess(),
     ]
-    can_create = _can_any
     can_read = _can_any + [
-        IfGroupNotManaged([AuthenticatedUser()], [UserManager]),
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[
+                IfGroupNotManaged([AuthenticatedUser()], [GroupManager]),
+            ],
+        ),
     ]
     can_search = _can_any + [AuthenticatedUser()]
-    can_update = _can_any
-    can_delete = _can_any
+    can_create = [ProtectedGroupIdentifiers(), GroupManager, SystemProcess()]
+    can_update = _can_any + [
+        ProtectedGroupIdentifiers(),
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[
+                IfGroupNotManaged([DenyAll()], [GroupManager]),
+            ],
+        ),
+    ]
+    can_delete = _can_any + [
+        ProtectedGroupIdentifiers(),
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[
+                IfGroupNotManaged([DenyAll()], [GroupManager]),
+            ],
+        ),
+        SystemProcess(),
+    ]
 
 
 class DomainPermissionPolicy(BasePermissionPolicy):
