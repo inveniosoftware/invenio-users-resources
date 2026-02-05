@@ -54,19 +54,19 @@ class UsersResourceConfig(RecordResourceConfig):
     routes = {
         "list": "",
         "search_all": "/all",
-        "item": "/<id>",
-        "groups-list": "/<id>/groups",
-        "item-avatar": "/<id>/avatar.svg",
-        "approve": "/<id>/approve",
-        "block": "/<id>/block",
-        "restore": "/<id>/restore",
-        "activate": "/<id>/activate",
-        "deactivate": "/<id>/deactivate",
-        "impersonate": "/<id>/impersonate",
+        "item": "/<int:id>",
+        "groups-list": "/<int:id>/groups",
+        "item-avatar": "/<int:id>/avatar.svg",
+        "approve": "/<int:id>/approve",
+        "block": "/<int:id>/block",
+        "restore": "/<int:id>/restore",
+        "activate": "/<int:id>/activate",
+        "deactivate": "/<int:id>/deactivate",
+        "impersonate": "/<int:id>/impersonate",
     }
 
     request_view_args = {
-        "id": ma.fields.Str(),
+        "id": ma.fields.Int(),
     }
 
     request_search_args = UsersSearchRequestArgsSchema
