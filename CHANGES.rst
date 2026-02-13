@@ -10,6 +10,16 @@
 Changes
 =======
 
+Version v10.2.0 (released 2026-02-13)
+
+- Add proper superadmin permissions checks and protection
+- feat(admin): add groups CRUD and role-aware views
+- fix(schemas): move description validation to schema
+- fix(users): improve role handling and group validation
+- fix(groups): clarify usage of group id and name
+- feat(groups): enforce validation and protect group updates
+- fix(roles): block escalation to protected roles
+
 Version v10.0.0 (released 2026-01-30)
 
 - chore(setup): bump dependencies
