@@ -10,6 +10,10 @@
 Changes
 =======
 
+Version v10.3.0 (released 2026-02-17)
+
+- feat(groups): resolve role by id instead of name
+
 Version v10.2.0 (released 2026-02-13)
 
 - Add proper superadmin permissions checks and protection
