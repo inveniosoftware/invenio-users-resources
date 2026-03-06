@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022-2024 KTH Royal Institute of Technology.
+# Copyright (C) 2022-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022 CERN.
@@ -16,6 +16,7 @@
 import secrets
 import string
 
+from flask import current_app
 from flask_security.utils import hash_password
 from invenio_accounts.models import User
 from invenio_accounts.proxies import current_datastore
@@ -171,6 +172,212 @@ class UsersService(RecordService):
         self.require_permission(
             identity, permission_type, record=user, actor_id=identity.id
         )
+
+    def _load_user_for_groups(self, identity, id_):
+        """Load user and check group-management permissions."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            raise PermissionDeniedError()
+
+        self._check_permission(identity, "manage_groups", user)
+
+        return user
+
+    def _normalize_role_id(self, role_id):
+        """Normalize a role ID from input."""
+        return str(role_id).strip()
+
+    def _normalize_role_ids(self, role_ids):
+        """Normalize and de-duplicate role IDs while preserving order."""
+        normalized_role_ids = []
+        for role_id in role_ids:
+            normalized = self._normalize_role_id(role_id)
+            if normalized and normalized not in normalized_role_ids:
+                normalized_role_ids.append(normalized)
+        return normalized_role_ids
+
+    def _resolve_group_ids_or_deny(self, user, role_ids):
+        """Resolve role IDs/names and hide existence details on failure."""
+        try:
+            return user.resolve_group_ids(role_ids)
+        except ValidationError as exc:
+            raise PermissionDeniedError() from exc
+
+    def _resolve_group_id_or_deny(self, user, role_id):
+        """Resolve a single role ID/name and hide existence details on failure."""
+        return self._resolve_group_ids_or_deny(user, [role_id])[0]
+
+    def _validate_single_role_mutation(self, user, identity, role_id):
+        """Normalize and resolve one role identifier."""
+        normalized_role_id = self._normalize_role_id(role_id)
+        if not normalized_role_id:
+            raise ValidationError({"role_id": ["Role ID cannot be empty."]})
+
+        resolved_role_id = self._resolve_group_id_or_deny(user, normalized_role_id)
+        return resolved_role_id
+
+    def _validate_bulk_role_mutation(self, user, identity, role_ids):
+        """Normalize and resolve many role identifiers."""
+        normalized_role_ids = self._normalize_role_ids(role_ids)
+        resolved_role_ids = self._resolve_group_ids_or_deny(user, normalized_role_ids)
+        return resolved_role_ids
+
+    def _current_group_ids(self, user):
+        """Return current assigned role IDs for a user."""
+        return {group["id"] for group in user.get_groups()}
+
+    def _log_group_change(
+        self, action, identity, user_id, role_id=None, added=None, removed=None
+    ):
+        """Log group membership mutations for audit/debugging."""
+        actor_id = getattr(identity, "id", None)
+        if role_id is not None:
+            current_app.logger.info(
+                "user_roles action=%s actor_id=%s target_user_id=%s role_id=%s",
+                action,
+                actor_id,
+                user_id,
+                role_id,
+            )
+            return
+
+        added_ids = list(added or [])
+        removed_ids = list(removed or [])
+        current_app.logger.info(
+            "user_roles action=%s actor_id=%s target_user_id=%s added=%s removed=%s",
+            action,
+            actor_id,
+            user_id,
+            added_ids,
+            removed_ids,
+        )
+
+    def get_groups(self, identity, id_):
+        """List role IDs for a user."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            raise PermissionDeniedError()
+        actor_id = getattr(identity, "id", None)
+        self.require_permission(
+            identity, "read_user_groups", record=user, actor_id=actor_id
+        )
+        groups = user.get_groups()
+        return {"groups": groups, "total": len(groups)}
+
+    @unit_of_work()
+    def add_group(self, identity, id_, role_id, uow=None):
+        """Add a role to a user."""
+        user = self._load_user_for_groups(identity, id_)
+        resolved_role_id = self._validate_single_role_mutation(user, identity, role_id)
+
+        current_role_ids = self._current_group_ids(user)
+        if resolved_role_id in current_role_ids:
+            self._log_group_change("add.noop", identity, id_, role_id=resolved_role_id)
+            return True
+
+        user.add_group(resolved_role_id)
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        self._log_group_change("add", identity, id_, role_id=resolved_role_id)
+        return True
+
+    @unit_of_work()
+    def remove_group(self, identity, id_, role_id, uow=None):
+        """Remove a role from a user."""
+        user = self._load_user_for_groups(identity, id_)
+        resolved_role_id = self._validate_single_role_mutation(user, identity, role_id)
+
+        current_role_ids = self._current_group_ids(user)
+        if resolved_role_id not in current_role_ids:
+            self._log_group_change(
+                "remove.noop", identity, id_, role_id=resolved_role_id
+            )
+            return True
+
+        user.remove_group(resolved_role_id)
+        uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        self._log_group_change("remove", identity, id_, role_id=resolved_role_id)
+        return True
+
+    @unit_of_work()
+    def set_groups(self, identity, id_, role_ids, uow=None):
+        """Replace mutable role memberships for a user."""
+        user = self._load_user_for_groups(identity, id_)
+
+        requested_role_ids = self._validate_bulk_role_mutation(user, identity, role_ids)
+        current_groups = user.get_groups()
+        current_role_ids = [group["id"] for group in current_groups]
+
+        requested = set(requested_role_ids)
+        current = set(current_role_ids)
+        # Deterministic ordering for both change lists.
+        to_add = sorted(requested - current)
+        to_remove = sorted(current - requested)
+
+        user.add_groups(to_add)
+        user.remove_groups(to_remove)
+
+        if to_add or to_remove:
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+            self._log_group_change(
+                "set", identity, id_, added=to_add, removed=to_remove
+            )
+        else:
+            self._log_group_change("set.noop", identity, id_)
+        return {
+            "added": to_add,
+            "removed": to_remove,
+            "groups": [group["id"] for group in user.get_groups()],
+        }
+
+    @unit_of_work()
+    def add_groups(self, identity, id_, role_ids, uow=None):
+        """Add multiple role memberships for a user without removing existing."""
+        user = self._load_user_for_groups(identity, id_)
+
+        requested_role_ids = self._validate_bulk_role_mutation(user, identity, role_ids)
+        requested = set(requested_role_ids)
+
+        current_role_ids = self._current_group_ids(user)
+        to_add = sorted(requested - current_role_ids)
+
+        user.add_groups(to_add)
+
+        if to_add:
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+            self._log_group_change("add.bulk", identity, id_, added=to_add)
+        else:
+            self._log_group_change("add.bulk.noop", identity, id_)
+
+        return {
+            "added": to_add,
+            "removed": [],
+            "groups": [group["id"] for group in user.get_groups()],
+        }
+
+    @unit_of_work()
+    def remove_groups(self, identity, id_, role_ids, uow=None):
+        """Remove multiple role memberships for a user."""
+        user = self._load_user_for_groups(identity, id_)
+
+        requested_role_ids = self._validate_bulk_role_mutation(user, identity, role_ids)
+        requested = set(requested_role_ids)
+
+        current_role_ids = self._current_group_ids(user)
+        to_remove = sorted(requested.intersection(current_role_ids))
+
+        user.remove_groups(to_remove)
+
+        if to_remove:
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+            self._log_group_change("remove.bulk", identity, id_, removed=to_remove)
+        else:
+            self._log_group_change("remove.bulk.noop", identity, id_)
+
+        return {
+            "added": [],
+            "removed": to_remove,
+            "groups": [group["id"] for group in user.get_groups()],
+        }
 
     @unit_of_work()
     def block(self, identity, id_, uow=None):

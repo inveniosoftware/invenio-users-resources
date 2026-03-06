@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022-2026 CERN.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,6 +11,7 @@
 """User service tests."""
 
 import pytest
+from invenio_access.permissions import system_identity
 from invenio_records_resources.services.errors import PermissionDeniedError
 from marshmallow import ValidationError
 
@@ -73,6 +75,23 @@ def test_admin_search_field(user_service, user_moderator, query):
     """Make sure certain fields ARE searchable."""
     res = user_service.search_all(user_moderator.identity, q=query).to_dict()
     assert res["hits"]["total"] > 0
+
+
+def test_admin_search_filter_and_facet_roles(
+    user_service, user_moderator, user_pub, group
+):
+    """Admin search can filter/facet users by roles."""
+    user_service.add_group(user_moderator.identity, user_pub.id, "it-dep")
+    res = user_service.search_all(user_moderator.identity, q="roles:it-dep").to_dict()
+    assert str(user_pub.id) in [hit["id"] for hit in res["hits"]["hits"]]
+    assert "aggregations" in res
+    assert "roles" in res["aggregations"]
+
+
+def test_admin_roles_facet_size_configured(app):
+    """Roles facet should return many buckets, not just the default 10."""
+    roles_facet_config = app.config["USERS_RESOURCES_SEARCH_FACETS"]["roles"]
+    assert roles_facet_config["facet_options"]["size"] == 100
 
 
 # User search
@@ -443,3 +462,247 @@ def test_can_impersonate_user(
 
 
 # TODO Clear the cache to test actions without locking side-effects
+
+
+def test_add_group_normalizes_role_id(user_service, user_moderator, user_pub, group):
+    """Role IDs are normalized at service boundary."""
+    assert user_service.add_group(user_moderator.identity, user_pub.id, "  it-dep  ")
+    groups = user_service.get_groups(user_moderator.identity, user_pub.id)["groups"]
+    assert "it-dep" in [group["id"] for group in groups]
+
+
+def test_add_group_empty_role_id_validation(user_service, user_moderator, user_pub):
+    """Empty/blank role IDs fail with validation error."""
+    with pytest.raises(ValidationError):
+        user_service.add_group(user_moderator.identity, user_pub.id, "   ")
+
+
+def test_add_group_self_forbidden(user_service, user_moderator):
+    """Self role mutation is denied via manage_groups + PreventSelf."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.add_group(user_moderator.identity, user_moderator.id, "it-dep")
+
+
+def test_add_group_unknown_role_validation(user_service, user_moderator, user_pub):
+    """Unknown role IDs are denied to avoid role enumeration."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.add_group(user_moderator.identity, user_pub.id, "unknown-role-id")
+
+
+def test_remove_group_noop_when_role_missing(user_service, user_moderator, user_pub):
+    """Removing a non-member role is a no-op."""
+    assert user_service.remove_group(user_moderator.identity, user_pub.id, "it-dep")
+
+
+def test_set_groups_add_remove_mixed(
+    user_service, user_moderator, user_pub, group, group2
+):
+    """Bulk replacement adds and removes groups in one operation."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, ["it-dep"])
+
+    result = user_service.set_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["hr-dep"],
+    )
+
+    assert result == {
+        "added": ["hr-dep"],
+        "removed": ["it-dep"],
+        "groups": ["hr-dep"],
+    }
+
+
+def test_add_groups_additive_no_removal(
+    user_service, user_moderator, user_pub, group, group2
+):
+    """Bulk add appends roles without removing existing memberships."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, ["it-dep"])
+
+    result = user_service.add_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["it-dep", "hr-dep"],
+    )
+
+    assert result == {
+        "added": ["hr-dep"],
+        "removed": [],
+        "groups": ["hr-dep", "it-dep"],
+    }
+
+
+def test_set_groups_noop(user_service, user_moderator, user_pub, group):
+    """Bulk replacement is a no-op if requested roles are unchanged."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, ["it-dep"])
+
+    result = user_service.set_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["it-dep"],
+    )
+
+    assert result == {
+        "added": [],
+        "removed": [],
+        "groups": ["it-dep"],
+    }
+
+
+def test_set_groups_normalizes_whitespace(
+    user_service, user_moderator, user_pub, group, group2
+):
+    """Bulk replacement normalizes IDs and ignores blanks."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, [])
+
+    result = user_service.set_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["  it-dep  ", " ", "\thr-dep\t"],
+    )
+
+    assert result == {
+        "added": ["hr-dep", "it-dep"],
+        "removed": [],
+        "groups": ["hr-dep", "it-dep"],
+    }
+
+
+def test_set_groups_empty_clears_mutable_roles(
+    user_service, user_moderator, user_pub, group, group2
+):
+    """Bulk replacement with [] clears all mutable roles."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, ["it-dep", "hr-dep"])
+
+    result = user_service.set_groups(
+        user_moderator.identity,
+        user_pub.id,
+        [],
+    )
+
+    assert result == {
+        "added": [],
+        "removed": ["hr-dep", "it-dep"],
+        "groups": [],
+    }
+
+
+def test_set_groups_unknown_role_validation(user_service, user_moderator, user_pub):
+    """Unknown role IDs are denied to avoid role enumeration."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.set_groups(
+            user_moderator.identity,
+            user_pub.id,
+            ["unknown-role-id"],
+        )
+
+
+def test_set_groups_self_forbidden(user_service, user_moderator, group):
+    """Self role mutation is denied in bulk endpoint too."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.set_groups(user_moderator.identity, user_moderator.id, ["it-dep"])
+
+
+def test_get_groups_self_allowed(user_service, user_moderator):
+    """Users can read their own role list."""
+    result = user_service.get_groups(user_moderator.identity, user_moderator.id)
+    assert "groups" in result
+    assert "total" in result
+
+
+def test_get_groups_other_user_permission_denied(user_service, user_pub, user_res):
+    """Non-managers cannot read role list of other users."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.get_groups(user_pub.identity, user_res.id)
+
+
+def test_set_groups_permission_denied(user_service, user_pub, user_res, group):
+    """Non-managers cannot mutate groups of other users."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.set_groups(user_pub.identity, user_res.id, ["it-dep"])
+
+
+def test_remove_groups_bulk(user_service, user_moderator, user_pub, group, group2):
+    """Bulk remove deletes only requested assigned roles."""
+    user_service.set_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["it-dep", "hr-dep"],
+    )
+
+    result = user_service.remove_groups(
+        user_moderator.identity,
+        user_pub.id,
+        ["it-dep"],
+    )
+
+    assert result == {
+        "added": [],
+        "removed": ["it-dep"],
+        "groups": ["hr-dep"],
+    }
+
+
+def test_remove_groups_unknown_role_denied(user_service, user_moderator, user_pub):
+    """Unknown role IDs are denied in bulk remove too."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.remove_groups(
+            user_moderator.identity,
+            user_pub.id,
+            ["unknown-role-id"],
+        )
+
+
+def test_remove_groups_self_forbidden(user_service, user_moderator, group):
+    """Self bulk role removal is denied."""
+    with pytest.raises(PermissionDeniedError):
+        user_service.remove_groups(
+            user_moderator.identity, user_moderator.id, ["it-dep"]
+        )
+
+
+def test_set_groups_protected_role_allowed(
+    app, user_service, user_moderator, user_pub, user_res, group
+):
+    """Protected roles can be managed through user-role assignment endpoints."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, ["it-dep"])
+
+    previous = app.config.get("USERS_RESOURCES_PROTECTED_GROUP_NAMES", [])
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["it-dep"]
+    try:
+        result_remove = user_service.set_groups(
+            user_moderator.identity, user_pub.id, []
+        )
+        assert result_remove["removed"] == ["it-dep"]
+        result_add = user_service.set_groups(
+            user_moderator.identity, user_res.id, ["it-dep"]
+        )
+        assert result_add["added"] == ["it-dep"]
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+
+
+def test_remove_protected_role_allowed_for_superadmin(
+    app, user_service, user_admin, user_pub
+):
+    """Superadmins can remove protected roles on other users."""
+    previous = app.config.get("USERS_RESOURCES_PROTECTED_GROUP_NAMES", [])
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["admin"]
+    try:
+        user_service.add_group(system_identity, user_pub.id, "admin")
+        assert user_service.remove_group(user_admin.identity, user_pub.id, "admin")
+    finally:
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
+
+
+def test_add_protected_role_allowed_for_superadmin(
+    app, user_service, user_admin, user_pub
+):
+    """Superadmins can add protected roles on other users."""
+    previous = app.config.get("USERS_RESOURCES_PROTECTED_GROUP_NAMES", [])
+    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["admin"]
+    try:
+        assert user_service.add_group(user_admin.identity, user_pub.id, "admin")
+    finally:
+        user_service.remove_group(system_identity, user_pub.id, "admin")
+        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
