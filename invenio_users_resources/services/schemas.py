@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2023-2025 Graz University of Technology.
+# Copyright (C) 2023-2026 Graz University of Technology.
 # Copyright (C) 2024 Ubiquity Press.
 # Copyright (C) 2025 KTH Royal Institute of Technology.
 #
@@ -177,6 +177,21 @@ class UserGhostSchema(BaseGhostSchema):
         dump_only=True,
     )
     username = fields.Constant(_("Deleted user"), dump_only=True)
+
+
+class AnonymousSchema(Schema):
+    """Anonymous schema."""
+
+    id = SanitizedUnicode(dump_only=True)
+    is_anonymous = fields.Constant(True, dump_only=True)
+    profile = fields.Constant(
+        {
+            "full_name": _("Anonymous user"),
+        },
+        dump_only=True,
+    )
+    username = fields.Constant(_("Anonymous user"), dump_only=True)
+    email = fields.Constant("anonymous@inveniosoftware.org", dump_only=True)
 
 
 class SystemUserSchema(BaseGhostSchema):
