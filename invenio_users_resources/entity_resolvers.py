@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022-2025 CERN
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2024 Graz University of Technology.
+# Copyright (C) 2024-2026 Graz University of Technology.
 #
 # Invenio-Records-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -24,7 +24,7 @@ from sqlalchemy.exc import NoResultFound
 
 from .proxies import current_users_service
 from .services.groups.config import GroupsServiceConfig
-from .services.schemas import SystemUserSchema, UserGhostSchema
+from .services.schemas import AnonymousSchema, SystemUserSchema, UserGhostSchema
 from .services.users.config import UsersServiceConfig
 
 
@@ -36,6 +36,8 @@ class UserProxy(EntityProxy):
         user_id = self._parse_ref_dict_id()
         if user_id == system_user_id:  # system_user_id is a string: "system"
             return self.system_record()
+        elif user_id == "None" or user_id is None:
+            return self.anonymous_user({"id": user_id})
         else:
             try:
                 return db.session.get(User, int(user_id))
@@ -51,6 +53,10 @@ class UserProxy(EntityProxy):
             return [UserNeed(int(user_id))]
         else:
             return []
+
+    def anonymous_user(self, value):
+        """Return anonymous user."""
+        return AnonymousSchema().dump(value)
 
     def ghost_record(self, value):
         """Return default representation of not resolved user."""
