@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022-2025 CERN.
+# Copyright (C) 2022-2026 CERN.
 # Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or

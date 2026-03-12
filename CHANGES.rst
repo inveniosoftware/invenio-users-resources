@@ -10,6 +10,13 @@
 Changes
 =======
 
+Version v10.4.0 (released 2026-03-12)
+
+- search: fix finding of usernames with dash
+- tests: username with a dash
+- search: improve with CompositeSuggestQueryParser
+- tests: precise assertions on user search results
+
 Version v10.3.0 (released 2026-02-17)
 
 - feat(groups): resolve role by id instead of name
