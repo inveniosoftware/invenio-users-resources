@@ -10,6 +10,10 @@
 Changes
 =======
 
+Version v10.4.1 (released 2026-03-23)
+
+- fix(resolve): handle None given as user_id
+
 Version v10.4.0 (released 2026-03-12)
 
 - search: fix finding of usernames with dash
