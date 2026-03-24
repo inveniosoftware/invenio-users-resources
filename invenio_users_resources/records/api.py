@@ -4,7 +4,7 @@
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Graz University of Technology.
 # Copyright (C) 2024 Ubiquity Press.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -14,7 +14,7 @@
 
 import unicodedata
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import current_app
 from invenio_accounts.models import Domain, User
@@ -27,7 +27,7 @@ from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 from marshmallow import ValidationError
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -41,6 +41,7 @@ from .systemfields import (
     DomainStatusNameField,
     IsNotNoneField,
     UserIdentitiesField,
+    UserRolesField,
 )
 
 EmulatedPID = namedtuple("EmulatedPID", ["pid_value"])
@@ -242,6 +243,9 @@ class UserAggregate(BaseAggregate):
     identities = UserIdentitiesField("identities", use_cache=True, index=True)
     """User identities."""
 
+    roles = UserRolesField("roles", index=True)
+    """User role names."""
+
     @property
     def avatar_chars(self):
         """Get avatar characters for user."""
@@ -261,6 +265,29 @@ class UserAggregate(BaseAggregate):
         """Get avatar color for user."""
         colors = current_app.config["USERS_RESOURCES_AVATAR_COLORS"]
         return colors[self.id % len(colors)]
+
+    @property
+    def revision_id(self):
+        """Return a revision id suitable for search engine versioning.
+
+        User role membership changes can happen through association table updates
+        where SQLAlchemy's ``version_id`` does not always advance. We therefore
+        use the ``updated`` timestamp as monotonic fallback to avoid stale
+        revision writes to OpenSearch.
+        """
+        if not self.model:
+            return 1
+
+        version = self.model.version_id or 0
+        # Convert `updated` to a monotonic microsecond integer fallback.
+        if self.model.updated:
+            updated = self.model.updated
+            if updated.tzinfo is None:
+                updated = updated.replace(tzinfo=timezone.utc)
+            updated_ts = int(updated.timestamp() * 1_000_000)
+        else:
+            updated_ts = 0
+        return max(version + 1, updated_ts)
 
     @classmethod
     def create(cls, data, id_=None, validator=None, format_checker=None, **kwargs):
@@ -306,6 +333,106 @@ class UserAggregate(BaseAggregate):
         if user is None:
             return False
         return current_datastore.deactivate_user(user)
+
+    def get_groups(self):
+        """Return assigned roles with IDs and names."""
+        user = self.model.model_obj
+        if user is None or not getattr(user, "roles", None):
+            return []
+        return sorted(
+            [{"id": role.id, "name": role.name} for role in user.roles],
+            key=lambda role: role["name"],
+        )
+
+    def add_group(self, role_id):
+        """Add role membership to user if not already assigned."""
+        self.add_groups([role_id])
+        return self
+
+    def remove_group(self, role_id):
+        """Remove role membership from user if assigned."""
+        self.remove_groups([role_id])
+        return self
+
+    def _resolve_roles(self, role_ids):
+        """Resolve role identifiers (ID or name) to role model objects."""
+        user = self.model.model_obj
+        if user is None:
+            raise ValidationError({"role_id": [_("User does not exist.")]})
+
+        normalized_role_ids = []
+        for role_id in role_ids:
+            normalized = str(role_id).strip()
+            if normalized and normalized not in normalized_role_ids:
+                normalized_role_ids.append(normalized)
+
+        if not normalized_role_ids:
+            return []
+
+        role_model = current_datastore.role_model
+        roles = (
+            db.session.query(role_model)
+            .filter(
+                or_(
+                    role_model.id.in_(normalized_role_ids),
+                    role_model.name.in_(normalized_role_ids),
+                )
+            )
+            .all()
+        )
+        roles_by_id = {str(role.id): role for role in roles}
+        roles_by_name = {str(role.name): role for role in roles}
+
+        resolved_roles = []
+        seen_role_ids = set()
+        for role_id in normalized_role_ids:
+            role = roles_by_id.get(role_id) or roles_by_name.get(role_id)
+            if role is None:
+                raise ValidationError({"role_id": [_("Role does not exist.")]})
+            role_db_id = str(role.id)
+            if role_db_id in seen_role_ids:
+                continue
+            seen_role_ids.add(role_db_id)
+            resolved_roles.append(role)
+        return resolved_roles
+
+    def resolve_group_ids(self, role_ids):
+        """Resolve role identifiers (ID or name) to canonical role IDs."""
+        return [str(role.id) for role in self._resolve_roles(role_ids)]
+
+    def add_groups(self, role_ids):
+        """Add multiple role memberships to user if not already assigned."""
+        user = self.model.model_obj
+        if user is None:
+            raise ValidationError({"role_id": [_("User does not exist.")]})
+
+        changed = False
+        for role in self._resolve_roles(role_ids):
+            if role not in user.roles:
+                user.roles.append(role)
+                changed = True
+
+        if changed:
+            # Force a user row update so version/revision advances for indexing.
+            user.updated = datetime.now(tz=timezone.utc)
+        return self
+
+    def remove_groups(self, role_ids):
+        """Remove multiple role memberships from user if assigned."""
+        user = self.model.model_obj
+        if user is None:
+            raise ValidationError({"role_id": [_("User does not exist.")]})
+
+        changed = False
+        for role in self._resolve_roles(role_ids):
+            if role in user.roles:
+                user.roles.remove(role)
+                changed = True
+
+        if changed:
+            # Force a user row update so version/revision advances for indexing.
+            user.updated = datetime.now(tz=timezone.utc)
+        return self
 
     @classmethod
     def get_record(cls, id_):
@@ -380,7 +507,13 @@ class GroupAggregate(BaseAggregate):
             return 1
 
         version = self.model.version_id or 0
-        updated_ts = int(self.model.updated.timestamp()) if self.model.updated else 0
+        if self.model.updated:
+            updated = self.model.updated
+            if updated.tzinfo is None:
+                updated = updated.replace(tzinfo=timezone.utc)
+            updated_ts = int(updated.timestamp())
+        else:
+            updated_ts = 0
         return max(version + 1, updated_ts)
 
     @classmethod

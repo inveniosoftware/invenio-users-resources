@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -18,6 +19,7 @@ from invenio_records_resources.resources import (
     SearchRequestArgsSchema,
 )
 from invenio_records_resources.resources.errors import ErrorHandlersMixin
+from invenio_records_resources.services.errors import PermissionDeniedError
 from marshmallow import fields
 
 
@@ -27,6 +29,12 @@ class UsersSearchRequestArgsSchema(SearchRequestArgsSchema):
     is_active = fields.Boolean()
     is_blocked = fields.Boolean()
     is_verified = fields.Boolean()
+
+
+def handle_user_permission_error(err):
+    """Handle permission errors without logging exception traceback."""
+    response = HTTPJSONException(code=403, description=err.description)
+    return response.get_response()
 
 
 #
@@ -41,6 +49,7 @@ class UsersResourceConfig(RecordResourceConfig):
         "list": "",
         "search_all": "/all",
         "item": "/<id>",
+        "groups-list": "/<id>/groups",
         "item-avatar": "/<id>/avatar.svg",
         "approve": "/<id>/approve",
         "block": "/<id>/block",
@@ -58,6 +67,7 @@ class UsersResourceConfig(RecordResourceConfig):
 
     error_handlers = {
         **ErrorHandlersMixin.error_handlers,
+        PermissionDeniedError: handle_user_permission_error,
         LockAcquireFailed: create_error_handler(
             lambda e: (
                 HTTPJSONException(

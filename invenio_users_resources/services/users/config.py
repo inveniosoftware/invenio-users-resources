@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022-2026 CERN.
-# Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -144,6 +144,7 @@ class AdminUserSearchOptions(UserSearchOptions):
             "domaininfo.flagged",
             "domaininfo.tld",
             "domaininfo.category",
+            "roles",
         ],
         mapping={
             "affiliation": "profile.affiliations",
@@ -163,6 +164,8 @@ class AdminUserSearchOptions(UserSearchOptions):
             "domain.tld": "domaininfo.tld",
             "domain.category": "domaininfo.category",
             "domain.flagged": "domaininfo.flagged",
+            "role": "roles",
+            "roles": "roles",
         },
     )
 
