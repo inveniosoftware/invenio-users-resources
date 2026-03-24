@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version v9.0.5 (released 2026-03-24)
+
+- setup: revert Invenio-OAuthClient major bump
+
 Version v9.0.4 (released 2026-03-24)
 
 - chore: reformat with black v26
