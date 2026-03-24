@@ -9,6 +9,13 @@
 Changes
 =======
 
+Version v9.0.4 (released 2026-03-24)
+
+- chore: reformat with black v26
+- fix(setup): pin setuptools for pkg_resources
+- i18n: pulled translations
+- i18n: pulled translations (#182)
+
 Version v9.0.3 (released 2025-XX-XX)
 
 - setup: bump major version of `invenio-oauthclient`
