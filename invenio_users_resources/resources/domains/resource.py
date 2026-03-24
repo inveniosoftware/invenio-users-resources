@@ -8,7 +8,6 @@
 
 """Domains resource."""
 
-
 from flask_resources import HTTPJSONException, create_error_handler
 from invenio_i18n import lazy_gettext as _
 from invenio_records_resources.resources import RecordResource
