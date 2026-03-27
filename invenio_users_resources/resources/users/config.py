@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -40,18 +41,18 @@ class UsersResourceConfig(RecordResourceConfig):
     routes = {
         "list": "",
         "search_all": "/all",
-        "item": "/<id>",
-        "item-avatar": "/<id>/avatar.svg",
-        "approve": "/<id>/approve",
-        "block": "/<id>/block",
-        "restore": "/<id>/restore",
-        "activate": "/<id>/activate",
-        "deactivate": "/<id>/deactivate",
-        "impersonate": "/<id>/impersonate",
+        "item": "/<int:id>",
+        "item-avatar": "/<int:id>/avatar.svg",
+        "approve": "/<int:id>/approve",
+        "block": "/<int:id>/block",
+        "restore": "/<int:id>/restore",
+        "activate": "/<int:id>/activate",
+        "deactivate": "/<int:id>/deactivate",
+        "impersonate": "/<int:id>/impersonate",
     }
 
     request_view_args = {
-        "id": ma.fields.Str(),
+        "id": ma.fields.Int(),
     }
 
     request_search_args = UsersSearchRequestArgsSchema
