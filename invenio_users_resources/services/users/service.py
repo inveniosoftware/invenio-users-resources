@@ -173,8 +173,26 @@ class UsersService(RecordService):
         )
 
     @unit_of_work()
-    def block(self, identity, id_, uow=None):
-        """Blocks a user."""
+    def block(self, identity, id_, uow=None, data=None):
+        """Block a user and schedule the registered moderation callbacks.
+
+        The user is marked as blocked synchronously; the follow-up actions
+        registered under the ``block`` moderation action (e.g. tombstoning
+        the user's records and communities) are executed asynchronously via
+        :func:`execute_moderation_actions`.
+
+        :param identity: Identity of the user performing the block; its id
+            is forwarded to the callbacks as ``actor_id`` so they can
+            attribute the action (e.g. on a tombstone's ``removed_by``).
+        :param id_: Id of the user to block.
+        :param uow: The unit of work to register the record operations.
+            Defaults to None.
+        :param data: Free-form dict of caller-supplied context (typically
+            the body of the REST request) forwarded verbatim to every
+            moderation callback. The semantics of individual fields (for
+            example ``removal_reason_id``, ``note``) are defined by the
+            callbacks themselves, not by this service. Defaults to None.
+        """
         user = UserAggregate.get_record(id_)
         if user is None:
             # return 403 even on empty resource due to security implications
@@ -191,7 +209,13 @@ class UsersService(RecordService):
 
         # Register a task to execute callback actions asynchronously, after committing the user
         uow.register(
-            TaskOp(execute_moderation_actions, user_id=user.id, action="block")
+            TaskOp(
+                execute_moderation_actions,
+                user_id=user.id,
+                action="block",
+                actor_id=identity.id,
+                data=data or {},
+            )
         )
         return True
 

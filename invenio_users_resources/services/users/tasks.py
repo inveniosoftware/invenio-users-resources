@@ -69,16 +69,30 @@ def unindex_users(user_ids):
 
 
 @shared_task(ignore_result=True, acks_late=True, retry=True)
-def execute_moderation_actions(user_id=None, action=None):
-    """Execute moderation actions.
+def execute_moderation_actions(user_id=None, action=None, actor_id=None, data=None):
+    """Execute the callbacks registered for a moderation action.
 
-    Callbacks share the same UOW to guarantee data consistency.
-    If any callback fails, then the error is logged and the UOW rolledback.
+    All callbacks registered for ``action`` under the
+    ``invenio_users_resources.moderation.actions`` entry-point group are
+    invoked with a shared unit of work. If any callback raises, the error
+    is logged and the unit of work is rolled back.
 
     Why ``acks_late``:
      - in case the worker fails unexpectedly.
     Why ``retry``:
         - if a task fails, it can be retried afterwards.
+
+    :param user_id: Id of the user that is the subject of the moderation
+        action (e.g. the user being blocked).
+    :param action: Name of the moderation action whose callbacks should be
+        executed (e.g. ``"block"``, ``"restore"``, ``"approve"``).
+    :param actor_id: User id of the actor that triggered the action. It is
+        forwarded to every callback as the ``actor_id`` keyword argument so
+        callbacks can attribute the action (e.g. on a tombstone's
+        ``removed_by``). Defaults to None.
+    :param data: Free-form dict of caller-supplied context. Expanded
+        (``**data``) into every callback's keyword arguments, so its keys
+        are interpreted by the callbacks themselves. Defaults to None.
     """
     actions = current_actions_registry.get(action, [])
 
@@ -88,8 +102,18 @@ def execute_moderation_actions(user_id=None, action=None):
         # Create a uow that is shared by all the callables
         uow = UnitOfWork()
         try:
+            data = data or {}
+            for key in ("uow", "actor_id"):
+                if key in data:
+                    current_app.logger.warning(
+                        "'%s' key is reserved and cannot be used in the data argument of '%s'.",
+                        key,
+                        action,
+                    )
+                    data.pop(key, None)
+
             for callback in actions:
-                callback(user_id, uow=uow)
+                callback(user_id, uow=uow, actor_id=actor_id, **data)
             # Commit the uow when all the callbacks succeeded
             uow.commit()
         except Exception as e:
