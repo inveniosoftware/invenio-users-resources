@@ -53,11 +53,11 @@ def test_moderation_callbacks_failure(
     - Even if a callback fails, the user block is committed.
     """
 
-    def _block_action_success(user_id, uow=None):
+    def _block_action_success(user_id, uow=None, **kwargs):
         """Action to execute after blocking a user."""
         user_service.approve(system_identity, user_id, uow=uow)
 
-    def _block_action_failure(user_id, uow=None):
+    def _block_action_failure(user_id, uow=None, **kwargs):
         """Action raises an exception."""
         raise Exception("Callback failed")
 
@@ -139,7 +139,7 @@ def test_moderation_callbacks_lock_renewal(
         4) if the lock exists, then it was renewed for 10 seconds.
     """
 
-    def _block_action_success(user_id, uow=None):
+    def _block_action_success(user_id, uow=None, **kwargs):
         """Action to execute after blocking a user."""
         time.sleep(default_timeout)
 

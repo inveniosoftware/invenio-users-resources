@@ -135,11 +135,16 @@ class UsersResource(RecordResource):
         return "", 200
 
     @request_view_args
+    @request_data
     def block(self):
         """Block user."""
+        # The request body is forwarded to the moderation callbacks as-is;
+        # downstream callbacks (e.g. tombstoning in invenio-rdm-records)
+        # decide how to interpret fields such as a removal reason.
         self.service.block(
             id_=resource_requestctx.view_args["id"],
             identity=g.identity,
+            data=resource_requestctx.data or {},
         )
         return "", 200
 
