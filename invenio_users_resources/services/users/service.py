@@ -3,7 +3,7 @@
 # Copyright (C) 2022-2024 KTH Royal Institute of Technology.
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2026 CERN.
 # Copyright (C) 2024 Ubiquity Press.
 # Copyright (C) 2025 Graz University of Technology.
 #

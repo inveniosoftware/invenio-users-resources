@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2026 CERN.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2024 Ubiquity Press.
 #

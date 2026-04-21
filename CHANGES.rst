@@ -10,6 +10,14 @@
 Changes
 =======
 
+Version v10.5.0 (released 2026-04-21)
+
+- feat(moderation): allow passing `data` and `actor_id` to block action
+    * Allows passing a `data` free-form dict to the block action. This gets
+      propagated down to the block action callbacks as expanded kwargs.
+    * Also passes the user ID from the identity performing the block service
+      call as `actor_id`.
+
 Version v10.4.1 (released 2026-03-23)
 
 - fix(resolve): handle None given as user_id
