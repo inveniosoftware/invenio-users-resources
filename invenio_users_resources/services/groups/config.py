@@ -40,7 +40,7 @@ class GroupSearchOptions(SearchOptions):
 
     pagination_options = {
         "default_results_per_page": 20,
-        "default_max_results": 50,
+        "default_max_results": 10_000,
     }
 
     query_parser_cls = QueryParser.factory(fields=["id", "name"])
