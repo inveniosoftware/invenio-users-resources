@@ -4,6 +4,7 @@
 # Copyright (C) 2022-2026 CERN.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -29,6 +30,7 @@ from invenio_records_resources.resources.records.resource import (
 )
 from invenio_records_resources.resources.records.utils import search_preference
 from invenio_records_resources.services.errors import PermissionDeniedError
+from marshmallow import ValidationError
 
 from .errors import UserNotFoundError
 
@@ -57,6 +59,10 @@ class UsersResource(RecordResource):
             route("POST", routes["list"], self.create),
             route("GET", routes["item"], self.read),
             route("GET", routes["item-avatar"], self.avatar),
+            route("GET", routes["groups-list"], self.groups),
+            route("POST", routes["groups-list"], self.add_groups),
+            route("PUT", routes["groups-list"], self.set_groups),
+            route("DELETE", routes["groups-list"], self.remove_groups),
             route("POST", routes["approve"], self.approve),
             route("POST", routes["block"], self.block),
             route("POST", routes["restore"], self.restore),
@@ -124,6 +130,69 @@ class UsersResource(RecordResource):
             last_modified=avatar.last_modified,
             max_age=avatar.max_age,
         )
+
+    @request_view_args
+    def groups(self):
+        """Get role IDs assigned to a user."""
+        data = self.service.get_groups(
+            id_=resource_requestctx.view_args["id"],
+            identity=g.identity,
+        )
+        return data, 200
+
+    def _load_groups_payload(self):
+        """Load role IDs from bulk groups payload."""
+        payload = resource_requestctx.data or {}
+        if isinstance(payload, list):
+            role_ids = payload
+        else:
+            role_ids = payload.get("groups", payload.get("role_ids"))
+        if role_ids is None:
+            raise ValidationError({"groups": ["Missing data for required field."]})
+        if not isinstance(role_ids, list) or not all(
+            isinstance(role_id, str) for role_id in role_ids
+        ):
+            raise ValidationError({"groups": ["Field must be a list of strings."]})
+        return role_ids
+
+    @request_view_args
+    @request_data
+    def add_groups(self):
+        """Add role IDs to a user from a list payload."""
+        id_ = resource_requestctx.view_args["id"]
+        role_ids = self._load_groups_payload()
+        data = self.service.add_groups(
+            id_=id_,
+            role_ids=role_ids,
+            identity=g.identity,
+        )
+        return data, 200
+
+    @request_view_args
+    @request_data
+    def set_groups(self):
+        """Set role IDs on a user from a list payload."""
+        id_ = resource_requestctx.view_args["id"]
+        role_ids = self._load_groups_payload()
+        data = self.service.set_groups(
+            id_=id_,
+            role_ids=role_ids,
+            identity=g.identity,
+        )
+        return data, 200
+
+    @request_view_args
+    @request_data
+    def remove_groups(self):
+        """Remove role IDs on a user from a list payload."""
+        id_ = resource_requestctx.view_args["id"]
+        role_ids = self._load_groups_payload()
+        data = self.service.remove_groups(
+            id_=id_,
+            role_ids=role_ids,
+            identity=g.identity,
+        )
+        return data, 200
 
     @request_view_args
     def approve(self):

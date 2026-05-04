@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2024 CERN
 # Copyright (C) 2024 Graz University of Technology.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -114,6 +115,23 @@ class UserIdentitiesField(CalculatedIndexedField):
         )
         data = {i.method: i.id for i in identities}
         return data
+
+
+class UserRolesField(CalculatedIndexedField):
+    """Get a user's role names."""
+
+    def calculate(self, user_record):
+        """Return sorted role names."""
+        model_obj = user_record.model.model_obj
+        if model_obj is None:
+            return []
+
+        role_names = [
+            role.name
+            for role in model_obj.roles
+            if getattr(role, "name", None) is not None
+        ]
+        return sorted(role_names)
 
 
 class DomainOrgField(CalculatedIndexedField):
