@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022-2026 CERN.
-# Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2024 Ubiquity Press.
 # Copyright (C) 2025 Northwestern University.
 #
@@ -232,6 +232,136 @@ def test_management_permissions(client, headers, user_pub, db):
     """Test permissions at the resource level."""
     client = user_pub.login(client)
     res = client.post(f"/users/{user_pub.id}/deactivate", headers=headers)
+    assert res.status_code == 403
+
+
+def test_user_groups_endpoints(client, headers, user_moderator, user_pub, group):
+    """Manage user roles through users groups endpoints."""
+    client = user_moderator.login(client)
+
+    res = client.get(f"/users/{user_pub.id}/groups", headers=headers)
+    assert res.status_code == 200
+    assert isinstance(res.json["groups"], list)
+
+    res = client.put(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["  it-dep  "]},
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert res.json["added"] == ["it-dep"]
+
+    res = client.get(f"/users/{user_pub.id}/groups", headers=headers)
+    assert res.status_code == 200
+    assert "it-dep" in [group["id"] for group in res.json["groups"]]
+
+    res = client.delete(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert res.json["removed"] == ["it-dep"]
+
+
+def test_user_groups_self_mutation_forbidden(client, headers, user_moderator):
+    """Users cannot mutate their own roles."""
+    client = user_moderator.login(client)
+    res = client.put(
+        f"/users/{user_moderator.id}/groups",
+        json={"groups": ["it-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 403
+
+
+def test_user_groups_bulk_set(client, headers, user_moderator, user_pub, group, group2):
+    """Bulk set roles via a single request."""
+    client = user_moderator.login(client)
+    res = client.put(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep", "hr-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert sorted(res.json["added"]) == ["hr-dep", "it-dep"]
+    assert res.json["removed"] == []
+    assert sorted(res.json["groups"]) == ["hr-dep", "it-dep"]
+
+
+def test_user_groups_bulk_add(client, headers, user_moderator, user_pub, group, group2):
+    """Bulk add roles appends without removing existing roles."""
+    client = user_moderator.login(client)
+    client.put(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep"]},
+        headers=headers,
+    )
+    res = client.post(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep", "hr-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert res.json["added"] == ["hr-dep"]
+    assert res.json["removed"] == []
+    assert sorted(res.json["groups"]) == ["hr-dep", "it-dep"]
+
+
+def test_user_groups_bulk_remove(
+    client, headers, user_moderator, user_pub, group, group2
+):
+    """Bulk remove roles via a single request."""
+    client = user_moderator.login(client)
+    client.put(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep", "hr-dep"]},
+        headers=headers,
+    )
+    res = client.delete(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": ["it-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert res.json["added"] == []
+    assert res.json["removed"] == ["it-dep"]
+    assert res.json["groups"] == ["hr-dep"]
+
+
+def test_user_groups_bulk_validation_error(client, headers, user_moderator, user_pub):
+    """Bulk groups payload must be a list of strings."""
+    client = user_moderator.login(client)
+    res = client.put(
+        f"/users/{user_pub.id}/groups",
+        json={"groups": "it-dep"},
+        headers=headers,
+    )
+    assert res.status_code == 400
+
+
+def test_user_groups_bulk_forbidden(client, headers, user_pub, user_res):
+    """Non-managers cannot bulk mutate roles."""
+    client = user_pub.login(client)
+    res = client.put(
+        f"/users/{user_res.id}/groups",
+        json={"groups": ["it-dep"]},
+        headers=headers,
+    )
+    assert res.status_code == 403
+
+
+def test_user_groups_read_self_allowed(client, headers, user_pub):
+    """Users can read their own role assignments."""
+    client = user_pub.login(client)
+    res = client.get(f"/users/{user_pub.id}/groups", headers=headers)
+    assert res.status_code == 200
+
+
+def test_user_groups_read_forbidden(client, headers, user_pub, user_res):
+    """Non-managers cannot read role assignments of other users."""
+    client = user_pub.login(client)
+    res = client.get(f"/users/{user_res.id}/groups", headers=headers)
     assert res.status_code == 403
 
 

@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -53,7 +53,14 @@ USERS_RESOURCES_SERVICE_SCHEMA = UserSchema
 
 USERS_RESOURCES_SEARCH = {
     "sort": ["bestmatch", "username", "email", "domain", "newest", "oldest", "updated"],
-    "facets": ["status", "visibility", "domain_status", "domain", "affiliations"],
+    "facets": [
+        "status",
+        "visibility",
+        "domain_status",
+        "domain",
+        "affiliations",
+        "roles",
+    ],
 }
 """User search configuration."""
 
@@ -118,6 +125,15 @@ USERS_RESOURCES_SEARCH_FACETS = {
         "facet": facets.visibility,
         "ui": {
             "field": "visibility",
+        },
+    },
+    "roles": {
+        "facet": facets.roles,
+        "facet_options": {
+            "size": 100,
+        },
+        "ui": {
+            "field": "roles",
         },
     },
 }
@@ -284,6 +300,12 @@ References:
 - admin: https://github.com/inveniosoftware/invenio-cli/blob/master/invenio_cli/commands/services.py (created during instance setup)
 - administration-moderation: https://github.com/inveniosoftware/invenio-users-resources/blob/master/invenio_users_resources/permissions.py
 """
+
+USERS_RESOURCES_PROTECTED_ROLE_ACTIONS = [
+    "administration",
+    "administration-moderation",
+]
+"""Actions required to mutate protected role assignments."""
 
 
 class OrgPropsSchema(Schema):
