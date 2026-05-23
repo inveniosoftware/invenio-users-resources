@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2022 TU Wien.
-# Copyright (C) 2025 Northwestern University.
-#
-# Invenio-Users-Resources is free software; you can redistribute it and/or
-# modify it under the terms of the MIT License; see LICENSE file for more
-# details.
+# SPDX-FileCopyrightText: 2022 TU Wien.
+# SPDX-FileCopyrightText: 2025 Northwestern University.
+# SPDX-License-Identifier: MIT
 
 """Definitions that are used by both users and user groups services."""
 

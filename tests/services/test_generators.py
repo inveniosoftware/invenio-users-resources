@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2025 Ubiquity Press.
-# Copyright (C) 2026 KTH Royal Institute of Technology.
-#
-# Invenio-Users-Resources is free software; you can redistribute it and/or
-# modify it under the terms of the MIT License; see LICENSE file for more
-# details.
+# SPDX-FileCopyrightText: 2025 Ubiquity Press.
+# SPDX-FileCopyrightText: 2026 KTH Royal Institute of Technology.
+# SPDX-License-Identifier: MIT
 
 """Permission generators tests."""
 

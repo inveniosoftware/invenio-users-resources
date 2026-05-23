@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2023 CERN.
-#
-# Invenio-users-resources is free software; you can redistribute it and/or modify
-# it under the terms of the MIT License; see LICENSE file for more details.
+# SPDX-FileCopyrightText: 2023 CERN.
+# SPDX-License-Identifier: MIT
 """Implements locking for users."""
 
 from flask import current_app

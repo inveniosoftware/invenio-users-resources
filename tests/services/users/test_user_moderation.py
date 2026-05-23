@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2023-2026 CERN.
-#
-# Invenio-users-resources is free software; you can redistribute it and/or modify
-# it under the terms of the MIT License; see LICENSE file for more details.
+# SPDX-FileCopyrightText: 2023-2026 CERN.
+# SPDX-License-Identifier: MIT
 """Tests for user moderation.
 
 These tests are separate from the service because this module will test collateral behaviours from moderating users. Examples:

@@ -1,15 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2022-2026 KTH Royal Institute of Technology.
-# Copyright (C) 2022 TU Wien.
-# Copyright (C) 2022 European Union.
-# Copyright (C) 2022-2026 CERN.
-# Copyright (C) 2024 Ubiquity Press.
-# Copyright (C) 2025 Graz University of Technology.
-#
-# Invenio-Users-Resources is free software; you can redistribute it and/or
-# modify it under the terms of the MIT License; see LICENSE file for more
-# details.
+# SPDX-FileCopyrightText: 2022-2026 KTH Royal Institute of Technology.
+# SPDX-FileCopyrightText: 2022 TU Wien.
+# SPDX-FileCopyrightText: 2022 European Union.
+# SPDX-FileCopyrightText: 2022-2026 CERN.
+# SPDX-FileCopyrightText: 2024 Ubiquity Press.
+# SPDX-FileCopyrightText: 2025 Graz University of Technology.
+# SPDX-License-Identifier: MIT
 
 """Users service."""
 

@@ -1,3 +1,7 @@
+{#-
+  SPDX-FileCopyrightText: 2025 Ubiquity Press.
+  SPDX-License-Identifier: MIT
+#}
 {{ _('Your new account has been created') }}
 
 {{ _('Click the link below to create a new password:') }}
