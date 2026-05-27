@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -23,6 +23,7 @@ def test_group_create_api(app, client, user_moderator):
     res = client.post("/groups", json=payload)
     assert 201 == res.status_code
     data = res.get_json()
+    assert payload["name"] == data["id"]
     assert payload["name"] == data["name"]
     assert payload["description"] == data["description"]
 

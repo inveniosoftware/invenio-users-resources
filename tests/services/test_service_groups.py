@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 CERN.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -10,7 +10,6 @@
 """User service tests."""
 
 from operator import attrgetter
-from uuid import UUID
 
 import pytest
 from invenio_access import ActionRoles, superuser_access
@@ -18,14 +17,6 @@ from invenio_access.permissions import system_identity
 from invenio_records_resources.resources.errors import PermissionDeniedError
 
 from invenio_users_resources.resources.groups.errors import GroupValidationError
-
-
-def is_uuid(value):
-    try:
-        UUID(value)
-        return True
-    except ValueError:
-        return False
 
 
 def test_groups_sort(app, groups, group_service):
@@ -142,7 +133,7 @@ def test_groups_crud(app, group_service, user_pub):
     }
 
     item = group_service.create(system_identity, payload).to_dict()
-    assert is_uuid(item["id"])
+    assert payload["name"] == item["id"]
     assert payload["name"] == item["name"]
     assert payload["description"] == item["description"]
 
@@ -160,8 +151,9 @@ def test_groups_crud(app, group_service, user_pub):
         system_identity,
         item["id"],
         {"name": "another"},
-    )
-    assert "another" == updated["name"]
+    ).to_dict()
+    assert payload["name"] == updated["id"]
+    assert payload["name"] == updated["name"]
 
     with pytest.raises(PermissionDeniedError):
         group_service.update(
@@ -227,7 +219,7 @@ def test_groups_manage_permission_required(
         user_moderator.identity,
         {"name": "perm-check-role-admin", "description": "managed"},
     ).to_dict()
-    assert is_uuid(created["id"])
+    assert "perm-check-role-admin" == created["id"]
 
     updated = group_service.update(
         user_moderator.identity,
@@ -301,39 +293,23 @@ def test_protected_group_not_creatable_via_api(
         app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
 
 
-def test_protected_group_cannot_become_protected(
-    app, group_service, user_moderator, user_admin
-):
-    """Renaming a group into a protected identifier is blocked for admins."""
-
-    previous = app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"]
-    app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = ["protected-admin-role"]
+def test_group_name_cannot_be_changed(app, group_service, user_moderator):
+    """Role names are ignored on update because id/name must stay coupled."""
 
     created = group_service.create(
         user_moderator.identity,
-        {"name": "temp-protected-rename", "description": "temp"},
+        {"name": "temp-immutable-role", "description": "temp"},
     ).to_dict()
 
     try:
-        with pytest.raises(PermissionDeniedError):
-            group_service.update(
-                user_moderator.identity,
-                created["id"],
-                {"name": "protected-admin-role"},
-            )
-        with pytest.raises(PermissionDeniedError):
-            group_service.update(
-                user_admin.identity,
-                created["id"],
-                {"name": "protected-admin-role"},
-            )
-
-        result = group_service.update(
-            system_identity, created["id"], {"name": "protected-admin-role"}
+        updated = group_service.update(
+            system_identity,
+            created["id"],
+            {"name": "renamed-role"},
         ).to_dict()
-        assert result["name"] == "protected-admin-role"
+        assert created["id"] == updated["id"]
+        assert created["name"] == updated["name"]
     finally:
-        app.config["USERS_RESOURCES_PROTECTED_GROUP_NAMES"] = previous
         group_service.delete(system_identity, created["id"])
 
 

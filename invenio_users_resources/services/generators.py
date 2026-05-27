@@ -3,7 +3,7 @@
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2023 Graz University of Technology.
-# Copyright (C) 2024-2025 KTH Royal Institute of Technology.
+# Copyright (C) 2024-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Ubiquity Press.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -199,10 +199,7 @@ class ProtectedGroupIdentifiers(Generator):
         # update protected role (object form)
         name_obj = getattr(record, "name", None)
         id_obj = getattr(record, "id", None)
-        # update role to protected
-        update_name = kwargs.get("update_grp", {}).get("name")
-
-        candidates = {str(v) for v in (name_dict, name_obj, id_obj, update_name) if v}
+        candidates = {str(v) for v in (name_dict, name_obj, id_obj) if v}
         return bool(protected & candidates)
 
     def excludes(self, record=None, identity=None, **kwargs):

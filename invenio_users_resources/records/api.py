@@ -144,7 +144,7 @@ def _validate_user_data(user_data):
         raise ValidationError(errors)
 
 
-def _validate_group_data(data, exclude_id=None):
+def _validate_group_data(data):
     """Validate the group data."""
     name = data.get("name")
     if not name:
@@ -154,9 +154,6 @@ def _validate_group_data(data, exclude_id=None):
     stmt = select(current_datastore.role_model.id).where(
         current_datastore.role_model.name == name
     )
-    if exclude_id is not None:
-        stmt = stmt.where(current_datastore.role_model.id != exclude_id)
-
     existing_role_id = db.session.execute(stmt).scalar_one_or_none()
 
     if existing_role_id:
@@ -468,8 +465,8 @@ class GroupAggregate(BaseAggregate):
     model_cls = GroupAggregateModel
     """The model class for the user group aggregate."""
 
-    # NOTE: the "uuid" isn't a UUID but contains the same value as the "id"
-    #       field, which is currently a str for Role objects (role.name)!
+    # NOTE: Role identifiers intentionally mirror role names. Permission checks
+    #       use the id field, while configuration stays human-readable.
     dumper = SearchDumper(extensions=[], model_fields={"id": ("uuid", str)})
     """Search index dumper."""
 
@@ -563,12 +560,11 @@ class GroupAggregate(BaseAggregate):
     @classmethod
     def create(cls, data):
         """Create a new group/role and store it in the database."""
-        # Filter out fields sqlalchemy model rejects
-        accepted_fields = [
-            "name",
-            "description",
-        ]
-        role_data = {k: v for k, v in data.items() if k in accepted_fields}
+        role_data = {
+            "id": data["name"],
+            "name": data["name"],
+            "description": data.get("description"),
+        }
 
         _validate_group_data(role_data)
         role = current_datastore.create_role(**role_data)
@@ -583,10 +579,7 @@ class GroupAggregate(BaseAggregate):
         if role is None:
             role = db.session.get(current_datastore.role_model, id_)
 
-        if "name" in data:
-            _validate_group_data({"name": data["name"]}, exclude_id=role.id)
-
-        role.name = data.get("name", role.name)
+        data.pop("name", None)
         role.description = data.get("description", role.description)
         role = current_datastore.update_role(role)
         return self.from_model(role)
