@@ -104,6 +104,18 @@
       "current_login_at": {
         "type": "date"
       },
+      "current_login_ip": {
+        "type": "ip"
+      },
+      "last_login_at": {
+        "type": "date"
+      },
+      "last_login_ip": {
+        "type": "ip"
+      },
+      "login_count": {
+        "type": "integer"
+      },
       "active": {
         "type": "boolean"
       },

@@ -116,6 +116,10 @@ class UserAggregateModel(AggregateMetadata):
         "created",
         "updated",
         "current_login_at",
+        "current_login_ip",
+        "last_login_at",
+        "last_login_ip",
+        "login_count",
     ]
     """Properties of this object that can be accessed."""
 

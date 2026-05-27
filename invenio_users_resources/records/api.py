@@ -220,6 +220,18 @@ class UserAggregate(BaseAggregate):
     current_login_at = ModelField("current_login_at", dump_type=datetime)
     """Timestamp for when account was blocked."""
 
+    last_login_at = ModelField("last_login_at", dump_type=datetime)
+    """Timestamp for last login."""
+
+    last_login_ip = ModelField("last_login_ip", dump_type=str)
+    """IP address of last login."""
+
+    current_login_ip = ModelField("current_login_ip", dump_type=str)
+    """IP address of current login."""
+
+    login_count = ModelField("login_count", dump_type=int)
+    """Number of times the user has logged in."""
+
     confirmed = IsNotNoneField("confirmed_at", index=True)
     """Boolean to determine if verified."""
 
