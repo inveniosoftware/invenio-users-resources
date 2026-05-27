@@ -102,6 +102,10 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
         "verified_at": "read_system_details",
         "confirmed_at": "read_system_details",
         "current_login_at": "read_system_details",
+        "current_login_ip": "read_system_details",
+        "last_login_at": "read_system_details",
+        "last_login_ip": "read_system_details",
+        "login_count": "read_system_details",
     }
 
     # NOTE: API should only deliver users that are active & confirmed
@@ -126,6 +130,10 @@ class UserSchema(BaseRecordSchema, FieldPermissionsMixin):
     verified_at = TZDateTime(dump_only=True)
     confirmed_at = TZDateTime(dump_only=True)
     current_login_at = TZDateTime(dump_only=True)
+    current_login_ip = fields.String(dump_only=True)
+    last_login_at = TZDateTime(dump_only=True)
+    last_login_ip = fields.String(dump_only=True)
+    login_count = fields.Integer(dump_only=True)
     created = TZDateTime(dump_only=True)
     updated = TZDateTime(dump_only=True)
 
