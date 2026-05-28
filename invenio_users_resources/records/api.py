@@ -4,7 +4,7 @@
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2024 Graz University of Technology.
 # Copyright (C) 2024 Ubiquity Press.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -17,6 +17,7 @@ from collections import namedtuple
 from datetime import datetime
 
 from flask import current_app
+from invenio_access import ActionRoles, superuser_access
 from invenio_accounts.models import Domain, User
 from invenio_accounts.proxies import current_datastore
 from invenio_db import db
@@ -27,7 +28,7 @@ from invenio_records.systemfields import ModelField
 from invenio_records_resources.records.api import Record
 from invenio_records_resources.records.systemfields import IndexField
 from marshmallow import ValidationError
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import NoResultFound
 
 from .dumpers import EmailFieldDumperExt
@@ -41,6 +42,7 @@ from .systemfields import (
     DomainStatusNameField,
     IsNotNoneField,
     UserIdentitiesField,
+    UserRolesField,
 )
 
 EmulatedPID = namedtuple("EmulatedPID", ["pid_value"])
@@ -242,6 +244,9 @@ class UserAggregate(BaseAggregate):
     identities = UserIdentitiesField("identities", use_cache=True, index=True)
     """User identities."""
 
+    roles = UserRolesField("roles", index=True)
+    """User role names."""
+
     @property
     def avatar_chars(self):
         """Get avatar characters for user."""
@@ -306,6 +311,125 @@ class UserAggregate(BaseAggregate):
         if user is None:
             return False
         return current_datastore.deactivate_user(user)
+
+    def get_groups(self):
+        """Return assigned group role model objects."""
+        return sorted(self.model.model_obj.roles, key=lambda role: role.name)
+
+    def group_ids(self):
+        """Return assigned group IDs."""
+        return [str(group.id) for group in self.get_groups()]
+
+    def add_group(self, group_id):
+        """Add group membership to user if not already assigned."""
+        self.add_groups([group_id])
+        return self
+
+    def remove_group(self, group_id):
+        """Remove group membership from user if assigned."""
+        self.remove_groups([group_id])
+        return self
+
+    def _resolve_groups_to_roles(self, group_ids):
+        """Resolve group identifiers (ID or name) to role model objects."""
+        normalized_group_ids = []
+        for group_id in group_ids:
+            normalized = str(group_id).strip()
+            if normalized and normalized not in normalized_group_ids:
+                normalized_group_ids.append(normalized)
+
+        if not normalized_group_ids:
+            return []
+
+        role_model = current_datastore.role_model
+        group_roles = (
+            db.session.query(role_model)
+            .filter(
+                or_(
+                    role_model.id.in_(normalized_group_ids),
+                    role_model.name.in_(normalized_group_ids),
+                )
+            )
+            .all()
+        )
+        group_roles_by_id = {
+            str(group_role.id): group_role for group_role in group_roles
+        }
+        group_roles_by_name = {
+            str(group_role.name): group_role for group_role in group_roles
+        }
+
+        resolved_group_roles = []
+        seen_group_role_ids = set()
+        for group_id in normalized_group_ids:
+            group_role = group_roles_by_id.get(group_id) or group_roles_by_name.get(
+                group_id
+            )
+            if group_role is None:
+                raise ValidationError({"groups": [_("Group does not exist.")]})
+            group_role_id = str(group_role.id)
+            if group_role_id in seen_group_role_ids:
+                continue
+            seen_group_role_ids.add(group_role_id)
+            resolved_group_roles.append(group_role)
+        return resolved_group_roles
+
+    def resolve_group_ids(self, group_ids, require=False):
+        """Resolve group identifiers (ID or name) to canonical group IDs."""
+        resolved_group_ids = [
+            str(role.id) for role in self._resolve_groups_to_roles(group_ids)
+        ]
+        if require and not resolved_group_ids:
+            raise ValidationError({"groups": [_("Group ID cannot be empty.")]})
+        return resolved_group_ids
+
+    def add_groups(self, group_ids):
+        """Add multiple group memberships to user if not already assigned."""
+        user = self.model.model_obj
+
+        added = []
+        for group_role in self._resolve_groups_to_roles(group_ids):
+            if current_datastore.add_role_to_user(user, group_role):
+                added.append(str(group_role.id))
+
+        return {
+            "added": sorted(added),
+            "removed": [],
+            "groups": self.group_ids(),
+        }
+
+    def remove_groups(self, group_ids):
+        """Remove multiple group memberships from user if assigned."""
+        user = self.model.model_obj
+
+        removed = []
+        for group_role in self._resolve_groups_to_roles(group_ids):
+            if current_datastore.remove_role_from_user(user, group_role):
+                removed.append(str(group_role.id))
+
+        return {
+            "added": [],
+            "removed": sorted(removed),
+            "groups": self.group_ids(),
+        }
+
+    def set_groups(self, group_ids):
+        """Replace group memberships for a user."""
+        requested_groups = self._resolve_groups_to_roles(group_ids)
+        requested_group_ids = {str(group.id) for group in requested_groups}
+        current_group_ids = set(self.group_ids())
+
+        to_add = requested_group_ids - current_group_ids
+        to_remove = current_group_ids - requested_group_ids
+
+        self.add_groups(to_add)
+        self.remove_groups(to_remove)
+
+        return {
+            "added": sorted(to_add),
+            "removed": sorted(to_remove),
+            "groups": self.group_ids(),
+        }
 
     @classmethod
     def get_record(cls, id_):
@@ -382,6 +506,23 @@ class GroupAggregate(BaseAggregate):
         version = self.model.version_id or 0
         updated_ts = int(self.model.updated.timestamp()) if self.model.updated else 0
         return max(version + 1, updated_ts)
+
+    @classmethod
+    def superadmin_group_ids(cls):
+        """Return group IDs that grant superuser access."""
+        return {
+            str(action_role.role_id)
+            for action_role in ActionRoles.query_by_action(superuser_access).all()
+        }
+
+    @classmethod
+    def available_groups(cls, exclude_group_ids=None):
+        """Return groups available for assignment."""
+        role_model = current_datastore.role_model
+        query = db.session.query(role_model).order_by(role_model.name)
+        if exclude_group_ids:
+            query = query.filter(role_model.id.notin_(exclude_group_ids))
+        return query.all()
 
     @classmethod
     def get_record(cls, id_):

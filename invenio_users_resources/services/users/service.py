@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022-2024 KTH Royal Institute of Technology.
+# Copyright (C) 2022-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022 European Union.
 # Copyright (C) 2022-2026 CERN.
@@ -16,7 +16,10 @@
 import secrets
 import string
 
+from flask import current_app
 from flask_security.utils import hash_password
+from invenio_access import Permission, superuser_access
+from invenio_access.permissions import system_process
 from invenio_accounts.models import User
 from invenio_accounts.proxies import current_datastore
 from invenio_accounts.utils import default_reset_password_link_func
@@ -28,12 +31,13 @@ from invenio_search.engine import dsl
 from marshmallow import ValidationError
 
 from invenio_users_resources.services.results import AvatarResult
+from invenio_users_resources.services.schemas import GroupSchema
 from invenio_users_resources.services.users.tasks import (
     execute_moderation_actions,
     execute_reset_password_email,
 )
 
-from ...records.api import UserAggregate
+from ...records.api import GroupAggregate, UserAggregate
 from .lock import ModerationMutex
 
 
@@ -171,6 +175,159 @@ class UsersService(RecordService):
         self.require_permission(
             identity, permission_type, record=user, actor_id=identity.id
         )
+
+    def _get_user_or_deny(self, id_):
+        """Load user or deny access when it does not exist."""
+        user = UserAggregate.get_record(id_)
+        if user is None:
+            raise PermissionDeniedError()
+        return user
+
+    def _can_manage_superadmin_roles(self, identity):
+        """Check if identity can mutate superadmin role memberships."""
+        return system_process in identity.provides or Permission(
+            superuser_access
+        ).allows(identity)
+
+    def _resolve_mutable_group_ids(self, identity, user, group_ids, require=False):
+        """Resolve and authorize group IDs for membership mutation."""
+        try:
+            resolved_group_ids = user.resolve_group_ids(group_ids, require=require)
+        except ValidationError as exc:
+            if require and not any(str(group_id).strip() for group_id in group_ids):
+                raise
+            raise PermissionDeniedError() from exc
+
+        return resolved_group_ids
+
+    def _deny_superadmin_group_mutation(self, identity, group_ids):
+        """Deny non-superadmins from changing superadmin role memberships."""
+        if (
+            group_ids
+            and not self._can_manage_superadmin_roles(identity)
+            and GroupAggregate.superadmin_group_ids().intersection(group_ids)
+        ):
+            raise PermissionDeniedError()
+
+    def _log_groups_update(self, identity, user, result):
+        """Log user group membership updates."""
+        current_app.logger.info(
+            "User '%s' updated user '%s' groups (added: %s, removed: %s)",
+            identity.id,
+            user.id,
+            result["added"],
+            result["removed"],
+        )
+
+    def get_groups(self, identity, id_):
+        """List group assignments and assignable groups for a user."""
+        user = self._get_user_or_deny(id_)
+        actor_id = getattr(identity, "id", None)
+        self.require_permission(
+            identity, "read_user_groups", record=user, actor_id=actor_id
+        )
+
+        groups = GroupSchema(many=True, only=("id", "name")).dump(user.get_groups())
+        can_manage_groups = self.check_permission(
+            identity, "manage_groups", record=user, actor_id=actor_id
+        )
+        excluded_group_ids = (
+            None
+            if self._can_manage_superadmin_roles(identity)
+            else GroupAggregate.superadmin_group_ids()
+        )
+        return {
+            "groups": groups,
+            "available_groups": (
+                GroupSchema(
+                    many=True, only=("id", "name", "description", "is_managed")
+                ).dump(GroupAggregate.available_groups(excluded_group_ids))
+                if can_manage_groups
+                else []
+            ),
+            "total": len(groups),
+        }
+
+    @unit_of_work()
+    def add_group(self, identity, id_, group_id, uow=None):
+        """Add a group to a user."""
+        user = self._get_user_or_deny(id_)
+        self._check_permission(identity, "manage_groups", user)
+
+        resolved_group_ids = self._resolve_mutable_group_ids(
+            identity, user, [group_id], require=True
+        )
+        self._deny_superadmin_group_mutation(identity, resolved_group_ids)
+        result = user.add_groups(resolved_group_ids)
+        self._log_groups_update(identity, user, result)
+        if result["added"]:
+            db.session.flush()
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return result
+
+    @unit_of_work()
+    def remove_group(self, identity, id_, group_id, uow=None):
+        """Remove a group from a user."""
+        user = self._get_user_or_deny(id_)
+        self._check_permission(identity, "manage_groups", user)
+
+        resolved_group_ids = self._resolve_mutable_group_ids(
+            identity, user, [group_id], require=True
+        )
+        self._deny_superadmin_group_mutation(identity, resolved_group_ids)
+        result = user.remove_groups(resolved_group_ids)
+        self._log_groups_update(identity, user, result)
+        if result["removed"]:
+            db.session.flush()
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return result
+
+    @unit_of_work()
+    def set_groups(self, identity, id_, group_ids, uow=None):
+        """Replace group memberships for a user."""
+        user = self._get_user_or_deny(id_)
+        self._check_permission(identity, "manage_groups", user)
+
+        resolved_group_ids = self._resolve_mutable_group_ids(identity, user, group_ids)
+        self._deny_superadmin_group_mutation(
+            identity, set(resolved_group_ids).symmetric_difference(user.group_ids())
+        )
+        result = user.set_groups(resolved_group_ids)
+        self._log_groups_update(identity, user, result)
+        if result["added"] or result["removed"]:
+            db.session.flush()
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return result
+
+    @unit_of_work()
+    def add_groups(self, identity, id_, group_ids, uow=None):
+        """Add multiple group memberships for a user without removing existing."""
+        user = self._get_user_or_deny(id_)
+        self._check_permission(identity, "manage_groups", user)
+
+        resolved_group_ids = self._resolve_mutable_group_ids(identity, user, group_ids)
+        self._deny_superadmin_group_mutation(identity, resolved_group_ids)
+        result = user.add_groups(resolved_group_ids)
+        self._log_groups_update(identity, user, result)
+        if result["added"]:
+            db.session.flush()
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return result
+
+    @unit_of_work()
+    def remove_groups(self, identity, id_, group_ids, uow=None):
+        """Remove multiple group memberships for a user."""
+        user = self._get_user_or_deny(id_)
+        self._check_permission(identity, "manage_groups", user)
+
+        resolved_group_ids = self._resolve_mutable_group_ids(identity, user, group_ids)
+        self._deny_superadmin_group_mutation(identity, resolved_group_ids)
+        result = user.remove_groups(resolved_group_ids)
+        self._log_groups_update(identity, user, result)
+        if result["removed"]:
+            db.session.flush()
+            uow.register(RecordCommitOp(user, indexer=self.indexer, index_refresh=True))
+        return result
 
     @unit_of_work()
     def block(self, identity, id_, uow=None, data=None):

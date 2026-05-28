@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2023 CERN.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Vocabularies is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -52,4 +53,10 @@ visibility = TermsFacet(
         "profile": _("Profile"),
         "full": _("Full"),
     },
+)
+
+roles = TermsFacet(
+    field="roles",
+    label=_("Roles"),
+    size=100,
 )

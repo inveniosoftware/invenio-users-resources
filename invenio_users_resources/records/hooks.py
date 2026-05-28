@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2022 CERN.
 # Copyright (C) 2022 TU Wien.
+# Copyright (C) 2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -15,6 +16,18 @@ from invenio_accounts.proxies import current_db_change_history
 from ..services.domains.tasks import delete_domains, reindex_domains
 from ..services.groups.tasks import reindex_groups, unindex_groups
 from ..services.users.tasks import reindex_users, unindex_users
+
+
+def _role_user_ids(role):
+    """Safely collect user IDs linked to a role."""
+    if role is None:
+        return []
+
+    try:
+        users = getattr(role, "users", []) or []
+        return [user.id for user in users if getattr(user, "id", None) is not None]
+    except (AttributeError, TypeError):
+        return []
 
 
 def pre_commit(sender, session):
@@ -37,6 +50,8 @@ def pre_commit(sender, session):
             current_db_change_history.add_updated_user(sid, item.id)
         if isinstance(item, Role):
             current_db_change_history.add_updated_role(sid, item.id)
+            for user_id in _role_user_ids(item):
+                current_db_change_history.add_updated_user(sid, user_id)
         if isinstance(item, Domain):
             current_db_change_history.add_updated_domain(sid, item.id)
 
@@ -45,6 +60,8 @@ def pre_commit(sender, session):
             current_db_change_history.add_deleted_user(sid, item.id)
         if isinstance(item, Role):
             current_db_change_history.add_deleted_role(sid, item.id)
+            for user_id in _role_user_ids(item):
+                current_db_change_history.add_updated_user(sid, user_id)
         if isinstance(item, Domain):
             current_db_change_history.add_deleted_domain(sid, item.id)
 

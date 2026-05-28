@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022 TU Wien.
 # Copyright (C) 2022-2026 CERN.
-# Copyright (C) 2024 KTH Royal Institute of Technology.
+# Copyright (C) 2024-2026 KTH Royal Institute of Technology.
 # Copyright (C) 2025 Northwestern University.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
@@ -38,6 +38,7 @@ from invenio_records_resources.services.records.queryparser import (
 )
 from luqum.tree import Word
 
+from ...proxies import current_users_service
 from ...records.api import UserAggregate
 from ..common import EndpointLinkWithId, vars_func_set_querystring
 from ..params import FixedPagination
@@ -49,9 +50,24 @@ from .search_params import ModerationFilterParam
 
 def can_manage(obj, ctx):
     """Check if user can manage."""
-    from invenio_users_resources.proxies import current_users_service
-
     return current_users_service.check_permission(ctx["identity"], "manage")
+
+
+def can_manage_groups(obj, ctx):
+    """Check if user roles can be managed."""
+    identity = ctx["identity"]
+    actor_id = getattr(identity, "id", None)
+    user_id = getattr(obj, "id", None)
+    if actor_id is not None and user_id is not None and str(actor_id) == str(user_id):
+        return False
+
+    model = getattr(obj, "model", None)
+    if getattr(model, "_model_obj", None) is not None:
+        return current_users_service.check_permission(
+            identity, "manage_groups", record=obj, actor_id=actor_id
+        )
+
+    return current_users_service.check_permission(identity, "manage_groups")
 
 
 def word_domain_status(node):
@@ -144,6 +160,7 @@ class AdminUserSearchOptions(UserSearchOptions):
             "domaininfo.flagged",
             "domaininfo.tld",
             "domaininfo.category",
+            "roles",
         ],
         mapping={
             "affiliation": "profile.affiliations",
@@ -163,6 +180,8 @@ class AdminUserSearchOptions(UserSearchOptions):
             "domain.tld": "domaininfo.tld",
             "domain.category": "domaininfo.category",
             "domain.flagged": "domaininfo.flagged",
+            "role": "roles",
+            "roles": "roles",
         },
     )
 
@@ -240,6 +259,7 @@ class UsersServiceConfig(RecordServiceConfig, ConfiguratorMixin):
             ),
             when=can_manage,
         ),
+        "groups": EndpointLinkWithId("users.groups", when=can_manage_groups),
         # TODO missing moderation actions based on permissions
     }
 

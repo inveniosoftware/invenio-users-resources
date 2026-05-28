@@ -148,7 +148,13 @@ def auth_identity():
 
 
 @pytest.fixture(scope="module")
-def user_moderator(UserFixture, app, database, users, administration_group):
+def user_moderator(
+    UserFixture,
+    app,
+    database,
+    users,
+    administration_group,
+):
     """Admin user for requests."""
     moderator = users["user_moderator"]
     moderator.roles = [administration_group]
