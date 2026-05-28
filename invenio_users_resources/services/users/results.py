@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 TU Wien.
-# Copyright (C) 2025 KTH Royal Institute of Technology.
+# Copyright (C) 2025-2026 KTH Royal Institute of Technology.
 #
 # Invenio-Users-Resources is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -15,7 +15,17 @@ from invenio_records_resources.services.records.results import RecordItem, Recor
 def _role_names(user):
     """Return list of role names."""
     model = getattr(user, "model", user)
+    roles = getattr(model, "roles", None)
+    if isinstance(roles, list) and all(isinstance(role, str) for role in roles):
+        return roles
+
     model_obj = getattr(model, "_model_obj", model)
+
+    profile = getattr(model_obj, "profile", None)
+    if isinstance(profile, dict):
+        profile_roles = profile.get("roles")
+        if isinstance(profile_roles, list):
+            return [role for role in profile_roles if isinstance(role, str)]
 
     if not hasattr(model_obj, "roles"):
         model_obj = user
@@ -23,6 +33,9 @@ def _role_names(user):
     roles = getattr(model_obj, "roles", None)
     if not roles:
         return []
+
+    if isinstance(roles, list) and all(isinstance(role, str) for role in roles):
+        return roles
 
     return [role.name for role in roles]
 

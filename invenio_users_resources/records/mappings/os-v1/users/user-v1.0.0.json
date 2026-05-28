@@ -97,6 +97,9 @@
         "type": "keyword",
         "index": "false"
       },
+      "roles": {
+        "type": "keyword"
+      },
       "profile": {
         "properties": {
           "full_name": {
