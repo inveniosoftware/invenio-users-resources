@@ -10,6 +10,11 @@
 Changes
 =======
 
+Version v11.0.0 (released 2026-05-29)
+
+- chore(setup): bump dependencies
+- feat(users)!: add admin role management backend
+
 Version v10.5.0 (released 2026-04-21)
 
 - feat(moderation): allow passing `data` and `actor_id` to block action
