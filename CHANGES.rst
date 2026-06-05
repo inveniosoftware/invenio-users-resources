@@ -10,6 +10,12 @@
 Changes
 =======
 
+Version v12.0.0 (released 2026-06-05)
+
+- fix: increase groups search max result window
+- fix(groups): keep group ids aligned
+- feat(users): expose login metadata
+
 Version v11.0.0 (released 2026-05-29)
 
 - chore(setup): bump dependencies
