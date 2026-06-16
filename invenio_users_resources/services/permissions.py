@@ -101,7 +101,7 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
         ),
     ]
     can_search = _can_any + [AuthenticatedUser()]
-    can_create = [ProtectedGroupIdentifiers(), GroupManager, SystemProcess()]
+    can_create = _can_any + [ProtectedGroupIdentifiers(), GroupManager]
     can_update = _can_any + [
         ProtectedGroupIdentifiers(),
         IfSuperAdmin(
