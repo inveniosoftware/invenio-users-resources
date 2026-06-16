@@ -7,6 +7,12 @@
 Changes
 =======
 
+Version v13.0.0 (released 2026-06-16)
+
+- chore(setup): bump dependencies
+- chore(git-blame): ignore the SPDX license header commit
+- chore(licenses): update license headers to use SPDX
+
 Version v12.0.0 (released 2026-06-05)
 
 - fix: increase groups search max result window
