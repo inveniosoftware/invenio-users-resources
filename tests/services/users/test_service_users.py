@@ -7,6 +7,7 @@
 
 import pytest
 from invenio_access.permissions import system_identity
+from invenio_accounts.proxies import current_datastore
 from invenio_records_resources.services.errors import PermissionDeniedError
 from marshmallow import ValidationError
 
@@ -464,6 +465,44 @@ def test_add_group_normalizes_role_id(user_service, user_moderator, user_pub, gr
     assert user_service.add_group(user_moderator.identity, user_pub.id, "  it-dep  ")
     groups = user_service.get_groups(user_moderator.identity, user_pub.id)["groups"]
     assert "it-dep" in [group["id"] for group in groups]
+
+
+def test_group_change_reporting_does_not_depend_on_datastore_return(
+    monkeypatch, user_service, user_moderator, user_pub, group
+):
+    """Added/removed are based on actual membership diff, not datastore return."""
+    user_service.set_groups(user_moderator.identity, user_pub.id, [])
+
+    datastore = current_datastore._get_current_object()
+    add_role_to_user = datastore.add_role_to_user
+    remove_role_from_user = datastore.remove_role_from_user
+
+    def add_role_to_user_without_return(user, role):
+        add_role_to_user(user, role)
+        return None
+
+    def remove_role_from_user_without_return(user, role):
+        remove_role_from_user(user, role)
+        return None
+
+    try:
+        monkeypatch.setattr(
+            datastore, "add_role_to_user", add_role_to_user_without_return
+        )
+        result = user_service.add_groups(
+            user_moderator.identity, user_pub.id, ["it-dep"]
+        )
+        assert result["added"] == ["it-dep"]
+
+        monkeypatch.setattr(
+            datastore, "remove_role_from_user", remove_role_from_user_without_return
+        )
+        result = user_service.remove_groups(
+            user_moderator.identity, user_pub.id, ["it-dep"]
+        )
+        assert result["removed"] == ["it-dep"]
+    finally:
+        user_service.set_groups(user_moderator.identity, user_pub.id, [])
 
 
 def test_add_group_empty_role_id_validation(user_service, user_moderator, user_pub):
