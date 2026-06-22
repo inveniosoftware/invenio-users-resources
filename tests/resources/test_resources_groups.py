@@ -5,6 +5,8 @@
 
 """Groups resource tests."""
 
+from invenio_access.permissions import system_identity
+
 
 def test_group_create_api(app, client, user_moderator):
     user_moderator.login(client)
@@ -24,6 +26,30 @@ def test_group_create_api(app, client, user_moderator):
 
     res = client.delete(f"/groups/{data['id']}")
     assert 204 == res.status_code
+
+
+def test_group_create_disabled_api(app, client, user_moderator, group_service):
+    """Group creation is forbidden when groups support is disabled."""
+    user_moderator.login(client)
+
+    payload = {
+        "name": "disabled-api-role",
+        "description": "Created via API",
+        "is_managed": False,
+    }
+
+    app.config["USERS_RESOURCES_GROUPS_ENABLED"] = False
+    try:
+        res = client.post("/groups", json=payload)
+        assert 403 == res.status_code
+    finally:
+        app.config["USERS_RESOURCES_GROUPS_ENABLED"] = True
+
+    res = client.post("/groups", json=payload)
+    assert 201 == res.status_code
+    # Cleanup
+    data = res.get_json()
+    assert group_service.delete(system_identity, data["id"])
 
 
 def test_group_update_validation_error_api(app, client, user_moderator, group):

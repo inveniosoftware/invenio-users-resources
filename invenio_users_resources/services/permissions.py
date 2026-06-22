@@ -88,6 +88,15 @@ class UsersPermissionPolicy(BasePermissionPolicy):
 class GroupsPermissionPolicy(BasePermissionPolicy):
     """Permission policy for users and user groups."""
 
+    _can_manage_existing = [
+        ProtectedGroupIdentifiers(),
+        IfSuperAdmin(
+            then_=[SuperAdmin],
+            else_=[
+                IfGroupNotManaged([DenyAll()], [GroupManager]),
+            ],
+        ),
+    ]
     _can_any = [
         GroupsEnabled("group"),
         SystemProcess(),
@@ -101,26 +110,9 @@ class GroupsPermissionPolicy(BasePermissionPolicy):
         ),
     ]
     can_search = _can_any + [AuthenticatedUser()]
-    can_create = [ProtectedGroupIdentifiers(), GroupManager, SystemProcess()]
-    can_update = _can_any + [
-        ProtectedGroupIdentifiers(),
-        IfSuperAdmin(
-            then_=[SuperAdmin],
-            else_=[
-                IfGroupNotManaged([DenyAll()], [GroupManager]),
-            ],
-        ),
-    ]
-    can_delete = _can_any + [
-        ProtectedGroupIdentifiers(),
-        IfSuperAdmin(
-            then_=[SuperAdmin],
-            else_=[
-                IfGroupNotManaged([DenyAll()], [GroupManager]),
-            ],
-        ),
-        SystemProcess(),
-    ]
+    can_create = _can_any + [ProtectedGroupIdentifiers(), GroupManager]
+    can_update = _can_any + _can_manage_existing
+    can_delete = _can_any + _can_manage_existing
 
 
 class DomainPermissionPolicy(BasePermissionPolicy):
