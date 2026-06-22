@@ -466,6 +466,27 @@ def test_add_group_normalizes_role_id(user_service, user_moderator, user_pub, gr
     assert "it-dep" in [group["id"] for group in groups]
 
 
+def test_get_groups_includes_management_state(
+    user_service, user_moderator, user_pub, group, not_managed_group
+):
+    """Assigned roles include whether they are managed."""
+    try:
+        user_service.set_groups(
+            user_moderator.identity,
+            user_pub.id,
+            ["it-dep", "not-managed-dep"],
+        )
+
+        groups = user_service.get_groups(user_moderator.identity, user_pub.id)["groups"]
+
+        assert {group["id"]: group["is_managed"] for group in groups} == {
+            "it-dep": True,
+            "not-managed-dep": False,
+        }
+    finally:
+        user_service.set_groups(user_moderator.identity, user_pub.id, [])
+
+
 def test_add_group_empty_role_id_validation(user_service, user_moderator, user_pub):
     """Empty/blank role IDs fail with validation error."""
     with pytest.raises(ValidationError):
