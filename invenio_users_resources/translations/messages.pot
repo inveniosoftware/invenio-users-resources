@@ -1,204 +1,284 @@
 # Translations template for invenio-users-resources.
-# Copyright (C) 2024 CERN
+# Copyright (C) 2026 CERN
 # This file is distributed under the same license as the
 # invenio-users-resources project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: invenio-users-resources 5.3.1\n"
+"Project-Id-Version: invenio-users-resources 12.0.0\n"
 "Report-Msgid-Bugs-To: info@inveniosoftware.org\n"
-"POT-Creation-Date: 2024-08-06 08:57+0000\n"
+"POT-Creation-Date: 2026-06-22 20:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.15.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: invenio_users_resources/config.py:60 invenio_users_resources/config.py:154
-#: invenio_users_resources/services/groups/config.py:44
+#: invenio_users_resources/config.py:64 invenio_users_resources/config.py:164
+#: invenio_users_resources/config.py:246
+#: invenio_users_resources/services/groups/config.py:47
 msgid "Best match"
 msgstr ""
 
-#: invenio_users_resources/config.py:64
+#: invenio_users_resources/config.py:68
 msgid "Username"
 msgstr ""
 
-#: invenio_users_resources/config.py:68
+#: invenio_users_resources/config.py:72
 msgid "Email"
 msgstr ""
 
-#: invenio_users_resources/config.py:72 invenio_users_resources/config.py:158
-#: invenio_users_resources/services/users/facets.py:16
+#: invenio_users_resources/config.py:76 invenio_users_resources/config.py:168
+#: invenio_users_resources/services/users/facets.py:12
 msgid "Domain"
 msgstr ""
 
-#: invenio_users_resources/config.py:76 invenio_users_resources/config.py:162
+#: invenio_users_resources/config.py:80 invenio_users_resources/config.py:172
 msgid "Newest"
 msgstr ""
 
-#: invenio_users_resources/config.py:80 invenio_users_resources/config.py:166
+#: invenio_users_resources/config.py:84 invenio_users_resources/config.py:176
 msgid "Oldest"
 msgstr ""
 
-#: invenio_users_resources/config.py:84 invenio_users_resources/config.py:170
+#: invenio_users_resources/config.py:88 invenio_users_resources/config.py:180
 msgid "Recently updated"
 msgstr ""
 
-#: invenio_users_resources/config.py:174
+#: invenio_users_resources/config.py:184
 msgid "# Users"
 msgstr ""
 
-#: invenio_users_resources/config.py:178
+#: invenio_users_resources/config.py:188
 msgid "# Active"
 msgstr ""
 
-#: invenio_users_resources/config.py:182
+#: invenio_users_resources/config.py:192
 msgid "# Inactive"
 msgstr ""
 
-#: invenio_users_resources/config.py:186
+#: invenio_users_resources/config.py:196
 msgid "# Confirmed"
 msgstr ""
 
-#: invenio_users_resources/config.py:190
+#: invenio_users_resources/config.py:200
 msgid "# Verified"
 msgstr ""
 
-#: invenio_users_resources/config.py:194
+#: invenio_users_resources/config.py:204
 msgid "# Blocked"
 msgstr ""
 
-#: invenio_users_resources/forms.py:24
+#: invenio_users_resources/config.py:250
+#: invenio_users_resources/services/groups/config.py:51
+msgid "Name (A-Z)"
+msgstr ""
+
+#: invenio_users_resources/config.py:254
+#: invenio_users_resources/services/groups/config.py:55
+msgid "Name (Z-A)"
+msgstr ""
+
+#: invenio_users_resources/config.py:258
+#: invenio_users_resources/services/groups/config.py:59
+msgid "Managed first"
+msgstr ""
+
+#: invenio_users_resources/config.py:262
+#: invenio_users_resources/services/groups/config.py:63
+msgid "Unmanaged first"
+msgstr ""
+
+#: invenio_users_resources/forms.py:19
 msgid "Notify me"
 msgstr ""
 
-#: invenio_users_resources/forms.py:25
+#: invenio_users_resources/forms.py:20
 msgid "Turn on to enable notifications for relevant events."
 msgstr ""
 
-#: invenio_users_resources/resources/domains/resource.py:29
+#: invenio_users_resources/records/api.py:133
+msgid "Email already used by another account."
+msgstr ""
+
+#: invenio_users_resources/records/api.py:137
+msgid "Username already used by another account."
+msgstr ""
+
+#: invenio_users_resources/records/api.py:155
+msgid "Role name already used by another group."
+msgstr ""
+
+#: invenio_users_resources/records/api.py:373
+msgid "Group does not exist."
+msgstr ""
+
+#: invenio_users_resources/records/api.py:387
+msgid "Group ID cannot be empty."
+msgstr ""
+
+#: invenio_users_resources/resources/domains/resource.py:23
 msgid "Domain already exists."
 msgstr ""
 
-#: invenio_users_resources/resources/users/config.py:65
+#: invenio_users_resources/resources/groups/errors.py:17
+msgid "A validation error occurred."
+msgstr ""
+
+#: invenio_users_resources/resources/users/config.py:77
 msgid "User is locked due to concurrent running operation."
 msgstr ""
 
-#: invenio_users_resources/services/schemas.py:147
-#: invenio_users_resources/services/schemas.py:151
+#: invenio_users_resources/resources/users/errors.py:16
+msgid "The user does not exist."
+msgstr ""
+
+#: invenio_users_resources/services/schemas.py:159
+msgid ""
+"Name must start with a letter and contain only letters, numbers, hyphens "
+"or underscores (max 80 chars)."
+msgstr ""
+
+#: invenio_users_resources/services/schemas.py:178
+#: invenio_users_resources/services/schemas.py:182
 msgid "Deleted user"
 msgstr ""
 
-#: invenio_users_resources/services/schemas.py:160
-#: invenio_users_resources/services/schemas.py:164
+#: invenio_users_resources/services/schemas.py:192
+#: invenio_users_resources/services/schemas.py:196
+msgid "Anonymous user"
+msgstr ""
+
+#: invenio_users_resources/services/schemas.py:206
+#: invenio_users_resources/services/schemas.py:210
 msgid "System"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:16
+#: invenio_users_resources/services/domains/facets.py:11
 msgid "Status"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:18
-#: invenio_users_resources/services/users/facets.py:23
-#: invenio_users_resources/services/users/facets.py:39
+#: invenio_users_resources/services/domains/facets.py:13
+#: invenio_users_resources/services/users/facets.py:19
+#: invenio_users_resources/services/users/facets.py:35
 msgid "New"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:19
-#: invenio_users_resources/services/users/facets.py:24
+#: invenio_users_resources/services/domains/facets.py:14
+#: invenio_users_resources/services/users/facets.py:20
 msgid "Moderated"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:20
-#: invenio_users_resources/services/users/facets.py:25
-#: invenio_users_resources/services/users/facets.py:40
+#: invenio_users_resources/services/domains/facets.py:15
+#: invenio_users_resources/services/users/facets.py:21
+#: invenio_users_resources/services/users/facets.py:36
 msgid "Verified"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:21
-#: invenio_users_resources/services/users/facets.py:26
-#: invenio_users_resources/services/users/facets.py:42
+#: invenio_users_resources/services/domains/facets.py:16
+#: invenio_users_resources/services/users/facets.py:22
+#: invenio_users_resources/services/users/facets.py:38
 msgid "Blocked"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:28
+#: invenio_users_resources/services/domains/facets.py:23
 msgid "Flagged"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:30
+#: invenio_users_resources/services/domains/facets.py:25
 msgid "Yes"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:31
+#: invenio_users_resources/services/domains/facets.py:26
 msgid "No"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:38
+#: invenio_users_resources/services/domains/facets.py:33
 msgid "Category"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:44
+#: invenio_users_resources/services/domains/facets.py:39
 msgid "Organisation"
 msgstr ""
 
-#: invenio_users_resources/services/domains/facets.py:50
+#: invenio_users_resources/services/domains/facets.py:45
 msgid "Top-level domain"
 msgstr ""
 
-#: invenio_users_resources/services/groups/config.py:48
-msgid "Name"
+#: invenio_users_resources/services/groups/facets.py:12
+msgid "Management state"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:21
+#: invenio_users_resources/services/groups/facets.py:14
+msgid "Unmanaged"
+msgstr ""
+
+#: invenio_users_resources/services/groups/facets.py:15
+msgid "Managed"
+msgstr ""
+
+#: invenio_users_resources/services/users/facets.py:17
 msgid "Domain status"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:32
+#: invenio_users_resources/services/users/facets.py:28
 msgid "Affiliations"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:37
+#: invenio_users_resources/services/users/facets.py:33
 msgid "Account status"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:41
+#: invenio_users_resources/services/users/facets.py:37
 msgid "Confirmed"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:43
+#: invenio_users_resources/services/users/facets.py:39
 msgid "Inactive"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:49
+#: invenio_users_resources/services/users/facets.py:45
 msgid "Profile visibility"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:51
+#: invenio_users_resources/services/users/facets.py:47
 msgid "Hidden"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:52
+#: invenio_users_resources/services/users/facets.py:48
 msgid "Profile"
 msgstr ""
 
-#: invenio_users_resources/services/users/facets.py:53
+#: invenio_users_resources/services/users/facets.py:49
 msgid "Full"
 msgstr ""
 
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:14
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:17
+#: invenio_users_resources/services/users/facets.py:55
+msgid "Roles"
+msgstr ""
+
+#: invenio_users_resources/templates/security/email/new_user_via_admin.html:5
+msgid "Your new account has been created"
+msgstr ""
+
+#: invenio_users_resources/templates/security/email/new_user_via_admin.html:8
+msgid "Click here to create a new password"
+msgstr ""
+
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:9
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:12
 msgid "Notifications"
 msgstr ""
 
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:50
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:45
 msgid "Notifications email"
 msgstr ""
 
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:53
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:48
 #, python-format
 msgid ""
 "\n"
@@ -209,11 +289,11 @@ msgid ""
 "                    "
 msgstr ""
 
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:67
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:62
 msgid "Cancel"
 msgstr ""
 
-#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:71
+#: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:66
 msgid "Update notification preferences"
 msgstr ""
 
