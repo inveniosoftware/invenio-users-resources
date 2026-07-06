@@ -45,7 +45,7 @@ def test_search_restricted(user_service, anon_identity, user_pub):
 def test_search_public_users(user_service, user_pub):
     """Only public users are shown in search."""
     res = user_service.search(user_pub.identity).to_dict()
-    assert res["hits"]["total"] == 2  # 2 public users in conftest
+    assert res["hits"]["total"] == 4  # 4 public users in conftest
 
 
 # Admin search
@@ -138,6 +138,19 @@ def test_user_search_field(user_service, user_pub, query, expected_usernames):
     res = user_service.search(user_pub.identity, suggest=query).to_dict()
     usernames = [entry["username"] for entry in res["hits"]["hits"]]
     assert sorted(usernames) == expected_usernames
+
+
+def test_user_search_exact_username_first(user_service, user_pub):
+    """An exact username match outranks fuzzy full-name matches."""
+    res = user_service.search(user_pub.identity, suggest="sbarton").to_dict()
+    assert res["hits"]["hits"][0]["username"] == "sbarton"
+
+
+@pytest.mark.parametrize("query", ["sbraton", "sbartn", "sbartoon"])
+def test_user_search_username_typo(user_service, user_pub, query):
+    """A typo'd username (first character excepted) still finds the user."""
+    res = user_service.search(user_pub.identity, suggest=query).to_dict()
+    assert "sbarton" in [entry["username"] for entry in res["hits"]["hits"]]
 
 
 #

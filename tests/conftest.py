@@ -191,6 +191,28 @@ def users_data():
             },
         },
         {
+            # Public user whose only searchable info is their username.
+            "username": "sbarton",
+            "email": "sbarton@inveniosoftware.org",
+            "preferences": {
+                "visibility": "public",
+                "email_visibility": "restricted",
+            },
+        },
+        {
+            # Full name fuzzy-matches "sbarton" ("barton" edge-gram, one edit).
+            "username": "abartonelli",
+            "email": "abartonelli@inveniosoftware.org",
+            "profile": {
+                "full_name": "Anna Bartonelli",
+                "affiliations": "ACME",
+            },
+            "preferences": {
+                "visibility": "public",
+                "email_visibility": "restricted",
+            },
+        },
+        {
             "username": "pub",
             "email": "pub@inveniosoftware.org",
             "profile": {

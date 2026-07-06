@@ -94,6 +94,45 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
             "profile.full_name^10",
             "profile.affiliations",
         ],
+        clauses=[
+            # Exact username/email match always wins.
+            {
+                "type": "best_fields",
+                "boost": 20,
+                "fields": ["username.keyword", "email.keyword"],
+            },
+            # Multi-term queries spanning fields (e.g. full name + affiliation).
+            {"type": "cross_fields", "boost": 3},
+            # Rewards matches in multiple fields. No fuzziness here: with the ^10
+            # full name boost and the edge-ngram index, fuzzy matches on other
+            # people's names would outscore an exact username match.
+            {"type": "most_fields", "boost": 1},
+            # Typo tolerance on the edge-ngram text fields. Unboosted best_fields
+            # keeps fuzzy noise below exact matches; prefix_length drops
+            # first-character expansions, by far the noisiest.
+            {
+                "type": "best_fields",
+                "boost": 1,
+                "fuzziness": "AUTO",
+                "prefix_length": 1,
+                "fields": [
+                    "username",
+                    "email",
+                    "profile.full_name",
+                    "profile.affiliations",
+                ],
+            },
+            # Typo tolerance on whole usernames/emails. Keyword terms are few
+            # enough that rare usernames survive the fuzzy expansion cap, which
+            # they don't on the edge-ngram fields.
+            {
+                "type": "best_fields",
+                "boost": 3,
+                "fuzziness": "AUTO",
+                "prefix_length": 1,
+                "fields": ["username.keyword", "email.keyword"],
+            },
+        ],
         # Only public emails because hidden emails are stored in email_hidden field.
         allow_list=["username", "email"],
         mapping={
