@@ -55,8 +55,8 @@ class GroupsResourceConfig(RecordResourceConfig):
     url_prefix = "/groups"
     routes = {
         "list": "",
-        "item": "/<id>",
-        "item-avatar": "/<id>/avatar.svg",
+        "item": "/<string:id>",
+        "item-avatar": "/<string:id>/avatar.svg",
     }
 
     request_view_args = {
