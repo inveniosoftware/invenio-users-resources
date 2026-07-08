@@ -49,6 +49,9 @@ invenio_groups = "invenio_users_resources.views:create_groups_resources_bp"
 invenio_users = "invenio_users_resources.views:create_users_resources_bp"
 invenio_users_resources = "invenio_users_resources.views:blueprint"
 
+[project.entry-points."invenio_base.api_converters"]
+user_id = "invenio_users_resources.utils:UserIDConverter"
+
 [project.entry-points."invenio_base.api_finalize_app"]
 invenio_users_resources = "invenio_users_resources.ext:api_finalize_app"
 
@@ -57,6 +60,9 @@ invenio_users_resources = "invenio_users_resources.ext:InvenioUsersResources"
 
 [project.entry-points."invenio_base.blueprints"]
 invenio_users_resources = "invenio_users_resources.views:blueprint"
+
+[project.entry-points."invenio_base.converters"]
+user_id = "invenio_users_resources.utils:UserIDConverter"
 
 [project.entry-points."invenio_base.finalize_app"]
 invenio_users_resources = "invenio_users_resources.ext:finalize_app"
