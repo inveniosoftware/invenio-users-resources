@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v13.1.0 (released 2026-07-09)
+
+- fix(users): rank exact username matches first in user search
+
 Version v13.0.1 (released 2026-07-02)
 
 - chore(setup): migrate from setuptools to hatchling
