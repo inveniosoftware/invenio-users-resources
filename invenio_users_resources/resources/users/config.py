@@ -49,15 +49,15 @@ class UsersResourceConfig(RecordResourceConfig):
     routes = {
         "list": "",
         "search_all": "/all",
-        "item": "/<id>",
-        "groups-list": "/<id>/groups",
-        "item-avatar": "/<id>/avatar.svg",
-        "approve": "/<id>/approve",
-        "block": "/<id>/block",
-        "restore": "/<id>/restore",
-        "activate": "/<id>/activate",
-        "deactivate": "/<id>/deactivate",
-        "impersonate": "/<id>/impersonate",
+        "item": "/<user_id:id>",
+        "groups-list": "/<user_id:id>/groups",
+        "item-avatar": "/<user_id:id>/avatar.svg",
+        "approve": "/<user_id:id>/approve",
+        "block": "/<user_id:id>/block",
+        "restore": "/<user_id:id>/restore",
+        "activate": "/<user_id:id>/activate",
+        "deactivate": "/<user_id:id>/deactivate",
+        "impersonate": "/<user_id:id>/impersonate",
     }
 
     request_view_args = {
