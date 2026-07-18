@@ -125,16 +125,17 @@ def _validate_user_data(user_data):
     `commit` state of the UOW and the feedback to the form can't be sent.
     """
     errors = {}
-    username = user_data["username"]
+    username = user_data.get("username")
     email = user_data["email"]
     # Check if Email exists already
     existing_email = db.session.query(User).filter_by(email=email).first()
     if existing_email:
         errors["email"] = [_("Email already used by another account.")]
     # Check if Username exists already
-    existing_username = db.session.query(User).filter_by(username=username).first()
-    if existing_username:
-        errors["username"] = [_("Username already used by another account.")]
+    if username is not None:
+        existing_username = db.session.query(User).filter_by(username=username).first()
+        if existing_username:
+            errors["username"] = [_("Username already used by another account.")]
     if errors:
         raise ValidationError(errors)
 
