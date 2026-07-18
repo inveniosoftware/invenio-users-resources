@@ -222,7 +222,9 @@ class UsersService(RecordService):
             identity, "read_user_groups", record=user, actor_id=actor_id
         )
 
-        groups = GroupSchema(many=True, only=("id", "name")).dump(user.get_groups())
+        groups = GroupSchema(many=True, only=("id", "name", "is_managed")).dump(
+            user.get_groups()
+        )
         can_manage_groups = self.check_permission(
             identity, "manage_groups", record=user, actor_id=actor_id
         )
