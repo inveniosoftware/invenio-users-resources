@@ -7,6 +7,11 @@
 Changes
 =======
 
+Version v12.0.1 (released 2026-07-21)
+
+- chore(setup): migrate from setuptools to hatchling
+- chore(licenses): update license headers to use SPDX
+
 Version v12.0.0 (released 2026-06-05)
 
 - fix: increase groups search max result window
