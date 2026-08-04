@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v13.1.1 (released 2026-08-04)
+
+- fix(build): include mo files
+
 Version v13.1.0 (released 2026-07-09)
 
 - fix(users): rank exact username matches first in user search
