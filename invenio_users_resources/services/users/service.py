@@ -132,11 +132,13 @@ class UsersService(RecordService):
             **kwargs,
         )
 
-    def read(self, identity, id_):
+    def read(self, identity, id_=None, email=None):
         """Retrieve a user."""
-        # resolve and require permission
-        user = UserAggregate.get_record(id_)
-        # TODO - email user issue
+        if email is not None:
+            user = UserAggregate.get_record_by_email(email)
+        else:
+            user = UserAggregate.get_record(id_)
+
         if user is None:
             # return 403 even on empty resource due to security implications
             raise PermissionDeniedError()

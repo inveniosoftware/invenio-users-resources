@@ -453,6 +453,17 @@ class UserAggregate(BaseAggregate):
         with db.session.no_autoflush:
             return cls.from_model(user)
 
+    @classmethod
+    def get_record_by_email(cls, email):
+        """Get the user via the specified email."""
+        with db.session.no_autoflush:
+            user = current_datastore.get_user_by_email(email)
+        if user is None:
+            return None
+
+        with db.session.no_autoflush:
+            return cls.from_model(user)
+
 
 class GroupAggregate(BaseAggregate):
     """An aggregate of information about a user group/role."""

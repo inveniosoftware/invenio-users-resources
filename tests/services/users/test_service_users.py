@@ -222,6 +222,25 @@ def test_read_self(user_service, users, username):
     user_service.read_avatar(user.identity, user.id)
 
 
+def test_read_by_email(user_service, user_pub, user_accented, auth_identity):
+    """Users can be read by email via read(email=...)."""
+    res = user_service.read(system_identity, email=user_pub.email).to_dict()
+    assert res["id"] == user_pub.id
+    assert res["email"] == user_pub.email
+
+    # Same permission rules as read-by-id for non-system callers
+    random_identity = auth_identity(user_accented.id)
+    res = user_service.read(random_identity, email=user_pub.email).to_dict()
+    assert res["id"] == user_pub.id
+
+    pytest.raises(
+        PermissionDeniedError,
+        user_service.read,
+        system_identity,
+        email="missing@example.org",
+    )
+
+
 def test_search_permissions(app, db, user_service, user_moderator, user_res):
     """Test service search for permissions."""
     # User can search for himself
