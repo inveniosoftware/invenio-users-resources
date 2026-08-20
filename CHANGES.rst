@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v13.2.0 (released 2026-08-20)
+
+- feat(users): allow UsersService.read to resolve by email
+
 Version v13.1.1 (released 2026-08-04)
 
 - fix(build): include mo files
