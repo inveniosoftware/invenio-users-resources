@@ -8,8 +8,8 @@
 # Alizee Pace <alizee.pace@gmail.com>, 2024
 # Zacharias Zacharodimos <zacharias.zacharodimos@cern.ch>, 2024
 # Tibor Simko <tibor.simko@cern.ch>, 2024
-# Jesús Martín <jesusmartin@sallep.net>, 2024
-# Ignacio Estevo, 2026
+# Ignacio Estevo, 2024
+# Jesús Martín <jesusmartin@sallep.net>, 2026
 # 
 #, fuzzy
 msgid ""
@@ -18,7 +18,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: info@inveniosoftware.org\n"
 "POT-Creation-Date: 2026-06-22 20:47+0000\n"
 "PO-Revision-Date: 2022-02-16 11:58+0000\n"
-"Last-Translator: Ignacio Estevo, 2026\n"
+"Last-Translator: Jesús Martín <jesusmartin@sallep.net>, 2026\n"
 "Language-Team: Spanish (https://app.transifex.com/inveniosoftware/teams/23537/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -52,7 +52,7 @@ msgstr "Más nuevo"
 
 #: invenio_users_resources/config.py:84 invenio_users_resources/config.py:176
 msgid "Oldest"
-msgstr "Más viejo"
+msgstr "Más antiguo"
 
 #: invenio_users_resources/config.py:88 invenio_users_resources/config.py:180
 msgid "Recently updated"
@@ -85,22 +85,22 @@ msgstr "# Bloqueados"
 #: invenio_users_resources/config.py:250
 #: invenio_users_resources/services/groups/config.py:51
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Nombre (A-Z)"
 
 #: invenio_users_resources/config.py:254
 #: invenio_users_resources/services/groups/config.py:55
 msgid "Name (Z-A)"
-msgstr ""
+msgstr "Nombre (Z-A)"
 
 #: invenio_users_resources/config.py:258
 #: invenio_users_resources/services/groups/config.py:59
 msgid "Managed first"
-msgstr ""
+msgstr "Gestionado primero"
 
 #: invenio_users_resources/config.py:262
 #: invenio_users_resources/services/groups/config.py:63
 msgid "Unmanaged first"
-msgstr ""
+msgstr "No administrado primero"
 
 #: invenio_users_resources/forms.py:19
 msgid "Notify me"
@@ -112,23 +112,23 @@ msgstr "Encender para habilitar las notificaciones para eventos relevantes."
 
 #: invenio_users_resources/records/api.py:133
 msgid "Email already used by another account."
-msgstr ""
+msgstr "El correo electrónico ya está siendo utilizado por otra cuenta."
 
 #: invenio_users_resources/records/api.py:137
 msgid "Username already used by another account."
-msgstr ""
+msgstr "El nombre de usuario ya está siendo utilizado por otra cuenta."
 
 #: invenio_users_resources/records/api.py:155
 msgid "Role name already used by another group."
-msgstr ""
+msgstr "El nombre del rol ya está siendo utilizado por otro grupo."
 
 #: invenio_users_resources/records/api.py:373
 msgid "Group does not exist."
-msgstr ""
+msgstr "El grupo no existe."
 
 #: invenio_users_resources/records/api.py:387
 msgid "Group ID cannot be empty."
-msgstr ""
+msgstr "El ID de grupo no puede estar vacío."
 
 #: invenio_users_resources/resources/domains/resource.py:23
 msgid "Domain already exists."
@@ -136,7 +136,7 @@ msgstr "El dominio ya existe."
 
 #: invenio_users_resources/resources/groups/errors.py:17
 msgid "A validation error occurred."
-msgstr ""
+msgstr "Se ha producido un error de validación."
 
 #: invenio_users_resources/resources/users/config.py:77
 msgid "User is locked due to concurrent running operation."
@@ -145,13 +145,15 @@ msgstr ""
 
 #: invenio_users_resources/resources/users/errors.py:16
 msgid "The user does not exist."
-msgstr ""
+msgstr "El usuario no existe."
 
 #: invenio_users_resources/services/schemas.py:159
 msgid ""
 "Name must start with a letter and contain only letters, numbers, hyphens or "
 "underscores (max 80 chars)."
 msgstr ""
+"El nombre debe comenzar con una letra y contener solo letras, números, "
+"guiones o guiones bajos (máximo 80 caracteres)."
 
 #: invenio_users_resources/services/schemas.py:178
 #: invenio_users_resources/services/schemas.py:182
@@ -161,7 +163,7 @@ msgstr "Usuario eliminado"
 #: invenio_users_resources/services/schemas.py:192
 #: invenio_users_resources/services/schemas.py:196
 msgid "Anonymous user"
-msgstr "Usuario anonimo"
+msgstr "Usuario anónimo"
 
 #: invenio_users_resources/services/schemas.py:206
 #: invenio_users_resources/services/schemas.py:210
@@ -221,15 +223,15 @@ msgstr "Dominio de nivel superior"
 
 #: invenio_users_resources/services/groups/facets.py:12
 msgid "Management state"
-msgstr ""
+msgstr "Estado de gestión"
 
 #: invenio_users_resources/services/groups/facets.py:14
 msgid "Unmanaged"
-msgstr ""
+msgstr "Sin gestión"
 
 #: invenio_users_resources/services/groups/facets.py:15
 msgid "Managed"
-msgstr ""
+msgstr "Gestionado"
 
 #: invenio_users_resources/services/users/facets.py:17
 msgid "Domain status"
@@ -269,15 +271,15 @@ msgstr "LLeno"
 
 #: invenio_users_resources/services/users/facets.py:55
 msgid "Roles"
-msgstr ""
+msgstr "Roles"
 
 #: invenio_users_resources/templates/security/email/new_user_via_admin.html:5
 msgid "Your new account has been created"
-msgstr ""
+msgstr "Su nueva cuenta ha sido creada."
 
 #: invenio_users_resources/templates/security/email/new_user_via_admin.html:8
 msgid "Click here to create a new password"
-msgstr ""
+msgstr "Pulse aquí para crear una nueva contraseña."
 
 #: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:9
 #: invenio_users_resources/templates/semantic-ui/invenio_users_resources/settings/notifications.html:12
