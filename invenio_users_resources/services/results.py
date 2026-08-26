@@ -4,7 +4,7 @@
 
 """Avatar results for users and groups."""
 
-import unicodedata
+import hashlib
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
@@ -43,19 +43,11 @@ class AvatarResult:
         return "avatar.svg"
 
     @property
-    def etag(self):
+    def etag(self) -> str:
         """Get an ETag for the avatar."""
-        # etags must be ascii. If the avatar_chars are not ascii, we need to
-        # normalize them to ascii. This is done by removing accents and
-        # diacritics from the characters.
-        etag_start = self._obj.avatar_chars
-        if not all(ord(c) < 128 for c in etag_start):
-            etag_start = "".join(
-                c
-                for c in unicodedata.normalize("NFD", etag_start)
-                if unicodedata.category(c) != "Mn"
-            )
-        return f"{etag_start}{self._obj.avatar_color}"
+        return hashlib.sha256(
+            f"{self._obj.avatar_chars}{self._obj.avatar_color}".encode("utf-8")
+        ).hexdigest()[:12]
 
     @property
     def last_modified(self):
