@@ -390,11 +390,14 @@ class UserAggregate(BaseAggregate):
     def add_groups(self, group_ids):
         """Add multiple group memberships to user if not already assigned."""
         user = self.model.model_obj
+        current_group_ids = set(self.group_ids())
 
         added = []
         for group_role in self._resolve_groups_to_roles(group_ids):
-            if current_datastore.add_role_to_user(user, group_role):
-                added.append(str(group_role.id))
+            group_role_id = str(group_role.id)
+            if group_role_id not in current_group_ids:
+                added.append(group_role_id)
+                current_datastore.add_role_to_user(user, group_role)
 
         return {
             "added": sorted(added),
@@ -405,11 +408,14 @@ class UserAggregate(BaseAggregate):
     def remove_groups(self, group_ids):
         """Remove multiple group memberships from user if assigned."""
         user = self.model.model_obj
+        current_group_ids = set(self.group_ids())
 
         removed = []
         for group_role in self._resolve_groups_to_roles(group_ids):
-            if current_datastore.remove_role_from_user(user, group_role):
-                removed.append(str(group_role.id))
+            group_role_id = str(group_role.id)
+            if group_role_id in current_group_ids:
+                removed.append(group_role_id)
+                current_datastore.remove_role_from_user(user, group_role)
 
         return {
             "added": [],
@@ -419,15 +425,19 @@ class UserAggregate(BaseAggregate):
 
     def set_groups(self, group_ids):
         """Replace group memberships for a user."""
-        requested_groups = self._resolve_groups_to_roles(group_ids)
-        requested_group_ids = {str(group.id) for group in requested_groups}
-        current_group_ids = set(self.group_ids())
+        user = self.model.model_obj
+        requested_groups = {
+            str(group.id): group for group in self._resolve_groups_to_roles(group_ids)
+        }
+        current_groups = {str(group.id): group for group in self.get_groups()}
 
-        to_add = requested_group_ids - current_group_ids
-        to_remove = current_group_ids - requested_group_ids
+        to_add = requested_groups.keys() - current_groups.keys()
+        to_remove = current_groups.keys() - requested_groups.keys()
 
-        self.add_groups(to_add)
-        self.remove_groups(to_remove)
+        for group_id in to_add:
+            current_datastore.add_role_to_user(user, requested_groups[group_id])
+        for group_id in to_remove:
+            current_datastore.remove_role_from_user(user, current_groups[group_id])
 
         return {
             "added": sorted(to_add),
