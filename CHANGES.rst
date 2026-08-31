@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v13.2.1 (released 2026-08-31)
+
+- fix: avatar etag hash to avoid header errors
+
 Version v13.2.0 (released 2026-08-20)
 
 - feat(users): allow UsersService.read to resolve by email
