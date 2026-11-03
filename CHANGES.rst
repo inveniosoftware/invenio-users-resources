@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v12.1.2 (released 2026-11-03)
+
+- fix(resources): add type converters to the resource endpoints
+
 Version v12.1.1 (released 2026-08-27)
 
 - i18n: pulled translations
