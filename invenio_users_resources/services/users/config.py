@@ -73,6 +73,27 @@ def word_domain_status(node):
     return Word(f"{val}")
 
 
+class UserSuggestQueryParser(CompositeSuggestQueryParser):
+    """Suggest parser tolerant of pasted emails and usernames."""
+
+    def parse(self, query_str):
+        """Parse the query, normalized like the stored emails and usernames."""
+        # Emails and usernames are stored lowercase, and the keyword fields
+        # only match exactly. Pasted text often has capitals or whitespace.
+        return super().parse(query_str.strip().lower())
+
+
+# Only public emails because hidden emails are stored in email_hidden field.
+PUBLIC_SEARCH_ALLOW_LIST = ["username", "email"]
+PUBLIC_SEARCH_MAPPING = {
+    "affiliation": "profile.affiliations",
+    "affiliations": "profile.affiliations",
+    "full_name": "profile.full_name",
+    "fullname": "profile.full_name",
+    "name": "profile.full_name",
+}
+
+
 class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     """Search options."""
 
@@ -84,7 +105,20 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
     # The user search needs to be highly restricted to avoid leaking
     # account information, hence do not edit here unless you are
     # absolutely sure what you're doing.
-    suggest_parser_cls = CompositeSuggestQueryParser.factory(
+    # Without an allow list, the query string can search any indexed field,
+    # including email_hidden, e.g. "email_hidden:*@example.org".
+    query_parser_cls = QueryParser.factory(
+        tree_transformer_cls=SearchFieldTransformer,
+        fields=[
+            "username^2",
+            "email^2",
+            "profile.full_name^3",
+            "profile.affiliations",
+        ],
+        allow_list=PUBLIC_SEARCH_ALLOW_LIST,
+        mapping=PUBLIC_SEARCH_MAPPING,
+    )
+    suggest_parser_cls = UserSuggestQueryParser.factory(
         tree_transformer_cls=SearchFieldTransformer,
         fields=[
             "username.keyword^2",
@@ -132,16 +166,13 @@ class UserSearchOptions(SearchOptions, SearchOptionsMixin):
                 "prefix_length": 1,
                 "fields": ["username.keyword", "email.keyword"],
             },
+            # Partially typed public emails. The edge-ngram text field misses
+            # them: its search analyzer splits at "@" and its grams stop at 20
+            # characters.
+            {"type": "bool_prefix", "boost": 3, "fields": ["email.keyword"]},
         ],
-        # Only public emails because hidden emails are stored in email_hidden field.
-        allow_list=["username", "email"],
-        mapping={
-            "affiliation": "profile.affiliations",
-            "affiliations": "profile.affiliations",
-            "full_name": "profile.full_name",
-            "fullname": "profile.full_name",
-            "name": "profile.full_name",
-        },
+        allow_list=PUBLIC_SEARCH_ALLOW_LIST,
+        mapping=PUBLIC_SEARCH_MAPPING,
     )
 
     params_interpreters_cls = [
