@@ -8,6 +8,11 @@
 Changes
 =======
 
+Version v14.0.0 (released 2026-11-10)
+
+- chore(setup): bump dependencies
+- fix(resources): add type converters to the resource endpoints
+
 Version v13.2.1 (released 2026-08-31)
 
 - fix: avatar etag hash to avoid header errors
