@@ -153,6 +153,59 @@ def test_user_search_username_typo(user_service, user_pub, query):
     assert "sbarton" in [entry["username"] for entry in res["hits"]["hits"]]
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        "pub@inveniosoft",
+        "pub@inveniosoftware.",
+        "pub@inveniosoftware.or",
+        "pub@inveniosoftware.org",
+        "PUB@InvenioSoftware.org",
+        " pub@inveniosoftware.org ",
+    ],
+)
+def test_user_search_public_email(user_service, user_pub, query):
+    """A public email is found while typing it and when pasting it whole."""
+    res = user_service.search(user_pub.identity, suggest=query).to_dict()
+    assert "pub" in [entry["username"] for entry in res["hits"]["hits"]]
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "pubres@inveniosoftware.org",
+        "pubres@inveniosoftware.or*",
+        "email_hidden:pubres@inveniosoftware.org",
+        "email_hidden:pubres*",
+        "email_hidden:pubres@inveniosoftware.or~",
+        "email_hidden:/pubres.*/",
+        "domain:inveniosoftware.org",
+    ],
+)
+def test_user_search_query_private_email_not_searchable(user_service, user_pub, query):
+    """A restricted email can't be matched with a search query, even partially."""
+    res = user_service.search(user_pub.identity, q=query).to_dict()
+    assert "pub-res" not in [entry["username"] for entry in res["hits"]["hits"]]
+
+
+@pytest.mark.parametrize(
+    "query,expected_usernames",
+    [
+        ("pub@inveniosoftware.org", USERNAME_JOSE),
+        ("email:pub@inveniosoftware.org", USERNAME_JOSE),
+        ("name:Jose", USERNAME_JOSE),
+        ("Tim", USERNAME_TIM),
+    ],
+)
+def test_user_search_query_public_fields(
+    user_service, user_pub, query, expected_usernames
+):
+    """Public fields stay searchable with a search query."""
+    res = user_service.search(user_pub.identity, q=query).to_dict()
+    usernames = [entry["username"] for entry in res["hits"]["hits"]]
+    assert sorted(usernames) == expected_usernames
+
+
 #
 # Read
 #
