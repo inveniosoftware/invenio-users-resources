@@ -8,6 +8,10 @@
 Changes
 =======
 
+Version v14.0.1 (released 2026-11-12)
+
+- fix(users): restrict search to public fields and match partial emails
+
 Version v14.0.0 (released 2026-11-10)
 
 - chore(setup): bump dependencies
