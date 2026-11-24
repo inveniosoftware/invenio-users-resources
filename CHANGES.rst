@@ -8,9 +8,9 @@
 Changes
 =======
 
-Version v14.0.1 (released 2026-11-12)
+Version v14.1.0 (released 2026-11-24)
 
-- fix(users): restrict search to public fields and match partial emails
+- chore(setup): bump dependencies
 
 Version v14.0.0 (released 2026-11-10)
 
