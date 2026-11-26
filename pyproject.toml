@@ -8,7 +8,7 @@
 name = "invenio-users-resources"
 description = "Invenio module providing management APIs for users and roles/groups."
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [
   { name = "CERN/TU Wien/JRC", email = "info@inveniosoftware.org" },
